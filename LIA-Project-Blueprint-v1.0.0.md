@@ -4,7 +4,7 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.0.0\
+> **Version:** 1.0.1\
 > **Last updated:** 12 November 2026\
 > **Current phase:** P2 --- Requirements Engineering\
 > **Current workstream:** P2.1 --- Functional Requirements\
@@ -533,68 +533,18 @@ Those topics belong to P2.2--P2.6 and P3.
 
 ## 4.4 Communication and conversation
 
-  --------------------------------------------------------------------------------
-  ID               Requirement                           Priority Status
-  ---------------- ------------------------ --------------------- ----------------
-  FR-020           LIA shall support                           P0 Draft
-                   text-based user                                
-                   interaction.                                   
-
-  FR-021           LIA shall support voice                     P0 Draft
-                   input and spoken                               
-                   responses.                                     
-
-  FR-022           LIA shall support a                         P0 Draft
-                   voice conversation                             
-                   without requiring the                          
-                   user to submit each                            
-                   utterance through a                            
-                   separate manual command.                       
-
-  FR-023           LIA shall maintain                          P0 Draft
-                   conversational context                         
-                   across multiple turns                          
-                   within a conversation.                         
-
-  FR-024           LIA shall support user                      P0 Draft
-                   interruption of spoken                         
-                   output.                                        
-
-  FR-025           LIA shall provide a way                     P0 Draft
-                   for the user to end or                         
-                   pause an active                                
-                   listening/conversation                         
-                   session.                                       
-
-  FR-026           LIA shall be able to                        P1 Draft
-                   initiate a conversation                        
-                   when proactive                                 
-                   interaction is enabled                         
-                   and applicable                                 
-                   conditions are                                 
-                   satisfied.                                     
-
-  FR-027           LIA shall be able to                        P1 Draft
-                   communicate the reason                         
-                   for a context-triggered                        
-                   suggestion when doing so                       
-                   is useful and                                  
-                   appropriate.                                   
-
-  FR-028           LIA shall support a text                    P1 Draft
-                   fallback when voice                            
-                   input or output is                             
-                   unavailable.                                   
-
-  FR-029           LIA shall preserve the                      P0 Draft
-                   distinction between a                          
-                   conversational response,                       
-                   a proposed action, and                         
-                   an action that has                             
-                   actually been executed.                        
-  --------------------------------------------------------------------------------
-
-
+| ID | Requirement | Priority | Status |
+|---|---|---:|---|
+| FR-020 | LIA shall support text-based user interaction. | P0 | Approved |
+| FR-021 | LIA shall support voice input and spoken responses. | P0 | Approved |
+| FR-022 | LIA shall support a continuous conversational session in which the user can speak subsequent turns without manually activating every utterance. | P0 | Approved |
+| FR-023 | LIA shall maintain conversational context across multiple turns within a conversation. | P0 | Approved |
+| FR-024 | LIA shall support user interruption of spoken output. | P0 | Approved |
+| FR-025 | LIA shall provide a way for the user to end or pause an active listening/conversation session. | P0 | Approved |
+| FR-026 | LIA shall be able to initiate a conversation when proactive interaction is enabled and applicable conditions are satisfied. | P1 | Draft |
+| FR-027 | LIA shall be able to communicate the reason for a context-triggered suggestion when doing so is useful and appropriate. | P1 | Draft |
+| FR-028 | LIA shall support text interaction as an independently usable interaction mode, including when voice input or output is unavailable. | P0 | Approved |
+| FR-029 | LIA shall preserve the distinction between a conversational response, a proposed action, and an action that has actually been executed. | P0 | Draft |
 
 ### Decision P2.1-D01 — Voice interaction modes (approved)
 
@@ -1157,13 +1107,10 @@ The modes shall be independently configurable. Their coexistence, precedence, tr
 
 # 5. P2.1 review questions and decisions to resolve
 
-The requirements above are a first structured baseline proposal, not yet
-approved. The following questions are intentionally left open rather
-than silently decided.
+The items below are the remaining decisions required to close the P2.1 review. P2.1-D01 has been resolved and is recorded in the approved decision subsection under Communication and conversation.
 
-| ID | Decision / open question | Rationale | Status |
+| ID | Question | Why it matters | Status |
 |---|---|---|---|
-| P2.1-D01 | LIA shall support all four voice interaction modes: push-to-talk, continuous conversation, wake-word activation, and text interaction. The modes shall be independently configurable. | Supports explicit activation, natural ongoing conversation, summon-by-voice, and text fallback. | **Approved** |
 | P2.1-D02 | Which desktop context should be available by default: active-window metadata only, screen capture on demand, or user-enabled ongoing screen context? | Defines the initial awareness behavior and privacy surface. | Open |
 | P2.1-D03 | Should LIA support a task queue visible to the user, including queued, running, blocked, paused, and completed tasks? | Makes long-running autonomy inspectable and controllable. | Open |
 | P2.1-D04 | Which window operations belong in the first vertical slice? | Keeps the first implementation small and verifiable. | Open |
@@ -1172,9 +1119,7 @@ than silently decided.
 | P2.1-D07 | Should the character be movable by dragging, and should LIA be able to reposition herself? | Defines desktop embodiment and user control. | Open |
 | P2.1-D08 | Should LIA be able to use keyboard and pointer input in the initial release, or only structured window/application APIs? | UI automation has broader reach and higher risk. | Open |
 | P2.1-D09 | What is the desired behavior when LIA detects a potentially useful action but the user is busy? | Drives proactive timing and interruption behavior. | Open |
-| P2.1-D10 | Which application categories should receive early integration support? | Prevents an unbounded "all applications" requirement. | Open |-
-
-------------------------------------------------------------------------
+| P2.1-D10 | Which application categories should receive early integration support? | Prevents an unbounded "all applications" requirement. | Open |
 
 # 6. Candidate first vertical slice
 
@@ -1314,6 +1259,12 @@ phases are completed.
                     stack.                                 
   ----------------------------------------------------------------------------
 
+### ADR-012 — Four configurable interaction modes
+
+**Status:** Approved
+
+LIA shall support push-to-talk, continuous conversation, wake-word activation, and text interaction. The modes shall be independently configurable. This provides multiple interaction styles while retaining user control over microphone access. Microphone access is not implied to be continuously active; it remains subject to explicit permission and a visible listening state.
+
 ------------------------------------------------------------------------
 
 # 9. Change log
@@ -1328,6 +1279,13 @@ phases are completed.
                                                   initial P2.1
                                                   functional-requirement
                                                   draft.
+
+  1.0.1                   12 Nov 2026             Approved all four voice
+                                                  interaction modes;
+                                                  updated FR-020–FR-025
+                                                  and FR-028; recorded
+                                                  ADR-012 and closed
+                                                  P2.1-D01.
 
   ------------------------------------------------------------------------
 
