@@ -4,7 +4,7 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.0.1\
+> **Version:** 1.0.2\
 > **Last updated:** 12 November 2026\
 > **Current phase:** P2 --- Requirements Engineering\
 > **Current workstream:** P2.1 --- Functional Requirements\
