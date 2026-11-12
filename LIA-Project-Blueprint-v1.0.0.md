@@ -463,9 +463,9 @@ Those topics belong to P2.2--P2.6 and P3.
 | FR-013 | LIA shall be able to capture and analyze screen content on demand when the relevant screen-perception capability has been explicitly enabled. | P0 | Approved |
 | FR-014 | LIA shall be able to extract text from permitted screen content when text extraction is available. | P1 | Draft |
 | FR-015 | LIA shall be able to associate observed desktop context with the current conversation or task when relevant. | P1 | Draft |
-| FR-016 | LIA shall distinguish directly observed facts from inferred user intent or activity. | P0 | Approved |
+| FR-016 | LIA shall distinguish directly observed facts from inferred user intent or activity. | P0 | Draft |
 | FR-017 | LIA shall be able to inspect process information in read-only mode when the relevant capability is available. | P1 | Draft |
-| FR-018 | LIA shall not treat unavailable, stale, or incomplete desktop observations as confirmed current facts. | P0 | Approved |
+| FR-018 | LIA shall not treat unavailable, stale, or incomplete desktop observations as confirmed current facts. | P0 | Draft |
 | FR-019 | LIA shall support optional ongoing screen-context perception when explicitly enabled, with a visible active-state indicator, configurable scope, and an immediate user-accessible pause control. | P1 | Approved |
 
 ### Decision P2.1-D02 — Three-level desktop awareness model (approved)
