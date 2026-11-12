@@ -455,81 +455,28 @@ Those topics belong to P2.2--P2.6 and P3.
 
 ## 4.3 Environmental and desktop context
 
-  ---------------------------------------------------------------------------
-  ID               Requirement                      Priority Status
-  ---------------- ------------------- --------------------- ----------------
-  FR-010           LIA shall be able                      P0 Draft
-                   to identify the                           
-                   currently active                          
-                   application and                           
-                   active window when                        
-                   the platform                              
-                   adapter supports                          
-                   it.                                       
+| ID | Requirement | Priority | Status |
+|---|---|---:|---|
+| FR-010 | LIA shall be able to identify the currently active application and active window when the platform adapter supports it. | P0 | Approved |
+| FR-011 | LIA shall be able to retrieve basic metadata about visible windows, including title and window identity where available. | P0 | Approved |
+| FR-012 | LIA shall be able to detect relevant desktop events, such as application launch, application exit, window focus change, and workspace change, where supported. | P1 | Draft |
+| FR-013 | LIA shall be able to capture and analyze screen content on demand when the relevant screen-perception capability has been explicitly enabled. | P0 | Approved |
+| FR-014 | LIA shall be able to extract text from permitted screen content when text extraction is available. | P1 | Draft |
+| FR-015 | LIA shall be able to associate observed desktop context with the current conversation or task when relevant. | P1 | Draft |
+| FR-016 | LIA shall distinguish directly observed facts from inferred user intent or activity. | P0 | Approved |
+| FR-017 | LIA shall be able to inspect process information in read-only mode when the relevant capability is available. | P1 | Draft |
+| FR-018 | LIA shall not treat unavailable, stale, or incomplete desktop observations as confirmed current facts. | P0 | Approved |
+| FR-019 | LIA shall support optional ongoing screen-context perception when explicitly enabled, with a visible active-state indicator, configurable scope, and an immediate user-accessible pause control. | P1 | Approved |
 
-  FR-011           LIA shall be able                      P0 Draft
-                   to retrieve basic                         
-                   metadata about                            
-                   visible windows,                          
-                   including title and                       
-                   window identity                           
-                   where available.                          
+### Decision P2.1-D02 — Three-level desktop awareness model (approved)
 
-  FR-012           LIA shall be able                      P1 Draft
-                   to detect relevant                        
-                   desktop events,                           
-                   such as application                       
-                   launch, application                       
-                   exit, window focus                        
-                   change, and                               
-                   workspace change,                         
-                   where supported.                          
+LIA's desktop awareness shall be organized into three independently controllable levels:
 
-  FR-013           LIA shall be able                      P0 Draft
-                   to obtain screen                          
-                   content through an                        
-                   explicitly enabled                        
-                   screen-perception                         
-                   capability.                               
+1. **Default awareness — desktop metadata:** LIA may identify the active application, active window, available window metadata (such as title and focus), and supported desktop events. This level does not imply continuous screen capture or access to the contents of every visible window.
+2. **On-demand screen perception:** When a task requires visual understanding, LIA may capture and analyze screen content through an explicitly enabled screen-perception capability. The system must not treat screen access as granted merely because default metadata awareness is active.
+3. **Continuous screen perception:** The user may optionally enable ongoing screen-context awareness. While active, it must have a visible indicator, a configurable scope, and an immediate pause control.
 
-  FR-014           LIA shall be able                      P1 Draft
-                   to extract text                           
-                   from permitted                            
-                   screen content when                       
-                   text extraction is                        
-                   available.                                
-
-  FR-015           LIA shall be able                      P1 Draft
-                   to associate                              
-                   observed desktop                          
-                   context with the                          
-                   current                                   
-                   conversation or                           
-                   task when relevant.                       
-
-  FR-016           LIA shall                              P0 Draft
-                   distinguish                               
-                   directly observed                         
-                   facts from inferred                       
-                   user intent or                            
-                   activity.                                 
-
-  FR-017           LIA shall be able                      P1 Draft
-                   to inspect process                        
-                   information in                            
-                   read-only mode when                       
-                   the relevant                              
-                   capability is                             
-                   available.                                
-
-  FR-018           LIA shall not treat                    P0 Draft
-                   unavailable, stale,                       
-                   or incomplete                             
-                   desktop                                   
-                   observations as                           
-                   confirmed current                         
-                   facts.                                    
-  ---------------------------------------------------------------------------
+The levels are intended to separate basic desktop context from access to screen contents. Detailed permission grants, retention, sensitive-content handling, and platform-specific constraints remain to be specified in P2.6. Performance and capture-frequency targets belong in P2.2.
 
 ## 4.4 Communication and conversation
 
@@ -1105,13 +1052,22 @@ The modes shall be independently configurable. Their coexistence, precedence, tr
 
 ------------------------------------------------------------------------
 
+### Decision P2.1-D02 — Three-level desktop awareness model (approved)
+
+The user approved a three-level model:
+
+1. **Default awareness:** active application, active window, available window metadata, and supported desktop events. This does not imply continuous screen capture.
+2. **On-demand screen perception:** capture and analyze screen content when a task requires visual understanding, through an explicitly enabled capability.
+3. **Continuous screen perception:** optional ongoing screen context, with a visible active-state indicator, configurable scope, and immediate pause control.
+
+The detailed permission model and sensitive-content handling remain for P2.6; performance and capture-frequency targets remain for P2.2.
+
 # 5. P2.1 review questions and decisions to resolve
 
-The items below are the remaining decisions required to close the P2.1 review. P2.1-D01 has been resolved and is recorded in the approved decision subsection under Communication and conversation.
+The following questions remain open. P2.1-D01 and P2.1-D02 have been resolved and are recorded in their approved decision subsections.
 
 | ID | Question | Why it matters | Status |
 |---|---|---|---|
-| P2.1-D02 | Which desktop context should be available by default: active-window metadata only, screen capture on demand, or user-enabled ongoing screen context? | Defines the initial awareness behavior and privacy surface. | Open |
 | P2.1-D03 | Should LIA support a task queue visible to the user, including queued, running, blocked, paused, and completed tasks? | Makes long-running autonomy inspectable and controllable. | Open |
 | P2.1-D04 | Which window operations belong in the first vertical slice? | Keeps the first implementation small and verifiable. | Open |
 | P2.1-D05 | Should file operations be in the first vertical slice, or should the initial OS action be limited to window management? | Controls risk and scope of the first working loop. | Open |
@@ -1265,6 +1221,14 @@ phases are completed.
 
 LIA shall support push-to-talk, continuous conversation, wake-word activation, and text interaction. The modes shall be independently configurable. This provides multiple interaction styles while retaining user control over microphone access. Microphone access is not implied to be continuously active; it remains subject to explicit permission and a visible listening state.
 
+### ADR-013 — Three-level desktop awareness
+
+**Status:** Approved
+
+Desktop awareness is divided into default metadata awareness, permissioned on-demand screen perception, and optional continuous screen perception. Continuous perception must include a visible indicator, configurable scope, and immediate pause control. Screen-content access is not implied by default metadata access.
+
+------------------------------------------------------------------------
+
 ------------------------------------------------------------------------
 
 # 9. Change log
@@ -1286,6 +1250,12 @@ LIA shall support push-to-talk, continuous conversation, wake-word activation, a
                                                   and FR-028; recorded
                                                   ADR-012 and closed
                                                   P2.1-D01.
+
+  1.0.2                   12 Nov 2026             Approved the three-level
+                                                  desktop awareness model;
+                                                  revised FR-010–FR-019;
+                                                  recorded ADR-013 and
+                                                  closed P2.1-D02.
 
   ------------------------------------------------------------------------
 
