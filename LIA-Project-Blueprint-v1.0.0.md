@@ -357,7 +357,7 @@ flowchart TD
 
 # 4. P2.1 --- Functional requirements
 
-**Workstream status:** Draft for review\
+**Workstream status:** In progress — requirements under review\
 **Scope:** Define observable functions LIA is expected to provide,
 without selecting the implementation technology.
 
@@ -593,6 +593,19 @@ Those topics belong to P2.2--P2.6 and P3.
                    an action that has                             
                    actually been executed.                        
   --------------------------------------------------------------------------------
+
+
+
+### Decision P2.1-D01 — Voice interaction modes (approved)
+
+LIA shall support all four interaction modes:
+
+1. **Push-to-talk:** Explicit user-initiated listening.
+2. **Continuous conversation:** Ongoing turn-taking within an active conversation, without repeated manual activation for each utterance.
+3. **Wake-word activation:** Spoken activation phrase to summon LIA.
+4. **Text interaction:** Typed input and text responses.
+
+The modes shall be independently configurable. Their coexistence, precedence, transitions, microphone indicators, wake-word operation, interruption handling, and permission details will be specified further in P2.4 and P2.6. Approval of these modes does not imply that the microphone is always active; microphone access remains subject to explicit user control and a visible listening state.
 
 ## 4.5 Embodiment, animation, and expression
 
@@ -1148,81 +1161,18 @@ The requirements above are a first structured baseline proposal, not yet
 approved. The following questions are intentionally left open rather
 than silently decided.
 
-  --------------------------------------------------------------------------
-  ID                Question             Why it matters    Status
-  ----------------- -------------------- ----------------- -----------------
-  P2.1-D01          Should LIA's voice   Changes the       Open
-                    interaction be       conversation and  
-                    push-to-talk,        microphone        
-                    wake-word,           interaction       
-                    continuous session,  model.            
-                    or configurable                        
-                    combinations?                          
-
-  P2.1-D02          Which desktop        Defines the       Open
-                    context should be    initial awareness 
-                    available by         behavior and      
-                    default:             privacy surface.  
-                    active-window                          
-                    metadata only,                         
-                    screen capture on                      
-                    demand, or                             
-                    user-enabled ongoing                   
-                    screen context?                        
-
-  P2.1-D03          Should LIA support a Makes             Open
-                    task queue visible   long-running      
-                    to the user,         autonomy          
-                    including queued,    inspectable and   
-                    running, blocked,    controllable.     
-                    paused, and                            
-                    completed tasks?                       
-
-  P2.1-D04          Which window         Keeps the first   Open
-                    operations belong in implementation    
-                    the first vertical   small and         
-                    slice?               verifiable.       
-
-  P2.1-D05          Should file          Controls risk and Open
-                    operations be in the scope of the      
-                    first vertical       first working     
-                    slice, or should the loop.             
-                    initial OS action be                   
-                    limited to window                      
-                    management?                            
-
-  P2.1-D06          Which memory         Determines memory Open
-                    categories should be behavior and      
-                    explicitly           consent           
-                    user-approved before requirements.     
-                    persistence?                           
-
-  P2.1-D07          Should the character Defines desktop   Open
-                    be movable by        embodiment and    
-                    dragging, and should user control.     
-                    LIA be able to                         
-                    reposition herself?                    
-
-  P2.1-D08          Should LIA be able   UI automation has Open
-                    to use keyboard and  broader reach and 
-                    pointer input in the higher risk.      
-                    initial release, or                    
-                    only structured                        
-                    window/application                     
-                    APIs?                                  
-
-  P2.1-D09          What is the desired  Drives proactive  Open
-                    behavior when LIA    timing and        
-                    detects a            interruption      
-                    potentially useful   behavior.         
-                    action but the user                    
-                    is busy?                               
-
-  P2.1-D10          Which application    Prevents an       Open
-                    categories should    unbounded "all    
-                    receive early        applications"     
-                    integration support? requirement.      
-  --------------------------------------------------------------------------
+| ID | Decision / open question | Rationale | Status |
+|---|---|---|---|
+| P2.1-D01 | LIA shall support all four voice interaction modes: push-to-talk, continuous conversation, wake-word activation, and text interaction. The modes shall be independently configurable. | Supports explicit activation, natural ongoing conversation, summon-by-voice, and text fallback. | **Approved** |
+| P2.1-D02 | Which desktop context should be available by default: active-window metadata only, screen capture on demand, or user-enabled ongoing screen context? | Defines the initial awareness behavior and privacy surface. | Open |
+| P2.1-D03 | Should LIA support a task queue visible to the user, including queued, running, blocked, paused, and completed tasks? | Makes long-running autonomy inspectable and controllable. | Open |
+| P2.1-D04 | Which window operations belong in the first vertical slice? | Keeps the first implementation small and verifiable. | Open |
+| P2.1-D05 | Should file operations be in the first vertical slice, or should the initial OS action be limited to window management? | Controls risk and scope of the first working loop. | Open |
+| P2.1-D06 | Which memory categories should be explicitly user-approved before persistence? | Determines memory behavior and consent requirements. | Open |
+| P2.1-D07 | Should the character be movable by dragging, and should LIA be able to reposition herself? | Defines desktop embodiment and user control. | Open |
+| P2.1-D08 | Should LIA be able to use keyboard and pointer input in the initial release, or only structured window/application APIs? | UI automation has broader reach and higher risk. | Open |
+| P2.1-D09 | What is the desired behavior when LIA detects a potentially useful action but the user is busy? | Drives proactive timing and interruption behavior. | Open |
+| P2.1-D10 | Which application categories should receive early integration support? | Prevents an unbounded "all applications" requirement. | Open |-
 
 ------------------------------------------------------------------------
 
@@ -1388,8 +1338,7 @@ phases are completed.
 **Current phase:** P2 --- Requirements Engineering\
 **Active workstream:** P2.1 --- Functional Requirements\
 **Current status:** Draft for review\
-**Next action:** Review P2.1 requirements and resolve the open decisions
-in Section 5. Do not move to technology selection yet.
+**Next action:** Continue reviewing P2.1 requirements and resolve the remaining open decisions in Section 5. Do not move to technology selection yet.
 
 ## Phase 2 exit criteria
 
