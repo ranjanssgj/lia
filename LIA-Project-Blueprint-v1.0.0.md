@@ -3445,7 +3445,7 @@ These deferrals do not leave product behavior undecided. The accepted requiremen
 
 The memory workstream has defined what LIA may remember, how memories are formed and represented, how uncertainty and temporal change are handled, how memories are retrieved, how domains are isolated and shared, how users inspect and control memory, and how correction, deletion, security and failure behavior must work.
 
-The remaining work is implementation-independent integration and verification: P2.6 will complete the authoritative permission model; P2.2 will set measurable non-functional targets; P2.7 will map and execute acceptance tests; P3 will select and implement the architecture. P2 as a whole remains in progress.
+At the time P2.5 was closed, permission integration, non-functional targets and acceptance specification remained assigned to P2.6, P2.2 and P2.7. Those workstreams have since been completed and are consolidated in Sections 13–18. Phase 2 is now closed as a requirements baseline; implementation, benchmarking and runtime test execution remain future engineering work.
 
 
 # 13. P2.2 — Non-functional requirements
