@@ -387,25 +387,31 @@ This tracker records design direction established during P2.1 discussions. "Agre
 
 ## 3.6 P2.5 memory requirements progress
 
-P2.5 has moved into active design. The following product-level directions have been accepted during discussion. Formal requirement wording, implementation-independent acceptance criteria and detailed policy edge cases are still being developed.
+**Workstream status:** Design and requirements baseline complete.  
+**Verification status:** Acceptance criteria defined; detailed test cases and execution are assigned to P2.7.
 
-| Memory area | Design status | Remaining work |
+| Memory area | Decision status | Remaining work / dependency |
 |---|---|---|
-| Autonomous memory formation | Agreed | Define capture boundaries, extraction quality and failure handling |
-| Historical archive | Agreed | Define archive schema, access controls and deletion verification |
-| Episodic and semantic memory | Agreed | Formalize memory records and consolidation behavior |
-| Procedural and working memory | Agreed | Define lifecycle and task integration |
-| Temporal knowledge graph | Agreed | Define entity resolution, edge semantics and temporal validity |
-| Associative reinforcement | Agreed conceptually | Calibrate evidence thresholds, reinforcement and decay |
-| Hybrid retrieval | Agreed conceptually | Define retrieval policies, ranking, evidence validation and context budgets |
-| Conversation retention | Agreed | Ordinary permitted conversation archive retained indefinitely until user deletion |
-| Temporary conversations | Agreed | Manual activation and LIA suggestion, with explicit user consent |
-| Sensitivity classes | Agreed as initial policy | Define classification, processing and retention controls |
-| Correction and contradiction handling | Agreed direction | Define propagation, authority and temporal reconciliation |
-| Forgetting and erasure | Agreed direction | Define deletion scope, propagation and completion reporting |
-| Compartmentalization | Agreed | Define domain boundaries and access-control rules |
-| Cross-domain sharing | Agreed direction | Define explicit sharing, defaults, revocation and non-transitive access |
-| Memory/permission separation | Agreed | Define authoritative permission checks and audit behavior |
+| Historical and source archive | Approved | Implement retention and deletion controls in P3; verify in P2.7 |
+| Episodic, semantic, procedural, working and task memory | Approved conceptual model | Map to architecture in P3 |
+| Temporal knowledge graph and entity resolution | Approved conceptual model | Select representation and algorithms in P3 |
+| Autonomous formation and consolidation | Approved | Implement permitted-source capture, evidence validation and lineage in P3 |
+| Epistemic states and uncertainty | Approved | Calibrate confidence and promotion thresholds through evaluation |
+| Associative reinforcement | Approved conceptual model | Empirically calibrate evidence weights and maintenance behavior |
+| Freshness and temporal validity | Approved | Define class-specific freshness behavior; numerical targets remain implementation/evaluation work |
+| Hybrid retrieval and context assembly | Approved conceptual model | Select indexes, ranking strategy and budgets in P3/P2.2 |
+| Provenance and record integrity | Approved | Implement versioning, source lineage and idempotent updates in P3 |
+| Conversation retention and temporary mode | Approved | Implement controls and test isolation in P3/P2.7 |
+| Sensitivity and retention classes | Approved | Integrate with P2.6 authorization and implementation |
+| Granular access and derived-memory restrictions | Approved | Integrate with the authoritative permission model in P2.6 |
+| Cross-project promotion and sharing | Approved | Implement and test scope isolation and revocation |
+| Correction, forgetting and deletion | Approved | Implement propagation, tombstones and verification |
+| Memory transparency and review | Approved | Implement user-facing inspection and management interface |
+| Export and portability | Approved requirement | Select open export schema and package format in P3 |
+| Security, external processing and failure behavior | Approved requirements | Select implementation controls in P3; quantitative NFRs in P2.2 |
+| Acceptance criteria | Defined in Section 12.17 | Detailed test cases and execution in P2.7 |
+
+P2.5 closes the product-level memory requirements and governance design. It does not claim that memory implementation or verification is complete.
 
 # 4. P2.1 --- Functional requirements
 
@@ -1365,6 +1371,7 @@ phases are completed.
 | FR-160–169 | Hybrid input interaction | P2.4 interaction; P2.6 authorization; P3 interaction abstraction |
 | FR-170–189 | Task management and scheduling | P2.2 performance/resources; P2.6 authority; P3 scheduler and task runtime |
 | FR-190–209 | Memory formation, retrieval and context assembly | P2.5 memory specification; P2.6 privacy/governance; P2.7 evaluation |
+| SEC-001–038 | Memory governance, integrity and user control | P2.5 baseline; P2.6 authorization integration; P2.7 acceptance tests; P3 implementation |
 
 # 8. Decision register
 
@@ -1588,6 +1595,73 @@ Memory is logically compartmentalized into user, project, task, experience and p
 
 Memory records historical and learned information. A separate authoritative permission service determines current execution authority. Historical approvals, inferred preferences and memory associations do not substitute for checking current permissions before execution.
 
+
+### ADR-036 — Uncertainty-aware memory states
+
+**Status:** Approved
+
+Memory records distinguish candidate, established, disputed and rejected information. Superseded is represented as a version/lifecycle relationship rather than as a confidence state. Confidence, importance, association strength, freshness and retrieval activation remain independent. Uncertain or disputed memories cannot independently justify consequential actions or permissions.
+
+### ADR-037 — Independent temporal validity and freshness
+
+**Status:** Approved
+
+LIA distinguishes valid time, recorded time, freshness and retrieval relevance. Age alone does not invalidate or delete historical evidence. Volatile information may require revalidation before current reliance. Retrieval relevance may decay, but retrieval does not reinforce factual confidence.
+
+### ADR-038 — Provenance-preserving records and conservative entity resolution
+
+**Status:** Approved
+
+Persistent and derived memories retain source provenance, temporal metadata, scope and derivation lineage. Original experience records are append-oriented; corrections create new evidence or versions rather than silently rewriting the source. Ambiguous entities remain separate until resolved with sufficient evidence or confirmation.
+
+### ADR-039 — Granular memory authorization and inherited restrictions
+
+**Status:** Approved
+
+Discover, read, use, derive, modify, share and delete are separately authorizable operations. Access checks occur before retrieval. Derived memories inherit relevant source restrictions; combining restricted sources does not automatically declassify the result. Graph links and non-transitive sharing do not grant access.
+
+### ADR-040 — Governed cross-project memory promotion
+
+**Status:** Approved
+
+Explicit user-level preferences may be global when permitted. Repeated preferences across independent projects may be promoted when evidence and access policy support it. Behavior repeated within one project remains project-scoped initially; one-time observations remain contextual. Sensitive or confidential information is not promoted globally through inference.
+
+### ADR-041 — Memory transparency and user control
+
+**Status:** Approved
+
+The user can inspect memory content, provenance, interpretation, confidence, sensitivity, scope, temporal validity, relationships and relevant usage. The user can correct, flag, review, scope, pause, forget and erase memory. The management interface enforces the same access boundaries as retrieval.
+
+### ADR-042 — Memory export and portability
+
+**Status:** Approved
+
+The user can export accessible memory in human-readable and machine-readable forms while preserving provenance, temporal information, relationships, scope and derivation lineage. Export does not mutate the original. Exact formats are deferred to P3; import is not a P2.5 release requirement.
+
+### ADR-043 — Permitted-source capture and data minimization
+
+**Status:** Approved
+
+Memory formation is limited to permitted sources and purposes. Permission to observe or read does not imply permission to retain or share. Raw audio, camera frames and transient screen observations are not permanent memory by default. Persistent extraction is sensitivity-aware and minimizes retained content.
+
+### ADR-044 — Account isolation and controlled external processing
+
+**Status:** Approved
+
+Memory is isolated to its authenticated OS user profile unless explicitly shared through a supported mechanism. External processing receives only the minimum relevant authorized context; the complete archive is not a default payload. Concrete storage, encryption and provider choices are deferred to P3.
+
+### ADR-045 — Safe persistence, recovery and failure behavior
+
+**Status:** Approved
+
+LIA distinguishes confirmed persistent writes from session-only context, exposes material write failures and retries safely without duplication. Restricted retrieval fails closed. Backup restoration reapplies deletion markers and revocations before memories are made available.
+
+### ADR-046 — Retrieved content is not governing authority
+
+**Status:** Approved
+
+Stored or retrieved documents, webpages, messages, source code and other content are evidence or context, not instructions that can override governing rules, grant permissions or authorize execution. Current authority remains with the permission system and the user's applicable authorization.
+
 # 9. Change log
 
   ------------------------------------------------------------------------
@@ -1659,12 +1733,18 @@ Memory records historical and learned information. A separate authoritative perm
 
 ------------------------------------------------------------------------
 
+
+**1.3.0 — 13 Nov 2026:** Completed the P2.5 memory requirements and governance baseline. Added uncertainty-aware memory states; freshness and temporal validity rules; provenance, versioning and conservative entity resolution; permitted-source capture and data minimization; granular access operations and derived-memory restrictions; automatic cross-project promotion policy; memory transparency, user controls and portability; account isolation, external-processing minimization, untrusted-source handling, persistence/failure safeguards; P2.5 acceptance criteria and explicit phase boundaries.
+
+
 # 10. Current working state
 
-**Current phase:** P2 --- Requirements Engineering\
-**Active workstream:** P2.5 --- Memory Requirements (governance and integrity)\
-**Current status:** P2.1 detailed design record consolidated; P2.5 governance and integrity design recorded, with formal requirements and acceptance criteria still under review\
-**Next action:** Continue P2.5 with access-control edge cases, memory correction/deletion verification and governance acceptance criteria. Then complete the remaining P2.1 reviews, P2.2–P2.7 requirements and phase-wide traceability. Do not move to technology selection yet.
+**Current phase:** P2 — Requirements Engineering  
+**Active workstream:** P2.1 — Functional Requirements (remaining formal review and first-vertical-slice scope)  
+**P2.5 status:** Complete — memory requirements and governance design baseline approved  
+**Overall status:** Phase 2 remains in progress. P2.1 review is not closed; P2.2–P2.7 remain to be completed. P2.5 implementation, measurable performance targets and test execution remain assigned to P3, P2.2 and P2.7 respectively.  
+**Next action:** Resume the remaining P2.1 review and close first-release scope decisions. Then complete the remaining requirements workstreams, using the P2.5 baseline as an input to P2.6 permission design and P2.7 acceptance testing.
+
 
 ## Phase 2 exit criteria
 
@@ -2870,6 +2950,25 @@ The following security and governance requirements are part of the P2.5/P2.6 des
 | SEC-019 | The system shall not claim complete erasure while applicable deletion work remains outstanding or unverified. | Agreed design direction |
 | SEC-020 | If sensitivity or permission status is uncertain, the system shall apply the more restrictive safe handling behavior until resolved. | Draft |
 
+| SEC-021 | Memory discovery, reading, use, derivation, modification, sharing and deletion shall be separately authorizable operations. | Approved |
+| SEC-022 | Authorization and scope filtering shall occur before memory search or retrieval and shall prevent disclosure of restricted content or its existence through metadata. | Approved |
+| SEC-023 | Derived memories shall inherit relevant restrictions from their source records; combining restricted sources shall not silently declassify the result. | Approved |
+| SEC-024 | Automatic cross-project promotion shall follow the explicit-user-preference, independent-repetition, contextual-observation and sensitivity rules in Section 12.14. | Approved |
+| SEC-025 | The user shall be able to pause persistent memory formation globally and configure permitted retention by source, category and domain. | Approved |
+| SEC-026 | Raw audio, camera frames and transient screen observations shall not be retained as permanent memory by default. | Approved |
+| SEC-027 | The user shall be able to inspect memory provenance, interpretation, confidence, scope, sensitivity, relationships and recorded usage. | Approved |
+| SEC-028 | Memory epistemic state shall distinguish candidate, established, disputed and rejected information; supersession and temporal validity shall be represented separately. | Approved |
+| SEC-029 | The system shall distinguish historical validity, freshness and retrieval relevance and shall revalidate stale information when material to current decisions. | Approved |
+| SEC-030 | Every retained or derived memory shall preserve source provenance and lineage sufficient to trace its origin and dependent representations. | Approved |
+| SEC-031 | Ambiguous entity matches shall remain separate unless identity can be established with sufficient evidence or user confirmation. | Approved |
+| SEC-032 | The user shall be able to export accessible memory in human-readable and machine-readable forms while preserving provenance, scope, relationships and temporal information. | Approved |
+| SEC-033 | Memory belonging to one authenticated OS user profile shall not be accessible to another local OS account without explicit supported sharing authorization. | Approved |
+| SEC-034 | Retrieved or stored third-party content shall be treated as data/evidence, not as governing instructions or authorization to execute actions. | Approved |
+| SEC-035 | External model or service processing shall receive only the minimum relevant authorized context; the complete historical archive shall not be sent by default. | Approved |
+| SEC-036 | The system shall not claim cross-session persistence until a write is confirmed; failed writes shall expose their status and be safely retryable. | Approved |
+| SEC-037 | Deletion markers and revocations shall be reapplied after backup restoration so deleted memories and revoked access are not resurrected. | Approved |
+| SEC-038 | Memory access, correction, sharing and deletion shall produce sufficient audit information to explain the operation without unnecessarily duplicating sensitive content. | Approved |
+
 ## 12.8 Memory governance workflow
 
 ```mermaid
@@ -2888,18 +2987,252 @@ flowchart TD
 
 ## 12.9 P2.5 completion boundary
 
-The memory governance design is not complete until the following are specified and tested:
+P2.5 is complete when the product-level memory architecture, lifecycle policies, governance rules, user controls, security boundaries and implementation-independent acceptance criteria are defined and approved. These requirements are now recorded in Sections 11.10 and 12.1–12.18.
 
-- Memory record ownership and sensitivity classification.
-- Retention rules for every memory category and source type.
-- Temporary conversation lifecycle and operational exceptions.
-- Explicit authorization for sensitive-memory retention.
-- Correction and temporal contradiction handling.
-- Forgetting, experience erasure and domain erasure.
-- Deletion propagation, backup handling and external-provider reporting.
-- Compartmentalized access and controlled cross-domain sharing.
-- Permission-authority integration and audit behavior.
-- Retrieval access checks and source-level provenance.
-- User inspection, correction and deletion workflows.
-- Acceptance criteria covering each governance operation.
+P2.5 completion does **not** mean that the memory system has been implemented, benchmarked or security-tested. Detailed test cases and test execution belong to P2.7; measurable latency, storage, resource and availability targets belong to P2.2; implementation and technology selection belong to P3.
 
+The completed P2.5 design baseline includes:
+
+- Layered memory representations, the historical source archive and the temporal knowledge graph.
+- Permitted-source capture, autonomous memory formation, consolidation and associative reinforcement.
+- Epistemic states, confidence/evidence separation, entity resolution and source provenance.
+- Temporal validity, freshness, stale-information handling and contradiction reconciliation.
+- Hybrid retrieval, bounded context assembly, access filtering and retrieval traceability.
+- Sensitivity classification, retention, temporary mode and independent persistent-memory controls.
+- Compartmentalization, granular access operations, derived-memory restrictions and cross-project promotion.
+- The separation of memory, permission authority, task scheduling and execution.
+- Correction, forgetting, experience/domain erasure, deletion propagation and backup recovery.
+- Memory transparency, review, user correction, export and portability.
+- Account isolation, external-processing minimization, untrusted-source handling and safe failure behavior.
+- Acceptance criteria and explicit boundaries for P2.2, P2.6, P2.7 and P3.
+
+**Status:** P2.5 design and requirements baseline complete. Verification remains scheduled for P2.7.
+
+## 12.10 Epistemic state and uncertainty model
+
+LIA shall not represent every extracted statement as an established fact. Memory reliability is represented through separate dimensions rather than one overloaded status field.
+
+| State | Meaning | Required behavior |
+|---|---|---|
+| Candidate | A provisional observation or inference without sufficient support | May inform cautious contextual reasoning, but must be identified as uncertain and must not independently justify consequential action |
+| Established | Supported by an explicit user statement or sufficiently strong evidence | May be used within its scope, freshness and access restrictions |
+| Disputed | Materially conflicting evidence remains unresolved | Preserve competing evidence, expose uncertainty and avoid asserting a single current answer |
+| Rejected | Evidence indicates the candidate was incorrect or inapplicable | Do not reuse as a valid fact or automatically reintroduce it from the same evidence |
+| Superseded | A later version or interpretation replaces this record as the current understanding | Preserve historical provenance and validity; do not treat as the current version outside its historical context |
+
+Superseded is a version/lifecycle relationship, not an epistemic confidence level. Temporal validity, freshness, factual confidence, importance, association strength and retrieval activation are also independent properties. A memory may be established but stale, established but historically valid only, or disputed while still being important to preserve.
+
+An explicit user statement may establish a scoped preference or fact without requiring repeated evidence. A single ambiguous observation should remain a candidate. Repeated evidence must be sufficiently independent and contextually relevant; repeated retrieval of the same memory is not new evidence.
+
+Low-confidence, potentially sensitive, scope-ambiguous, disputed and proposed cross-project memories shall be eligible for a selective review queue. LIA may surface a review when it is useful, but shall not repeatedly interrupt ordinary interaction for low-impact uncertainties. The user may inspect and correct memories at any time.
+
+Uncertainty shall constrain action. A candidate, disputed or stale memory cannot independently provide execution authority, expand a permission grant or justify a consequential operation. Where uncertainty materially affects an answer, LIA must communicate it or seek clarification rather than fabricate certainty.
+
+## 12.11 Temporal validity, freshness and memory ageing
+
+Memory ageing shall not be treated as automatic falsification or deletion.
+
+Every time-sensitive memory must distinguish:
+
+- **Valid time:** When the represented fact, preference, relationship or state was true.
+- **Recorded time:** When LIA acquired or stored the information.
+- **Freshness:** Whether available evidence is recent and reliable enough to represent the current state.
+- **Retrieval relevance:** Whether the memory is useful to the present conversation or task.
+
+The bi-temporal model remains authoritative for historical interpretation. Freshness is a separate assessment.
+
+LIA shall distinguish relatively durable information from volatile information. Historical events and completed decisions remain historically meaningful. Current schedules, active task status, project progress, roles, availability and preferences known to change may require revalidation before being relied upon.
+
+No universal time-to-live shall be imposed on all memories. Freshness behavior shall be calibrated by memory type, source reliability, rate of change and consequence of error. Where a memory is stale or its freshness is unknown, LIA shall seek current evidence or label the uncertainty when the information is material.
+
+New evidence updates the current interpretation without silently rewriting the past. Retrieval relevance may decay over time or with changing context; verified historical facts shall not be deleted merely because they are old. Repeated retrieval must not increase factual confidence or association strength by itself.
+
+## 12.12 Memory record integrity, provenance and entity resolution
+
+Every retained memory shall carry a conceptual metadata envelope. The exact database schema is deferred to P3, but the design must preserve at least:
+
+| Record property | Purpose |
+|---|---|
+| Stable record identity and memory type | Identify the record and distinguish archive, episode, semantic fact, procedure, task state or other memory |
+| Content or structured payload | Preserve the actual information represented |
+| Owner, domain and scope | Identify whose information it is and where it may be used |
+| Source provenance | Point to the original conversation, event, document, task, observation or imported source |
+| Recorded and valid timestamps | Support historical reconstruction and temporal reasoning |
+| Sensitivity and retention class | Govern processing, persistence, retrieval, export and deletion |
+| Epistemic state and evidence | Distinguish explicit information, inference, uncertainty and contradiction |
+| Confidence and importance | Preserve independent assessments of factual support and relevance |
+| Freshness and version/lifecycle state | Identify whether information is current, ageing, stale or superseded |
+| Entity and relationship references | Connect the memory to relevant people, projects, applications, tasks and experiences |
+| Derivation lineage | Identify source records used to create summaries, profiles or other derived memories |
+| Access and purpose constraints | Preserve the scope and restrictions under which it may be retrieved or used |
+
+These are semantic requirements, not a commitment to a particular storage schema.
+
+Original experience records shall be append-oriented. Corrections, annotations and updated interpretations shall be recorded as new evidence or versions rather than silently overwriting the source. Derived memories shall retain lineage to all material source records. A merge or consolidation shall preserve the identities, provenance and restrictions of the contributing records.
+
+Entity resolution shall be conservative. Aliases may be associated when there is adequate evidence. Ambiguous references shall remain separate or be represented as candidate relationships until resolved. LIA shall not merge two people, projects or other entities merely because their names or contexts are similar. Where an incorrect merge would materially affect user understanding or access, LIA should request confirmation. Any supported merge must preserve lineage and permit the resulting relationships to be inspected and corrected.
+
+## 12.13 Permitted-source capture and data minimization
+
+Memory formation may use only information that LIA is permitted to access and process for the relevant purpose. Permission to observe or read a source does not imply permission to retain it, summarize it into long-term memory, share it across domains or send it to an external provider.
+
+The memory pipeline shall classify source ownership and sensitivity before persistent extraction, indexing, graph construction or cross-domain promotion. It shall retain the minimum information needed for the intended memory purpose. A concise permitted event or decision record is preferred over indiscriminate retention of raw transient data.
+
+Default capture boundaries:
+
+- Ordinary permitted conversation text or transcripts may enter the historical conversation archive under the user's memory settings and the approved conversation-retention policy.
+- Raw microphone audio is transient by default and is not permanently archived merely because voice interaction occurred.
+- Camera frames and transient screen captures are not permanent memory by default.
+- Desktop metadata and application observations may support working context. Persistent retention requires the applicable source permission, sensitivity classification and memory policy.
+- File contents, private correspondence and sensitive documents may be processed for an authorized task without being retained as long-term memory.
+- A task record may preserve the minimum objective, plan, checkpoint and execution outcome needed for continuity without archiving the entire conversation that produced it.
+- Operational and security records shall be minimal, avoid copying sensitive conversational content and follow a separate bounded retention policy.
+
+A user-level instruction not to remember specified information overrides ordinary autonomous retention for that scope. A global persistent-memory pause and per-source, per-category and per-domain controls shall be available. During a pause, LIA may still use current-session context to answer the ongoing interaction, but shall not create unauthorized cross-session memories.
+
+Temporary mode follows Section 12.1. It remains user-activated, including when suggested by LIA. Temporary content is excluded from the permanent archive and autonomous long-term extraction. Any separately authorized persistent task record must be limited to the task information needed for execution and must not become a backdoor archive of temporary conversation content.
+
+## 12.14 Granular memory authorization and cross-project promotion
+
+Memory access is not a single read permission. The system shall distinguish authorization for:
+
+| Operation | Meaning |
+|---|---|
+| Discover | Learn that a memory or domain exists or is available |
+| Read | Retrieve its content |
+| Use | Include the memory in reasoning or task context |
+| Derive | Create a summary, inference, profile entry or relationship from it |
+| Modify | Correct, annotate or change its current interpretation |
+| Share | Make it available across a domain or to another authorized context |
+| Delete | Forget or erase it within the authorized scope |
+
+Permission for one operation does not imply permission for another. Access checks must be applied before retrieval and indexing results are exposed. Search result counts, metadata, relationship traversal and error messages must not leak the existence or content of inaccessible memories.
+
+Each access decision shall consider ownership, sensitivity, purpose, domain scope and the current authorization grant. The memory system may store historical references to grants, but the separate permission authority remains the only source of current execution authority.
+
+Derived memories shall inherit relevant restrictions from their source material. A summary made from restricted project documents remains restricted to the extent that it reveals information from those documents. Combining multiple restricted sources does not silently produce an unrestricted result. Declassification or broader sharing requires an explicit policy and authorization decision. Graph relationships do not grant access, and cross-domain sharing remains non-transitive by default.
+
+### Automatic cross-project promotion rules
+
+The following policy is approved:
+
+| Evidence pattern | Default scope and behavior |
+|---|---|
+| Explicit user-level preference | May be stored as a global preference when sensitivity and access policy permit |
+| Repeated preference across independent projects | May be consolidated into a global preference when evidence is sufficiently strong and the source restrictions allow promotion |
+| Repeated behavior within one project | Remains project-scoped initially; repetition in one context does not establish a universal preference |
+| One-time observation | Remains contextual and does not become a global user fact |
+| Sensitive or confidential source | Cannot be promoted globally through inference; appropriate explicit authorization is required |
+
+Promotion is a distinct governed operation, not an automatic side effect of graph connectivity. The original project-scoped records and evidence remain traceable after promotion. A global preference must preserve relevant context and must not be generalized beyond what the evidence supports. Revocation or scope changes must invalidate future retrieval under the old grant and update relevant caches and indexes.
+
+## 12.15 Memory transparency, user control and portability
+
+LIA shall provide a user-facing memory inspection and management interface. It shall present understandable explanations of memory, not merely expose raw database structures.
+
+For an inspectable memory, the interface should expose:
+
+- What LIA currently remembers or believes.
+- The original source or sources and a path to inspect them when available.
+- Whether the information was explicitly stated, inferred or consolidated from repeated evidence.
+- Confidence, supporting evidence and unresolved contradictions.
+- Sensitivity, ownership, domain scope and retention status.
+- Valid time, recorded time and freshness.
+- Related memories and the lineage of derived summaries or profiles.
+- Whether the memory has been retrieved or used, and the reason it was relevant.
+
+The user shall be able to correct or annotate a memory, flag uncertainty, inspect related records, review proposed or disputed memories, change sharing scope where authorized, pause persistent memory, and initiate forgetting or deletion operations. Changes shall have an auditable history. The inspection interface must enforce the same access controls as ordinary retrieval.
+
+LIA shall explain why a memory was selected for an answer or task when the user asks or when transparency is materially useful. The explanation should identify relevant provenance and whether the selected material was explicit, inferred, historical or uncertain.
+
+### Export and portability
+
+The user shall be able to export accessible LIA-held memory in both human-readable and machine-readable forms. Export shall preserve source provenance, timestamps, scope, sensitivity labels, relationships, epistemic status and derivation lineage to the extent supported by the exported content.
+
+Export must not silently modify or delete the source data. Sensitive export shall require appropriate authentication and authorization. Credentials and S3 secrets are never included because they are excluded from ordinary memory. Data about other people or domains shall be included only where the user has the necessary rights and access.
+
+The exact open structured format, package layout and schema versioning belong in P3. Importing external memory is not a P2.5 release requirement. If a later release supports import, imported records must be marked with their external provenance and unverified status; they must not automatically become established current facts or permissions. LIA must clearly distinguish copies exported outside its control from records it can still manage or delete.
+
+## 12.16 Security, external processing, integrity and failure behavior
+
+Memory is user data and shall be protected by least-privilege access, isolation and secure storage/communication controls. Memory for one authenticated OS user profile shall not be retrievable by another local OS account without an explicitly supported sharing mechanism. P3 shall select the concrete storage, encryption, key-management and local/cloud deployment design; the requirement to protect data at rest and in transit is established here.
+
+External processing shall follow data minimization. Before context is sent to an external model or service, LIA shall perform authorization and scope checks, select only relevant permitted records, and exclude unrelated archive content. The full conversation archive is never a default context payload. Provider capabilities and retention terms must be represented accurately; LIA shall not claim external deletion that has not been verified.
+
+Stored conversations, documents, webpages, source code, messages and other retrieved material are evidence or context, not governing instructions. Their contents cannot change system rules, grant permissions, approve operations or override the authoritative permission service. Instruction-like content found in a memory remains untrusted unless independently authorized through the appropriate user interaction and policy path.
+
+### Persistence and degraded operation
+
+- LIA shall distinguish confirmed persistent writes from information held only in working/session context.
+- LIA shall not claim that a memory has been saved across sessions until the persistence operation is confirmed.
+- Failed writes shall expose an understandable pending or failed status when relevant and may be retried safely.
+- Retries and event replay shall be idempotent so they do not create duplicate memories or repeat external actions.
+- If the memory store is unavailable, LIA may continue using available current-session context, but shall not fabricate retrieval results or imply that long-term memory was available.
+- Restricted-memory retrieval shall fail closed when authorization or scope cannot be established.
+- If the source archive is unavailable, LIA shall not invent a source reference or claim that an original record was checked.
+- Backup restoration shall reapply deletion markers, corrections and permission revocations before restored memory becomes available for ordinary retrieval.
+- If deletion, revocation or external-provider removal is pending, LIA shall report the actual state and shall not claim completion.
+
+Audit records shall be sufficient to establish what memory operation occurred, its purpose and its result, without unnecessarily duplicating the sensitive content being governed.
+
+## 12.17 P2.5 acceptance criteria
+
+The following implementation-independent acceptance criteria shall be mapped to detailed test cases in P2.7. A criterion passes only when behavior is demonstrable through observable results and traceable records.
+
+| Area | Acceptance criterion |
+|---|---|
+| Source provenance | Every persistent memory can be traced to its source or explicitly marked as externally supplied/derived; missing provenance is not silently fabricated |
+| Explicit versus inferred | Explicit statements, observations and inferences remain distinguishable; uncertain inferences are not presented as user-stated facts |
+| Candidate promotion | Single ambiguous observations remain candidates; explicit scoped statements can establish a memory; repeated evidence is evaluated for independence and context |
+| Contradiction handling | Conflicting facts remain disputed until resolved; corrections update current understanding without erasing valid historical evidence |
+| Temporal validity | Historical and current facts are distinguished; stale volatile information is revalidated or qualified before material reliance |
+| Entity resolution | Ambiguous identities are not merged; corrections to entity links propagate through dependent memories |
+| Retrieval relevance | Retrieval returns contextually relevant memories with provenance and uncertainty; graph expansion is bounded and does not create unsupported facts |
+| Scope isolation | User, project, task and experience compartments enforce ownership and purpose; unauthorized content and existence metadata are not exposed |
+| Derived restrictions | Summaries and derived memories preserve source restrictions; combining sources does not silently declassify information |
+| Cross-project promotion | Explicit preferences, repeated independent preferences, project-local behavior, one-time observations and sensitive sources follow Section 12.14 |
+| Temporary mode | Temporary conversations do not enter the permanent archive, long-term memory extraction, graph or indexes; separately authorized task records do not copy the conversation |
+| Retention controls | Global pause and source/category/domain controls prevent disallowed persistent formation while preserving permitted active-session context |
+| Correction | A correction updates affected current views, derived memories, graph relationships and indexes while retaining historical source evidence unless deletion is requested |
+| Forgetting | Forgotten information is absent from active retrieval and dependent derived representations; original archive handling follows the selected operation |
+| Experience/domain erasure | Source records and all in-scope dependent memories, indexes, summaries and caches are tracked through deletion |
+| Backup recovery | Restoring a backup does not resurrect deleted records or revoked grants |
+| Transparency | A user can inspect what LIA remembers, why it believes it, its provenance, scope, freshness and related usage |
+| User control | The user can correct, flag, scope, pause, forget and erase memory using understandable operations |
+| Export | Export preserves accessible source and derived information, temporal properties, scope and relationships without mutating the originals |
+| Sensitivity | S2 information is not retained long-term without explicit authorization; S3 secrets do not enter ordinary memory or indexes |
+| External processing | Only authorized and necessary context is sent to an external provider; unrelated archive content is excluded by default |
+| Untrusted content | Instruction-like text inside retrieved content cannot grant permission or override governing instructions |
+| Failure behavior | Storage or retrieval failures are disclosed accurately; failed writes are not represented as durable; restricted reads fail closed |
+| Auditability | Memory operations have sufficient non-content audit information to explain access, correction, sharing and deletion outcomes |
+
+Unauthorized disclosure, unauthorized cross-domain access, use of a memory as an implicit permission grant, or ordinary-memory retention of S3 secrets are hard failures and are not subject to a performance trade-off.
+
+Evaluation shall measure retrieval precision and recall, source fidelity, temporal accuracy, confidence calibration, false promotion, contradiction handling, scope leakage, deletion completeness, context size and latency. No numerical threshold is invented in P2.5. Resource budgets and latency targets are assigned to P2.2; detailed acceptance-test execution belongs to P2.7.
+
+## 12.18 Decisions deferred to later phases
+
+P2.5 intentionally defines behavior and constraints without selecting implementation technologies.
+
+| Deferred decision | Owning phase |
+|---|---|
+| Database, graph store, vector store, lexical index and storage layout | P3 |
+| Embedding model, summarization model and entity-resolution implementation | P3 |
+| Retrieval ranking weights, confidence thresholds, decay parameters and promotion thresholds | P3 implementation and empirical evaluation |
+| Exact machine-readable export schema and package format | P3 |
+| Local, cloud or hybrid memory deployment and external-provider selection | P3, under P2.6 privacy constraints |
+| Encryption algorithms, key storage and recovery mechanisms | P3 security architecture |
+| Numerical latency, memory size, storage, resource and availability targets | P2.2 |
+| Authoritative permission grants, revocation, per-source and per-application enforcement details | P2.6 |
+| Detailed test cases, fixtures, benchmark procedure and test execution | P2.7 |
+| Platform-specific capture and perception behavior | P2.3 and P3 |
+
+These deferrals do not leave product behavior undecided. The accepted requirements in this section constrain the later design choices.
+
+## 12.19 P2.5 closure
+
+**P2.5 status: Complete — memory requirements and governance design baseline approved.**
+
+The memory workstream has defined what LIA may remember, how memories are formed and represented, how uncertainty and temporal change are handled, how memories are retrieved, how domains are isolated and shared, how users inspect and control memory, and how correction, deletion, security and failure behavior must work.
+
+The remaining work is implementation-independent integration and verification: P2.6 will complete the authoritative permission model; P2.2 will set measurable non-functional targets; P2.7 will map and execute acceptance tests; P3 will select and implement the architecture. P2 as a whole remains in progress.
