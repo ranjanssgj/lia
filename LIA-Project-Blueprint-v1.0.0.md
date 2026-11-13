@@ -4,8 +4,8 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.0.2\
-> **Last updated:** 12 November 2026\
+> **Version:** 1.1.0\
+> **Last updated:** 13 November 2026\
 > **Current phase:** P2 --- Requirements Engineering\
 > **Current workstream:** P2.1 --- Functional Requirements\
 > **Document status:** Active; P1 baseline approved, P2.1 draft for
@@ -39,6 +39,14 @@ document.
 
 A requirement marked **Draft** must not be treated as an approved
 commitment.
+
+### 1.4 Project discussion and documentation workflow
+
+During an active phase, design discussions and requirement refinement take place before the canonical blueprint is revised. The blueprint is normally consolidated at phase completion, rather than updated after every conversation. An explicit user request may authorize an interim consolidation checkpoint.
+
+The document distinguishes approved product/design direction from draft functional requirements, unresolved first-release scope, and implementation status. Approval of a product capability does not mean that it has been implemented or that every detailed acceptance criterion is complete.
+
+Technology and infrastructure selection remain deferred to P3 unless an earlier phase explicitly establishes a platform constraint.
 
 ### 1.2 Requirement writing convention
 
@@ -355,6 +363,27 @@ flowchart TD
 
 ------------------------------------------------------------------------
 
+
+## 3.5 P2.1 discussion progress
+
+This tracker records design direction established during P2.1 discussions. "Agreed direction" means the product-level capability has been accepted; its detailed requirements may still be Draft and require formal review and acceptance criteria.
+
+| Functional area | Discussion status | Remaining work |
+|---|---|---|
+| Voice and communication | Agreed direction | Final interaction requirements and P2.7 tests |
+| Environmental awareness | Agreed direction | Detailed perception boundaries, privacy and performance |
+| Window management | Full product scope agreed | Select first vertical-slice operations |
+| Spatial desktop awareness | Agreed direction | Formal geometry, relationship and freshness requirements |
+| Application interaction | Agreed direction | Define initial application integrations |
+| Per-application permissions | Three capability classes agreed | Detailed grants, scope and sensitive-action rules in P2.6 |
+| File-system interaction | Direct and file-manager interaction both agreed | Define first-slice scope and detailed safeguards |
+| Desktop environment | Navigation and configuration agreed | Platform-specific capability requirements |
+| Input interaction | Full input scope and hybrid model agreed | Select first-slice scope and detailed interruption behavior |
+| Task management and scheduling | Conceptual model agreed | Formal requirements, policies and acceptance tests |
+| Memory and continuity | Hybrid architecture direction agreed | Governance, retention, correction, deletion and tests |
+| Embodiment and character behavior | Initial conceptual model established | Detailed interaction and animation requirements |
+| Runtime self-management | Product scope identified | Detailed functional review |
+
 # 4. P2.1 --- Functional requirements
 
 **Workstream status:** In progress — requirements under review\
@@ -381,6 +410,11 @@ P2.1 covers the functional behavior of:
 -   Proactive behavior and task execution.
 -   Configuration and user control.
 -   Runtime health and recovery.
+-   Spatial modeling of the desktop environment.
+-   Desktop configuration and cross-window interaction.
+-   Hybrid input and application-control mechanisms.
+-   Task planning, scheduling, dependencies, and adaptive execution.
+-   Autonomous memory formation, consolidation, retrieval, and governance.
 
 P2.1 does **not** decide:
 
@@ -468,16 +502,6 @@ Those topics belong to P2.2--P2.6 and P3.
 | FR-018 | LIA shall not treat unavailable, stale, or incomplete desktop observations as confirmed current facts. | P0 | Draft |
 | FR-019 | LIA shall support optional ongoing screen-context perception when explicitly enabled, with a visible active-state indicator, configurable scope, and an immediate user-accessible pause control. | P1 | Approved |
 
-### Decision P2.1-D02 — Three-level desktop awareness model (approved)
-
-LIA's desktop awareness shall be organized into three independently controllable levels:
-
-1. **Default awareness — desktop metadata:** LIA may identify the active application, active window, available window metadata (such as title and focus), and supported desktop events. This level does not imply continuous screen capture or access to the contents of every visible window.
-2. **On-demand screen perception:** When a task requires visual understanding, LIA may capture and analyze screen content through an explicitly enabled screen-perception capability. The system must not treat screen access as granted merely because default metadata awareness is active.
-3. **Continuous screen perception:** The user may optionally enable ongoing screen-context awareness. While active, it must have a visible indicator, a configurable scope, and an immediate pause control.
-
-The levels are intended to separate basic desktop context from access to screen contents. Detailed permission grants, retention, sensitive-content handling, and platform-specific constraints remain to be specified in P2.6. Performance and capture-frequency targets belong in P2.2.
-
 ## 4.4 Communication and conversation
 
 | ID | Requirement | Priority | Status |
@@ -492,17 +516,6 @@ The levels are intended to separate basic desktop context from access to screen 
 | FR-027 | LIA shall be able to communicate the reason for a context-triggered suggestion when doing so is useful and appropriate. | P1 | Draft |
 | FR-028 | LIA shall support text interaction as an independently usable interaction mode, including when voice input or output is unavailable. | P0 | Approved |
 | FR-029 | LIA shall preserve the distinction between a conversational response, a proposed action, and an action that has actually been executed. | P0 | Draft |
-
-### Decision P2.1-D01 — Voice interaction modes (approved)
-
-LIA shall support all four interaction modes:
-
-1. **Push-to-talk:** Explicit user-initiated listening.
-2. **Continuous conversation:** Ongoing turn-taking within an active conversation, without repeated manual activation for each utterance.
-3. **Wake-word activation:** Spoken activation phrase to summon LIA.
-4. **Text interaction:** Typed input and text responses.
-
-The modes shall be independently configurable. Their coexistence, precedence, transitions, microphone indicators, wake-word operation, interruption handling, and permission details will be specified further in P2.4 and P2.6. Approval of these modes does not imply that the microphone is always active; microphone access remains subject to explicit user control and a visible listening state.
 
 ## 4.5 Embodiment, animation, and expression
 
@@ -1052,30 +1065,204 @@ The modes shall be independently configurable. Their coexistence, precedence, tr
 
 ------------------------------------------------------------------------
 
-### Decision P2.1-D02 — Three-level desktop awareness model (approved)
 
-The user approved a three-level model:
+## 4.12 Desktop as a spatial environment
 
-1. **Default awareness:** active application, active window, available window metadata, and supported desktop events. This does not imply continuous screen capture.
-2. **On-demand screen perception:** capture and analyze screen content when a task requires visual understanding, through an explicitly enabled capability.
-3. **Continuous screen perception:** optional ongoing screen context, with a visible active-state indicator, configurable scope, and immediate pause control.
+The desktop is treated as LIA's environment, not merely as a collection of unrelated application handles. Windows, application surfaces and desktop objects are identifiable objects with spatial properties and relationships. These capabilities are subject to platform support and user permissions.
 
-The detailed permission model and sensitive-content handling remain for P2.6; performance and capture-frequency targets remain for P2.2.
+| ID | Requirement | Priority | Status |
+|---|---|---:|---|
+| FR-110 | LIA shall be able to represent the available desktop topology, including monitors, display boundaries, workspaces and supported coordinate spaces. | P0 | Draft |
+| FR-111 | LIA shall be able to maintain spatial information about windows and supported desktop objects, including position, dimensions, visibility and stacking/layer state where available. | P0 | Draft |
+| FR-112 | LIA shall be able to derive spatial relationships between desktop objects, such as overlap, adjacency, relative position and available screen regions, when sufficient information is available. | P1 | Draft |
+| FR-113 | LIA shall update her spatial representation when relevant desktop changes are observed or when an operation changes the environment. | P0 | Draft |
+| FR-114 | LIA shall be able to relate her own rendered position, orientation and attention target to desktop objects for embodied interaction. | P1 | Draft |
+| FR-115 | LIA shall distinguish directly available geometric information from inferred or uncertain spatial relationships. | P0 | Draft |
+
+## 4.13 Expanded window-management capabilities
+
+The full product scope includes discovery, manipulation, organization and lifecycle operations. The first vertical slice may implement only a subset.
+
+| ID | Requirement | Priority | Status |
+|---|---|---:|---|
+| FR-120 | LIA shall be able to discover and enumerate supported windows and retrieve their relevant state and metadata. | P0 | Draft |
+| FR-121 | LIA shall be able to focus, move, resize, minimize, maximize, restore and close windows where supported and authorized. | P0 | Draft |
+| FR-122 | LIA shall be able to arrange, tile, snap and reposition windows across supported monitors and workspaces. | P1 | Draft |
+| FR-123 | LIA shall be able to launch supported applications and manage their windows through available platform mechanisms. | P0 | Draft |
+| FR-124 | When LIA physically represents a window operation through character movement or gestures, the animation shall be coordinated with the actual operation and its result. | P0 | Draft |
+| FR-125 | LIA shall verify the resulting window state when verification is available and shall not represent an unsuccessful operation as completed. | P0 | Draft |
+
+## 4.14 Application interaction and per-application permission model
+
+Application support is a product-level capability. The set of applications receiving early integration support remains a release-planning decision.
+
+| ID | Requirement | Priority | Status |
+|---|---|---:|---|
+| FR-130 | LIA shall be able to interact with supported application controls, including buttons, menus, text fields, forms, tabs, dialogs, toolbars and other interactive elements. | P0 | Draft |
+| FR-131 | Application access shall be configurable per application and distinguish at least observation, interaction and modification capabilities. | P0 | Draft |
+| FR-132 | Application permissions shall be inspectable and revocable, and shall be enforced regardless of the interaction mechanism used. | P0 | Draft |
+| FR-133 | Permission to modify an application shall not automatically authorize every consequential operation within it; sensitive operations may require additional authorization or confirmation. | P0 | Draft |
+
+The three application capability classes are:
+
+- **Observe:** Inspect the permitted application state and contents.
+- **Interact:** Navigate and operate controls, including clicking, typing, scrolling and switching tabs.
+- **Modify:** Change content or application data and perform operations such as saving, submitting forms, uploading or downloading.
+
+These classes are independent. Granting one does not automatically grant the others. Detailed permission scopes and sensitive-operation policy belong in P2.6.
+
+## 4.15 File-system interaction
+
+LIA's product scope includes both direct file-system operations and embodied interaction through a file-manager application. These are alternative execution methods for the same user-authorized file-system capabilities.
+
+| ID | Requirement | Priority | Status |
+|---|---|---:|---|
+| FR-140 | LIA shall be able to discover, search, enumerate and inspect files and directories within authorized locations. | P0 | Draft |
+| FR-141 | LIA shall be able to read and understand supported file formats when access is authorized. | P0 | Draft |
+| FR-142 | LIA shall be able to create files, directories and project structures within authorized locations. | P1 | Draft |
+| FR-143 | LIA shall be able to modify supported documents, source files and configuration files within authorized locations. | P1 | Draft |
+| FR-144 | LIA shall be able to copy, move, rename, organize and sort files and directories within authorized locations. | P1 | Draft |
+| FR-145 | LIA shall be able to delete files and use trash or recovery mechanisms where supported and authorized. | P1 | Draft |
+| FR-146 | LIA shall support both direct file-system operations and interactive file-manager operations. Both methods shall enforce the same authorization boundaries and provide verifiable results. | P0 | Draft |
+
+## 4.16 Desktop-environment navigation and configuration
+
+LIA's desktop interaction scope extends beyond individual application windows to the desktop environment itself.
+
+| ID | Requirement | Priority | Status |
+|---|---|---:|---|
+| FR-150 | LIA shall be able to inspect supported display topology, monitors, workspaces, panels, docks, launchers, desktop icons and relevant desktop objects. | P1 | Draft |
+| FR-151 | LIA shall be able to navigate and organize supported workspaces and monitor arrangements. | P1 | Draft |
+| FR-152 | LIA shall be able to configure supported desktop elements, including workspace arrangements, panels, docks and display settings, when authorized. | P1 | Draft |
+| FR-153 | LIA shall be able to observe and interact with supported desktop notifications and system-level interface elements within the granted permissions. | P1 | Draft |
+| FR-154 | LIA shall report when a desktop configuration operation is unavailable or behaves differently because of platform or desktop-environment limitations. | P0 | Draft |
+
+## 4.17 Human-like input and hybrid interaction
+
+LIA's eventual input capability includes pointer, keyboard, scrolling, drag-and-drop and interaction with application controls. The product shall not be restricted to simulated mouse and keyboard input alone.
+
+| ID | Requirement | Priority | Status |
+|---|---|---:|---|
+| FR-160 | LIA shall support pointer movement, hover, clicking, double-clicking, right-clicking, click-and-hold, dragging, dropping, text selection and scrolling where supported and authorized. | P0 | Draft |
+| FR-161 | LIA shall support text entry, individual key input, key combinations, shortcuts and keyboard-driven navigation where supported and authorized. | P0 | Draft |
+| FR-162 | LIA shall be able to interact with recognized application controls through suitable input or semantic interaction mechanisms. | P0 | Draft |
+| FR-163 | LIA shall support a hybrid interaction model combining direct input simulation, accessibility or application interfaces, and visual perception-driven interaction. | P0 | Draft |
+| FR-164 | LIA shall select an appropriate interaction mechanism based on the task, available platform/application capabilities and expected reliability. | P1 | Draft |
+| FR-165 | All interaction mechanisms shall use common authorization, action-planning, execution-result and verification rules. | P0 | Draft |
+| FR-166 | Where an interaction is represented through LIA's physical embodiment, character movement and the actual input or application operation shall remain coordinated. | P1 | Draft |
+
+The hybrid model is a product-level design direction. It does not select a programming language, accessibility framework, UI automation library or computer-vision implementation; those choices remain for P3.
+
+## 4.18 Task management, scheduling and autonomous execution
+
+LIA shall maintain an ongoing, inspectable task system. A task may originate from a direct user instruction, a delegated objective, a schedule, an observed event or LIA's own memory-informed initiative.
+
+| ID | Requirement | Priority | Status |
+|---|---|---:|---|
+| FR-170 | LIA shall maintain a persistent, user-visible task queue. | P0 | Draft |
+| FR-171 | LIA shall represent work hierarchically as an objective, a plan containing steps, and the individual actions that execute those steps. | P0 | Draft |
+| FR-172 | LIA shall record a task's origin, objective, plan, dependencies, required capabilities and authorization basis, status, progress, execution history, blockers and outcome. | P0 | Draft |
+| FR-173 | LIA shall support task states including Queued, Running, Blocked, Paused, Completed, Cancelled and Failed. | P0 | Draft |
+| FR-174 | LIA shall distinguish task creation, planning and execution as separate operations with separately governed authority. | P0 | Draft |
+| FR-175 | LIA shall use relevant user memory, conversations, preferences, goals and permitted environmental context to identify potentially useful tasks and propose or create them within configured autonomy. | P1 | Draft |
+| FR-176 | LIA shall be able to execute tasks within valid standing authorization without requesting approval for every individual step. | P0 | Draft |
+| FR-177 | Before beginning an autonomously initiated task, LIA shall notify the user. This notification shall not be presented as an approval request when execution is already authorized. | P0 | Draft |
+| FR-178 | When a task requires an operation outside the available authorization scope, LIA shall block that operation and request the necessary authorization or revise the plan. | P0 | Draft |
+| FR-179 | LIA shall distinguish one-time authorization from standing authorization and shall not silently broaden the scope of either. | P0 | Draft |
+| FR-180 | LIA shall support task priority categories of Critical, High, Normal, Low and Someday. | P1 | Draft |
+| FR-181 | LIA shall support immediate, background, idle-time, scheduled, deadline-driven, event-triggered and deferred execution modes. | P1 | Draft |
+| FR-182 | LIA shall support sequential, parallel, conditional, parent-child and recurring task relationships. | P1 | Draft |
+| FR-183 | LIA shall classify execution needs, including background-safe, low-interference, desktop-interactive, user-dependent and resource-intensive work. | P1 | Draft |
+| FR-184 | LIA shall be able to reprioritize and reschedule tasks as circumstances change while respecting explicit user-assigned priorities and communicating meaningful changes. | P0 | Draft |
+| FR-185 | LIA shall be able to checkpoint, pause, cancel and safely resume tasks, verifying the current environment before repeating operations that may already have taken effect. | P0 | Draft |
+| FR-186 | LIA shall distinguish Blocked from Failed, and shall mark a task Completed only when its intended outcome has been verified to the extent possible. | P0 | Draft |
+| FR-187 | LIA shall avoid disrupting active user work with desktop-interactive tasks while allowing suitable background-safe tasks to continue when their authorization and resource conditions are satisfied. | P0 | Draft |
+| FR-188 | LIA shall make task status, blockers, progress and significant execution history available to the user. | P0 | Draft |
+
+**Task priority and scheduling principles:** Priority, urgency and deadline are separate attributes. LIA may adapt execution order when dependencies become available, deadlines approach or circumstances change, but shall not silently downgrade an explicit user priority merely because another task appears more interesting. Meaningful schedule changes should be communicated.
+
+**Notification versus approval:** Notification informs the user that authorized autonomous work is about to begin. Approval is required only when the operation is not covered by valid authorization or when the operation's risk policy requires additional authorization or confirmation.
+
+## 4.19 Memory formation, organization and associative learning
+
+Memory is a foundational capability for LIA's persistent identity, cognitive continuity and autonomous initiative. The design direction is a hybrid, multi-layered memory system with a temporal knowledge graph as its relational backbone, not as the only storage representation.
+
+| ID | Requirement | Priority | Status |
+|---|---|---:|---|
+| FR-190 | LIA shall maintain a searchable historical archive of permitted conversations, meaningful experiences, decisions, task events and retained source materials. | P0 | Draft |
+| FR-191 | LIA shall autonomously identify candidate memories from permitted experiences without requiring the user to explicitly issue a remember command each time. | P0 | Draft |
+| FR-192 | LIA shall organize information into complementary memory forms, including episodic, semantic, procedural, working and task memory. | P0 | Draft |
+| FR-193 | LIA shall represent relevant entities and typed relationships in a temporal knowledge graph, including links to source episodes and supporting evidence. | P0 | Draft |
+| FR-194 | Memory records shall preserve provenance and distinguish explicit statements, direct observations, inferred information and confirmed facts. | P0 | Draft |
+| FR-195 | LIA shall maintain distinct measures for association strength, factual confidence, importance and current retrieval activation. | P1 | Draft |
+| FR-196 | LIA shall reinforce meaningful associations when supported by repeated, sufficiently independent experiences or strong explicit evidence, using consolidation thresholds that can be evaluated and calibrated. | P1 | Draft |
+| FR-197 | Association reinforcement shall not be based solely on concepts co-occurring or on a memory being retrieved repeatedly; retrieval alone shall not be treated as new evidence of truth. | P0 | Draft |
+| FR-198 | LIA shall consolidate recurring information into durable memories while preserving the original source history and the distinction between candidate, consolidated and strongly supported associations. | P1 | Draft |
+| FR-199 | LIA shall reconcile contradictory or superseding information while preserving historical records and representing what is currently believed to be valid. | P0 | Draft |
+| FR-200 | Memory records shall distinguish when information was valid from when LIA learned or recorded it, enabling historical and current-state queries. | P1 | Draft |
+| FR-201 | LIA shall support correction, inspection and user-requested deletion of memories, with appropriate propagation to derived summaries, graph relationships and retrieval indexes. | P0 | Draft |
+| FR-202 | LIA shall apply retention and privacy rules to the historical archive. The archive shall not imply unrestricted or indefinite retention of raw microphone streams, screen frames or other sensitive observations. | P0 | Draft |
+
+**Memory formation and consolidation principles**
+
+LIA should autonomously form candidate memories and consolidate information according to its type, evidence and significance. An explicit user statement may establish a high-confidence memory immediately; weaker inferences generally require stronger or repeated evidence.
+
+Associations may strengthen through meaningful, independent experiences. Co-occurrence alone is insufficient to establish a semantic relationship. Association strength, confidence, importance and retrieval activation must remain separate.
+
+Temporal decay should primarily affect retrieval activation or the relevance of temporary/contextual information. It must not silently erase historically verified facts or important decisions merely because time has passed. Contradictions and changed information should be reconciled with provenance rather than handled through blind overwrites.
+
+The historical archive stores permitted records and source evidence. It is not an unrestricted recorder of every screen frame, audio sample or desktop observation.
+
+## 4.20 Memory retrieval and context assembly
+
+The retrieval system shall identify what information is needed for the current conversation, task or proactive activity, search the relevant memory representations, validate the evidence and assemble a bounded working context.
+
+| ID | Requirement | Priority | Status |
+|---|---|---:|---|
+| FR-210 | LIA shall determine the information need and create a retrieval plan appropriate to the current query, task or event. | P0 | Draft |
+| FR-211 | LIA shall support complementary retrieval methods, including semantic, lexical, structured, graph-based, temporal and source-archive retrieval. | P0 | Draft |
+| FR-212 | LIA shall be able to traverse typed knowledge-graph relationships to retrieve relevant multi-hop context, with bounded and task-appropriate expansion. | P1 | Draft |
+| FR-213 | LIA shall rank candidate memories using relevant signals such as semantic and lexical relevance, relationship relevance, temporal validity, source authority, confidence and current context. | P0 | Draft |
+| FR-214 | LIA shall resolve temporal validity and identify stale, superseded, conflicting or incomplete information before using it as current fact. | P0 | Draft |
+| FR-215 | LIA shall retrieve original source material when extracted memories or summaries are insufficient for a reliable answer or action. | P0 | Draft |
+| FR-216 | LIA shall assemble a bounded working context containing relevant memories, source references, temporal status and uncertainty labels. | P0 | Draft |
+| FR-217 | LIA shall distinguish current facts, historical facts, explicit statements, observations and inferences within assembled context. | P0 | Draft |
+| FR-218 | LIA shall be able to retrieve likely relevant context in anticipation of a task or interaction, without treating retrieval itself as authorization to act. | P1 | Draft |
+| FR-219 | LIA shall retain a retrieval trace sufficient to explain which memory sources and relationships contributed to a response or plan. | P1 | Draft |
+| FR-220 | LIA shall acknowledge insufficient or contradictory evidence rather than manufacture a memory or force an unsupported conclusion. | P0 | Draft |
+| FR-221 | LIA shall refresh relevant live environmental state before acting when historical memory cannot establish the current state of an application, window, process or file. | P0 | Draft |
+
+**Retrieval principles**
+
+Retrieval is context-dependent. Casual conversation, historical questions, project work, task resumption and proactive planning may require different combinations of memory sources.
+
+The system should merge and deduplicate candidates from multiple sources, expand relevant graph connections progressively, validate evidence, retrieve original sources when needed, and assemble only the context useful for the current reasoning step.
+
+The retrieval engine shall explain why a memory was selected sufficiently to support debugging and review. A memory of a previous approval or action is not, by itself, an authoritative current permission grant; execution must consult the permission system.
+
+**Technology boundary:** Vector indexes, lexical indexes, graph traversal, temporal indexes and structured search are capability concepts. The concrete database, graph engine, embedding model, indexing infrastructure and orchestration framework have not been selected and remain for P3.
 
 # 5. P2.1 review questions and decisions to resolve
 
-The following questions remain open. P2.1-D01 and P2.1-D02 have been resolved and are recorded in their approved decision subsections.
+This section tracks unresolved decisions. Product-level design direction can be approved while first-release scope and detailed acceptance criteria remain open.
+
+## 5.1 Resolved design decisions
+
+- **P2.1-D01 — Voice modes:** Push-to-talk, continuous conversation, wake-word activation and text interaction are all supported as independently configurable modes. See ADR-012.
+- **P2.1-D02 — Desktop awareness:** Default metadata awareness, on-demand screen perception and optional continuous screen perception are supported as distinct levels. Continuous perception requires a visible indicator, configurable scope and immediate pause control. See ADR-013.
+- **P2.1-D03 — Task queue:** A persistent, user-visible task queue with Queued, Running, Blocked, Paused, Completed, Cancelled and Failed states is part of the product direction. Objectives, plans and individual actions are represented separately.
+- **P2.1-D09 — Busy-user behavior:** Suitable background-safe work may continue while the user is busy. Desktop-interactive work should avoid disrupting active user activity. Tasks should be paused, checkpointed or deferred when safe execution conditions are not satisfied. Exact thresholds and interruption rules remain for P2.2 and P2.4.
+
+## 5.2 Remaining decisions
 
 | ID | Question | Why it matters | Status |
 |---|---|---|---|
-| P2.1-D03 | Should LIA support a task queue visible to the user, including queued, running, blocked, paused, and completed tasks? | Makes long-running autonomy inspectable and controllable. | Open |
-| P2.1-D04 | Which window operations belong in the first vertical slice? | Keeps the first implementation small and verifiable. | Open |
-| P2.1-D05 | Should file operations be in the first vertical slice, or should the initial OS action be limited to window management? | Controls risk and scope of the first working loop. | Open |
-| P2.1-D06 | Which memory categories should be explicitly user-approved before persistence? | Determines memory behavior and consent requirements. | Open |
-| P2.1-D07 | Should the character be movable by dragging, and should LIA be able to reposition herself? | Defines desktop embodiment and user control. | Open |
-| P2.1-D08 | Should LIA be able to use keyboard and pointer input in the initial release, or only structured window/application APIs? | UI automation has broader reach and higher risk. | Open |
-| P2.1-D09 | What is the desired behavior when LIA detects a potentially useful action but the user is busy? | Drives proactive timing and interruption behavior. | Open |
-| P2.1-D10 | Which application categories should receive early integration support? | Prevents an unbounded "all applications" requirement. | Open |
+| P2.1-D04 | Which window operations belong in the first vertical slice? The full product scope includes discovery, focus, move, resize, minimize, maximize, restore, close, launch and window arrangement. | Selects a small but convincing first implementation. | Open |
+| P2.1-D05 | Should file-system operations be included in the first vertical slice, or should the first OS action remain limited to window interaction? | Controls risk and scope of the first working loop. | Open |
+| P2.1-D06 | Which memory categories or data classes require explicit user approval before retention, and which may be autonomously retained under standing memory preferences? | Autonomous memory formation is approved, but sensitivity, retention and consent boundaries remain to be defined in P2.5/P2.6. | Open |
+| P2.1-D07 | Should the character itself be user-draggable, and under what conditions may LIA reposition herself? | Defines control of LIA's own desktop position and spatial behavior. | Open |
+| P2.1-D08 | Which input and interaction capabilities belong in the first vertical slice? The full product uses a hybrid model. | Separates eventual capability from initial implementation scope. | Open |
+| P2.1-D10 | Which application categories should receive early integration support? | Prevents the first release from implicitly promising support for every application. | Open |
 
 # 6. Candidate first vertical slice
 
@@ -1142,6 +1329,19 @@ phases are completed.
   -----------------------------------------------------------------------
 
 ------------------------------------------------------------------------
+
+### Supplemental traceability for expanded P2.1 requirements
+
+| Requirement range | Product domain | Architecture / requirements follow-up |
+|---|---|---|
+| FR-110–119 | Spatial desktop awareness | P2.3 perception; P3 spatial representation and platform adapters |
+| FR-120–129 | Expanded window management | P2.6 authorization; P3 window-management adapter |
+| FR-130–139 | Application interaction and permissions | P2.6 per-application permission model; P3 application adapters |
+| FR-140–149 | File-system interaction | P2.6 scoped file permissions; P3 file-system and file-manager interfaces |
+| FR-150–159 | Desktop environment configuration | P2.3 context; P2.6 permissions; P3 platform adapters |
+| FR-160–169 | Hybrid input interaction | P2.4 interaction; P2.6 authorization; P3 interaction abstraction |
+| FR-170–189 | Task management and scheduling | P2.2 performance/resources; P2.6 authority; P3 scheduler and task runtime |
+| FR-190–209 | Memory formation, retrieval and context assembly | P2.5 memory specification; P2.6 privacy/governance; P2.7 evaluation |
 
 # 8. Decision register
 
@@ -1231,6 +1431,97 @@ Desktop awareness is divided into default metadata awareness, permissioned on-de
 
 ------------------------------------------------------------------------
 
+
+### ADR-014 — Desktop as an interactive spatial environment
+
+**Status:** Approved design direction
+
+LIA treats the desktop as an environment containing identifiable, spatially related and manipulable objects. Product scope includes window management, application interaction, file-system interaction, desktop-environment interaction/configuration and keyboard/pointer input. These capabilities are subject to platform support and user permissions.
+
+### ADR-015 — Spatial desktop awareness
+
+**Status:** Approved design direction
+
+LIA maintains an understanding of monitor and workspace topology, window geometry, object relationships and relevant environmental changes. Spatial information must distinguish direct observations from inferred relationships and remain synchronized with the changing desktop.
+
+### ADR-016 — Per-application capability permissions
+
+**Status:** Approved design direction
+
+Application permissions distinguish Observe, Interact and Modify capabilities and are configurable per application. These permissions are independent. Modification permission does not automatically authorize every consequential operation; detailed scopes and additional authorization rules are defined in P2.6.
+
+### ADR-017 — Direct and interactive file-system operation
+
+**Status:** Approved design direction
+
+LIA supports both direct file-system operations and embodied interaction through a file-manager interface. Both methods enforce the same file-system authorization boundaries and must provide verifiable outcomes.
+
+### ADR-018 — Desktop-environment configuration
+
+**Status:** Approved design direction
+
+LIA's eventual capability scope includes navigating and configuring supported monitors, workspaces, panels, docks, launchers, desktop objects and display settings, subject to platform capabilities and authorization.
+
+### ADR-019 — Hybrid computer interaction
+
+**Status:** Approved design direction
+
+LIA combines direct input simulation, accessibility or application interfaces, and visual perception-driven interaction. She selects an appropriate mechanism for each operation, while all mechanisms share common planning, authorization, execution-result and verification rules. This does not select specific implementation technologies.
+
+### ADR-020 — Task hierarchy and persistent task queue
+
+**Status:** Approved design direction
+
+LIA maintains a user-visible persistent task queue and represents work as Objective → Plan → Actions. Task states include Queued, Running, Blocked, Paused, Completed, Cancelled and Failed. A task record includes origin, plan, dependencies, required capabilities/authorization basis, status, progress, execution history, blockers and outcome.
+
+### ADR-021 — Separate task creation, planning and execution authority
+
+**Status:** Approved design direction
+
+Task creation, planning and execution are separate capabilities. LIA may identify and create useful tasks using relevant user memory, goals, conversations and permitted context. She may execute within valid standing authorization without seeking approval for every step. She notifies the user before autonomously initiated work; notification is not an approval request. Operations outside the authorization scope remain blocked pending authorization or plan revision.
+
+### ADR-022 — Adaptive scheduling and non-interference
+
+**Status:** Approved design direction
+
+LIA schedules work using priority, urgency, deadlines, dependencies, resource needs and execution context. She supports immediate, background, idle-time, scheduled, deadline-driven, event-triggered and deferred execution. She may adapt schedules while respecting explicit user priorities and communicating meaningful changes. Suitable background work may continue while the user is busy; desktop-interactive work must avoid disrupting active user activity. Tasks should checkpoint and resume safely.
+
+### ADR-023 — Hybrid, multi-layered memory
+
+**Status:** Approved conceptual architecture
+
+LIA's memory combines a searchable historical experience archive with organized long-term representations, including episodic, semantic, procedural, working and task memory. A temporal knowledge graph provides the relational backbone, while original source evidence remains accessible. No single memory representation is considered sufficient.
+
+### ADR-024 — Autonomous memory formation and consolidation
+
+**Status:** Approved conceptual architecture
+
+LIA autonomously identifies candidate memories from permitted experiences and consolidates recurring or significant information. Explicit statements may establish high-confidence memories immediately; weaker inferences require stronger or repeated evidence. Original evidence must remain traceable, and derived summaries must not replace the historical record.
+
+### ADR-025 — Associative memory reinforcement
+
+**Status:** Approved conceptual design direction
+
+Meaningful relationships between memories and entities may strengthen through repeated, sufficiently independent experiences and strong explicit evidence. Association strength, factual confidence, importance and retrieval activation remain separate. Mere co-occurrence or repeated retrieval is not sufficient evidence for reinforcement. Thresholds and maintenance parameters require empirical calibration.
+
+### ADR-026 — Memory history, provenance and temporal validity
+
+**Status:** Approved conceptual design direction
+
+Memory records retain source provenance and distinguish the time an event was valid from the time LIA learned or recorded it. Contradictions and superseded information are reconciled without erasing historical evidence. Retention, sensitive-data handling, correction and deletion policies remain detailed P2.5/P2.6 work.
+
+### ADR-027 — Context-aware hybrid memory retrieval
+
+**Status:** Approved conceptual architecture
+
+LIA's retrieval engine determines the information need, plans retrieval across semantic, lexical, structured, graph, temporal and source-archive representations, expands relevant graph relationships in a bounded manner, validates evidence and assembles a bounded working context with source references and uncertainty labels.
+
+### ADR-028 — Memory retrieval traceability and evaluation
+
+**Status:** Approved design direction
+
+Memory retrieval should expose why information was selected and retain enough trace information to debug extraction, entity resolution, graph traversal, ranking, temporal resolution and context assembly. Evaluation must include exact recall, multi-session recall, multi-hop reasoning, temporal reasoning, contradiction handling, provenance, abstention, correction, deletion and task resumption.
+
 # 9. Change log
 
   ------------------------------------------------------------------------
@@ -1257,6 +1548,18 @@ Desktop awareness is divided into default metadata awareness, permissioned on-de
                                                   recorded ADR-013 and
                                                   closed P2.1-D02.
 
+  1.1.0                   13 Nov 2026             Consolidated P2.1
+                                                  discussions through
+                                                  task scheduling, spatial
+                                                  desktop interaction,
+                                                  hybrid input, application
+                                                  and file permissions,
+                                                  desktop configuration,
+                                                  and the conceptual
+                                                  memory architecture,
+                                                  associative reinforcement
+                                                  and retrieval design.
+
   ------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
@@ -1265,8 +1568,8 @@ Desktop awareness is divided into default metadata awareness, permissioned on-de
 
 **Current phase:** P2 --- Requirements Engineering\
 **Active workstream:** P2.1 --- Functional Requirements\
-**Current status:** Draft for review\
-**Next action:** Continue reviewing P2.1 requirements and resolve the remaining open decisions in Section 5. Do not move to technology selection yet.
+**Current status:** P2.1 design baseline expanded; detailed functional requirements remain under review\
+**Next action:** Continue P2.1 with memory governance and integrity, then review embodiment and runtime self-management. Resolve remaining first-release questions and formalize acceptance criteria in P2.7. Do not move to technology selection yet.
 
 ## Phase 2 exit criteria
 
