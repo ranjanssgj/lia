@@ -83,7 +83,10 @@ choices unless the choice is already an approved constraint.
   -----------------------------------------------------------------------
 
 Priority describes product/development importance, not implementation
-status.
+status or automatic inclusion in the first vertical slice. The first
+vertical slice is a deliberately narrow integration proof, not a complete
+release of every P0 capability. Its exact membership is defined separately
+in Section 6.
 
 ------------------------------------------------------------------------
 
@@ -366,23 +369,21 @@ flowchart TD
 
 ## 3.5 P2.1 discussion progress
 
-This tracker records design direction established during P2.1 discussions. "Agreed direction" means the product-level capability has been accepted; its detailed requirements may still be Draft and require formal review and acceptance criteria.
+**Status:** Complete — approved functional requirements baseline and first
+vertical-slice scope.
 
-| Functional area | Discussion status | Remaining work |
-|---|---|---|
-| Voice and communication | Agreed direction | Final interaction requirements and P2.7 tests |
-| Environmental awareness | Agreed direction | Detailed perception boundaries, privacy and performance |
-| Window management | Full product scope agreed | Select first vertical-slice operations |
-| Spatial desktop awareness | Agreed direction | Formal geometry, relationship and freshness requirements |
-| Application interaction | Agreed direction | Define initial application integrations |
-| Per-application permissions | Three capability classes agreed | Detailed grants, scope and sensitive-action rules in P2.6 |
-| File-system interaction | Direct and file-manager interaction both agreed | Define first-slice scope and detailed safeguards |
-| Desktop environment | Navigation and configuration agreed | Platform-specific capability requirements |
-| Input interaction | Full input scope and hybrid model agreed | Select first-slice scope and detailed interruption behavior |
-| Task management and scheduling | Conceptual model agreed | Formal requirements, policies and acceptance tests |
-| Memory and continuity | Hybrid architecture direction agreed | Governance, retention, correction, deletion and tests |
-| Embodiment and character behavior | Initial conceptual model established | Detailed interaction and animation requirements |
-| Runtime self-management | Product scope identified | Detailed functional review |
+P2.1 requirements FR-001–FR-224 are approved where assigned; unused
+identifier gaps remain reserved and are not missing requirements. The full
+product scope is distinguished from first-slice membership. The agreed
+voice modes, desktop-awareness levels, window interaction, application and
+file capabilities, task model, autonomy defaults, embodied character
+control, failure behavior and memory continuity are recorded in Section 4.
+The first vertical slice and its AC-001–AC-011 traceability are recorded in
+Section 6 and Section 7.
+
+Detailed permissions remain with P2.6, measurable non-functional targets
+with P2.2, interaction/perception refinements with P2.3/P2.4, detailed test
+procedures and execution with P2.7, and implementation choices with P3.
 
 
 ## 3.6 P2.5 memory requirements progress
@@ -415,9 +416,14 @@ P2.5 closes the product-level memory requirements and governance design. It does
 
 # 4. P2.1 --- Functional requirements
 
-**Workstream status:** In progress — requirements under review\
+**Workstream status:** Complete — product-functional requirements reviewed and approved\
 **Scope:** Define observable functions LIA is expected to provide,
 without selecting the implementation technology.
+
+All FR requirements in this chapter are approved product-level
+commitments. Approval does not mean implementation or verification. The
+first vertical slice is a subset of this full product baseline and is
+specified separately in Section 6.
 
 Functional requirements describe system behavior: what input or event is
 handled, what operation is performed, and what result is made available.
@@ -462,7 +468,7 @@ Those topics belong to P2.2--P2.6 and P3.
   -------------------------------------------------------------------------
   ID               Requirement                    Priority Status
   ---------------- ----------------- --------------------- ----------------
-  FR-001           LIA shall be able                    P0 Draft
+  FR-001           LIA shall be able                    P0 Approved
                    to maintain a                           
                    persistent                              
                    desktop presence                        
@@ -470,7 +476,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    individual                              
                    conversation.                           
 
-  FR-002           LIA shall expose                     P1 Draft
+  FR-002           LIA shall expose                     P1 Approved
                    her current                             
                    lifecycle state,                        
                    including                               
@@ -481,13 +487,13 @@ Those topics belong to P2.2--P2.6 and P3.
                    and sleeping                            
                    where applicable.                       
 
-  FR-003           LIA shall support                    P0 Draft
+  FR-003           LIA shall support                    P0 Approved
                    user-controlled                         
                    pause and resume                        
                    of autonomous                           
                    interactions.                           
 
-  FR-004           LIA shall                            P0 Draft
+  FR-004           LIA shall                            P0 Approved
                    distinguish                             
                    conversational                          
                    availability from                       
@@ -496,7 +502,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    operate the                             
                    computer.                               
 
-  FR-005           LIA shall restore                    P0 Draft
+  FR-005           LIA shall restore                    P0 Approved
                    the supported                           
                    portions of her                         
                    user                                    
@@ -505,7 +511,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    context after a                         
                    restart.                                
 
-  FR-006           LIA shall                            P0 Draft
+  FR-006           LIA shall                            P0 Approved
                    communicate when                        
                    a capability is                         
                    unavailable,                            
@@ -522,13 +528,13 @@ Those topics belong to P2.2--P2.6 and P3.
 |---|---|---:|---|
 | FR-010 | LIA shall be able to identify the currently active application and active window when the platform adapter supports it. | P0 | Approved |
 | FR-011 | LIA shall be able to retrieve basic metadata about visible windows, including title and window identity where available. | P0 | Approved |
-| FR-012 | LIA shall be able to detect relevant desktop events, such as application launch, application exit, window focus change, and workspace change, where supported. | P1 | Draft |
+| FR-012 | LIA shall be able to detect relevant desktop events, such as application launch, application exit, window focus change, and workspace change, where supported. | P1 | Approved |
 | FR-013 | LIA shall be able to capture and analyze screen content on demand when the relevant screen-perception capability has been explicitly enabled. | P0 | Approved |
-| FR-014 | LIA shall be able to extract text from permitted screen content when text extraction is available. | P1 | Draft |
-| FR-015 | LIA shall be able to associate observed desktop context with the current conversation or task when relevant. | P1 | Draft |
-| FR-016 | LIA shall distinguish directly observed facts from inferred user intent or activity. | P0 | Draft |
-| FR-017 | LIA shall be able to inspect process information in read-only mode when the relevant capability is available. | P1 | Draft |
-| FR-018 | LIA shall not treat unavailable, stale, or incomplete desktop observations as confirmed current facts. | P0 | Draft |
+| FR-014 | LIA shall be able to extract text from permitted screen content when text extraction is available. | P1 | Approved |
+| FR-015 | LIA shall be able to associate observed desktop context with the current conversation or task when relevant. | P1 | Approved |
+| FR-016 | LIA shall distinguish directly observed facts from inferred user intent or activity. | P0 | Approved |
+| FR-017 | LIA shall be able to inspect process information in read-only mode when the relevant capability is available. | P1 | Approved |
+| FR-018 | LIA shall not treat unavailable, stale, or incomplete desktop observations as confirmed current facts. | P0 | Approved |
 | FR-019 | LIA shall support optional ongoing screen-context perception when explicitly enabled, with a visible active-state indicator, configurable scope, and an immediate user-accessible pause control. | P1 | Approved |
 
 ## 4.4 Communication and conversation
@@ -536,22 +542,22 @@ Those topics belong to P2.2--P2.6 and P3.
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
 | FR-020 | LIA shall support text-based user interaction. | P0 | Approved |
-| FR-021 | LIA shall support voice input and spoken responses. | P0 | Approved |
-| FR-022 | LIA shall support a continuous conversational session in which the user can speak subsequent turns without manually activating every utterance. | P0 | Approved |
+| FR-021 | LIA shall support voice input and spoken responses through independently configurable push-to-talk, continuous-conversation and wake-word activation modes; microphone access shall remain user-controlled and the active listening state shall be visible. | P0 | Approved |
+| FR-022 | When continuous-conversation mode is enabled, LIA shall support subsequent user speech turns without requiring manual activation for each utterance; this mode shall not imply microphone access when the mode is disabled. | P0 | Approved |
 | FR-023 | LIA shall maintain conversational context across multiple turns within a conversation. | P0 | Approved |
 | FR-024 | LIA shall support user interruption of spoken output. | P0 | Approved |
-| FR-025 | LIA shall provide a way for the user to end or pause an active listening/conversation session. | P0 | Approved |
-| FR-026 | LIA shall be able to initiate a conversation when proactive interaction is enabled and applicable conditions are satisfied. | P1 | Draft |
-| FR-027 | LIA shall be able to communicate the reason for a context-triggered suggestion when doing so is useful and appropriate. | P1 | Draft |
+| FR-025 | LIA shall provide an immediate user-accessible way to pause or end an active listening/conversation session and visibly indicate when listening has stopped or resumed. | P0 | Approved |
+| FR-026 | LIA shall be able to initiate a conversation when proactive interaction is enabled and applicable conditions are satisfied. | P1 | Approved |
+| FR-027 | LIA shall be able to communicate the reason for a context-triggered suggestion when doing so is useful and appropriate. | P1 | Approved |
 | FR-028 | LIA shall support text interaction as an independently usable interaction mode, including when voice input or output is unavailable. | P0 | Approved |
-| FR-029 | LIA shall preserve the distinction between a conversational response, a proposed action, and an action that has actually been executed. | P0 | Draft |
+| FR-029 | LIA shall preserve the distinction between a conversational response, a proposed action, and an action that has actually been executed. | P0 | Approved |
 
 ## 4.5 Embodiment, animation, and expression
 
   ------------------------------------------------------------------------
   ID               Requirement                   Priority Status
   ---------------- ---------------- --------------------- ----------------
-  FR-030           LIA shall render                    P0 Draft
+  FR-030           LIA shall render                    P0 Approved
                    a persistent                           
                    character                              
                    representation                         
@@ -559,14 +565,14 @@ Those topics belong to P2.2--P2.6 and P3.
                    when embodiment                        
                    is enabled.                            
 
-  FR-031           LIA shall                           P0 Draft
+  FR-031           LIA shall                           P0 Approved
                    support idle                           
                    behavior when no                       
                    immediate                              
                    interaction or                         
                    task is active.                        
 
-  FR-032           LIA shall                           P0 Draft
+  FR-032           LIA shall                           P0 Approved
                    express                                
                    supported                              
                    interaction                            
@@ -579,7 +585,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    reacting, and                          
                    acting.                                
 
-  FR-033           LIA shall                           P1 Draft
+  FR-033           LIA shall                           P1 Approved
                    support facial                         
                    expressions,                           
                    gestures, poses,                       
@@ -589,7 +595,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    expressive                             
                    outputs.                               
 
-  FR-034           LIA shall be                        P1 Draft
+  FR-034           LIA shall be                        P1 Approved
                    able to direct                         
                    attention toward                       
                    a relevant                             
@@ -598,7 +604,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    context is                             
                    available.                             
 
-  FR-035           LIA shall be                        P0 Draft
+  FR-035           LIA shall be                        P0 Approved
                    able to                                
                    coordinate an                          
                    expressive                             
@@ -606,7 +612,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    an authorized                          
                    desktop action.                        
 
-  FR-036           LIA shall                           P0 Draft
+  FR-036           LIA shall                           P0 Approved
                    continue to                            
                    render                                 
                    appropriate                            
@@ -621,7 +627,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    remains                                
                    operational.                           
 
-  FR-037           LIA shall allow                     P0 Draft
+  FR-037           LIA shall allow                     P0 Approved
                    the user to                            
                    hide,                                  
                    reposition, or                         
@@ -637,7 +643,7 @@ Those topics belong to P2.2--P2.6 and P3.
   ---------------------------------------------------------------------------
   ID               Requirement                      Priority Status
   ---------------- ------------------- --------------------- ----------------
-  FR-040           LIA shall expose a                     P0 Draft
+  FR-040           LIA shall expose a                     P0 Approved
                    common set of                             
                    abstract desktop                          
                    operations to the                         
@@ -647,32 +653,32 @@ Those topics belong to P2.2--P2.6 and P3.
                    supplied by OS                            
                    adapters.                                 
 
-  FR-041           LIA shall be able                      P0 Draft
+  FR-041           LIA shall be able                      P0 Approved
                    to enumerate or                           
                    retrieve supported                        
                    window information.                       
 
-  FR-042           LIA shall be able                      P0 Draft
+  FR-042           LIA shall be able                      P0 Approved
                    to focus, minimize,                       
                    maximize, restore,                        
                    and close windows                         
                    where supported and                       
                    authorized.                               
 
-  FR-043           LIA shall be able                      P0 Draft
+  FR-043           LIA shall be able                      P0 Approved
                    to move and resize                        
                    windows where                             
                    supported and                             
                    authorized.                               
 
-  FR-044           LIA shall be able                      P0 Draft
+  FR-044           LIA shall be able                      P0 Approved
                    to launch an                              
                    application through                       
                    an available                              
                    platform mechanism                        
                    when authorized.                          
 
-  FR-045           LIA shall be able                      P1 Draft
+  FR-045           LIA shall be able                      P1 Approved
                    to send controlled                        
                    keyboard and                              
                    pointer input when                        
@@ -681,14 +687,14 @@ Those topics belong to P2.2--P2.6 and P3.
                    enabled and                               
                    authorized.                               
 
-  FR-046           LIA shall report                       P0 Draft
+  FR-046           LIA shall report                       P0 Approved
                    whether a requested                       
                    OS operation                              
                    succeeded, failed,                        
                    was unsupported, or                       
                    was not attempted.                        
 
-  FR-047           LIA shall verify                       P0 Draft
+  FR-047           LIA shall verify                       P0 Approved
                    the resulting                             
                    desktop state when                        
                    verification is                           
@@ -698,7 +704,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    operation means it                        
                    succeeded.                                
 
-  FR-048           LIA shall not                          P0 Draft
+  FR-048           LIA shall not                          P0 Approved
                    silently substitute                       
                    a materially                              
                    different operation                       
@@ -706,7 +712,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    operation is                              
                    unsupported.                              
 
-  FR-049           LIA shall be able                      P1 Draft
+  FR-049           LIA shall be able                      P1 Approved
                    to present an                             
                    action plan or                            
                    preview before                            
@@ -723,7 +729,7 @@ Those topics belong to P2.2--P2.6 and P3.
   ------------------------------------------------------------------------------
   ID               Requirement                         Priority Status
   ---------------- ---------------------- --------------------- ----------------
-  FR-050           LIA shall be able to                      P1 Draft
+  FR-050           LIA shall be able to                      P1 Approved
                    interact with                                
                    supported desktop                            
                    applications through                         
@@ -732,50 +738,50 @@ Those topics belong to P2.2--P2.6 and P3.
                    permitted UI                                 
                    interaction.                                 
 
-  FR-051           LIA shall be able to                      P1 Draft
+  FR-051           LIA shall be able to                      P1 Approved
                    open and navigate web                        
                    pages through an                             
                    available browser                            
                    interaction                                  
                    capability.                                  
 
-  FR-052           LIA shall be able to                      P1 Draft
+  FR-052           LIA shall be able to                      P1 Approved
                    locate files and                             
                    folders within                               
                    user-authorized                              
                    locations.                                   
 
-  FR-053           LIA shall be able to                      P1 Draft
+  FR-053           LIA shall be able to                      P1 Approved
                    read file content when                       
                    the file type is                             
                    supported and access                         
                    is authorized.                               
 
-  FR-054           LIA shall be able to                      P1 Draft
+  FR-054           LIA shall be able to                      P1 Approved
                    create and edit files                        
                    within user-authorized                       
                    locations when the                           
                    relevant operation is                        
                    supported.                                   
 
-  FR-055           LIA shall be able to                      P1 Draft
+  FR-055           LIA shall be able to                      P1 Approved
                    move, rename, and                            
                    organize files when                          
                    authorized.                                  
 
-  FR-056           LIA shall distinguish                     P0 Draft
+  FR-056           LIA shall distinguish                     P0 Approved
                    reversible file                              
                    operations from                              
                    destructive or                               
                    difficult-to-reverse                         
                    operations.                                  
 
-  FR-057           LIA shall provide an                      P0 Draft
+  FR-057           LIA shall provide an                      P0 Approved
                    execution result for                         
                    application, browser,                        
                    and file operations.                         
 
-  FR-058           LIA shall be able to                      P1 Draft
+  FR-058           LIA shall be able to                      P1 Approved
                    maintain task context                        
                    while switching                              
                    between supported                            
@@ -787,21 +793,22 @@ Those topics belong to P2.2--P2.6 and P3.
   ------------------------------------------------------------------------
   ID               Requirement                   Priority Status
   ---------------- ---------------- --------------------- ----------------
-  FR-060           LIA shall retain                    P0 Draft
+  FR-060           LIA shall retain                    P0 Approved
                    conversational                         
                    context for the                        
                    duration of an                         
                    active                                 
                    conversation.                          
 
-  FR-061           LIA shall be                        P0 Draft
-                   able to retain                         
-                   selected                               
-                   user-approved                          
-                   information                            
-                   across sessions.                       
+  FR-061           LIA shall retain                    P0 Approved
+                   selected and autonomously                
+                   formed information                        
+                   across sessions under                    
+                   the approved memory                       
+                   policy and user                          
+                   controls.                               
 
-  FR-062           LIA shall be                        P1 Draft
+  FR-062           LIA shall be                        P1 Approved
                    able to retain                         
                    task state so                          
                    that an                                
@@ -811,7 +818,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    state is                               
                    available.                             
 
-  FR-063           LIA shall                           P0 Draft
+  FR-063           LIA shall                           P0 Approved
                    retrieve                               
                    relevant stored                        
                    context when                           
@@ -820,7 +827,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    performing a                           
                    task.                                  
 
-  FR-064           LIA shall be                        P1 Draft
+  FR-064           LIA shall be                        P1 Approved
                    able to                                
                    associate                              
                    memories with                          
@@ -833,7 +840,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    associations are                       
                    available.                             
 
-  FR-065           LIA shall                           P0 Draft
+  FR-065           LIA shall                           P0 Approved
                    distinguish                            
                    stored                                 
                    information from                       
@@ -841,14 +848,14 @@ Those topics belong to P2.2--P2.6 and P3.
                    newly generated                        
                    inferences.                            
 
-  FR-066           LIA shall                           P0 Draft
+  FR-066           LIA shall                           P0 Approved
                    support                                
                    correction of                          
                    inaccurate                             
                    stored user                            
                    information.                           
 
-  FR-067           LIA shall                           P0 Draft
+  FR-067           LIA shall                           P0 Approved
                    support                                
                    user-requested                         
                    review and                             
@@ -859,7 +866,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    defined in P2.5                        
                    and P2.6.                              
 
-  FR-068           LIA shall not                       P0 Draft
+  FR-068           LIA shall not                       P0 Approved
                    claim to                               
                    remember                               
                    information that                       
@@ -874,7 +881,7 @@ Those topics belong to P2.2--P2.6 and P3.
   ------------------------------------------------------------------------
   ID               Requirement                   Priority Status
   ---------------- ---------------- --------------------- ----------------
-  FR-070           LIA shall be                        P1 Draft
+  FR-070           LIA shall be                        P1 Approved
                    able to initiate                       
                    a social                               
                    interaction                            
@@ -884,7 +891,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    social autonomy                        
                    is enabled.                            
 
-  FR-071           LIA shall be                        P1 Draft
+  FR-071           LIA shall be                        P1 Approved
                    able to generate                       
                    context-aware                          
                    suggestions from                       
@@ -893,7 +900,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    and relevant                           
                    memory.                                
 
-  FR-072           LIA shall be                        P1 Draft
+  FR-072           LIA shall be                        P1 Approved
                    able to identify                       
                    a potential                            
                    follow-up action                       
@@ -901,13 +908,13 @@ Those topics belong to P2.2--P2.6 and P3.
                    or interrupted                         
                    task.                                  
 
-  FR-073           LIA shall be                        P1 Draft
+  FR-073           LIA shall be                        P1 Approved
                    able to create                         
                    and maintain a                         
                    task plan for an                       
                    authorized goal.                       
 
-  FR-074           LIA shall be                        P1 Draft
+  FR-074           LIA shall be                        P1 Approved
                    able to execute                        
                    delegated task                         
                    steps within the                       
@@ -915,7 +922,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    operational                            
                    permissions.                           
 
-  FR-075           LIA shall be                        P0 Draft
+  FR-075           LIA shall be                        P0 Approved
                    able to pause,                         
                    cancel, or                             
                    abandon an                             
@@ -927,14 +934,14 @@ Those topics belong to P2.2--P2.6 and P3.
                    longer                                 
                    satisfied.                             
 
-  FR-076           LIA shall                           P0 Draft
+  FR-076           LIA shall                           P0 Approved
                    provide the user                       
                    with the current                       
                    status of an                           
                    ongoing                                
                    autonomous task.                       
 
-  FR-077           LIA shall                           P0 Draft
+  FR-077           LIA shall                           P0 Approved
                    request                                
                    additional                             
                    information or                         
@@ -944,7 +951,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    correctly                              
                    proceed.                               
 
-  FR-078           LIA shall                           P0 Draft
+  FR-078           LIA shall                           P0 Approved
                    distinguish a                          
                    suggestion, a                          
                    plan, a pending                        
@@ -954,7 +961,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    communication                          
                    and task state.                        
 
-  FR-079           LIA shall                           P0 Draft
+  FR-079           LIA shall                           P0 Approved
                    respect                                
                    configured quiet                       
                    periods,                               
@@ -965,7 +972,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    proactive                              
                    interactions.                          
 
-  FR-080           LIA shall avoid                     P1 Draft
+  FR-080           LIA shall avoid                     P1 Approved
                    repeating a                            
                    dismissed                              
                    proactive                              
@@ -983,14 +990,14 @@ Those topics belong to P2.2--P2.6 and P3.
   -------------------------------------------------------------------------
   ID               Requirement                    Priority Status
   ---------------- ----------------- --------------------- ----------------
-  FR-090           LIA shall provide                    P0 Draft
+  FR-090           LIA shall provide                    P0 Approved
                    user controls for                       
                    enabling and                            
                    disabling major                         
                    capabilities                            
                    independently.                          
 
-  FR-091           LIA shall provide                    P0 Draft
+  FR-091           LIA shall provide                    P0 Approved
                    separate controls                       
                    for social,                             
                    cognitive,                              
@@ -998,35 +1005,35 @@ Those topics belong to P2.2--P2.6 and P3.
                    temporal                                
                    autonomy.                               
 
-  FR-092           LIA shall allow                      P0 Draft
+  FR-092           LIA shall allow                      P0 Approved
                    the user to                             
                    configure how and                       
                    when proactive                          
                    interactions may                        
                    occur.                                  
 
-  FR-093           LIA shall provide                    P0 Draft
+  FR-093           LIA shall provide                    P0 Approved
                    a way to inspect                        
                    the permissions                         
                    and capabilities                        
                    currently                               
                    enabled.                                
 
-  FR-094           LIA shall provide                    P0 Draft
+  FR-094           LIA shall provide                    P0 Approved
                    a way to revoke                         
                    previously                              
                    granted                                 
                    capability                              
                    access.                                 
 
-  FR-095           LIA shall expose                     P0 Draft
+  FR-095           LIA shall expose                     P0 Approved
                    a user-accessible                       
                    pause or stop                           
                    control for                             
                    autonomous                              
                    activity.                               
 
-  FR-096           LIA shall allow                      P1 Draft
+  FR-096           LIA shall allow                      P1 Approved
                    the user to                             
                    configure                               
                    character                               
@@ -1036,24 +1043,31 @@ Those topics belong to P2.2--P2.6 and P3.
                    behavior.                               
   -------------------------------------------------------------------------
 
+**Initial autonomy defaults**
+
+| ID | Requirement | Priority | Status |
+|---|---|---:|---|
+| FR-097 | Unless changed by the user, initial configuration shall set social autonomy to Off, cognitive autonomy to On, operational autonomy to Restricted (direct user requests and currently valid grants only), and temporal autonomy to Off. Each dimension shall remain independently configurable; these defaults shall not replace the authoritative permission check. | P0 | Approved |
+
+
 ## 4.11 Runtime self-management
 
   -------------------------------------------------------------------------
   ID               Requirement                    Priority Status
   ---------------- ----------------- --------------------- ----------------
-  FR-100           LIA shall monitor                    P1 Draft
+  FR-100           LIA shall monitor                    P1 Approved
                    the operational                         
                    state of her                            
                    major runtime                           
                    subsystems.                             
 
-  FR-101           LIA shall                            P1 Draft
+  FR-101           LIA shall                            P1 Approved
                    identify when a                         
                    subsystem becomes                       
                    unavailable or                          
                    unhealthy.                              
 
-  FR-102           LIA shall isolate                    P1 Draft
+  FR-102           LIA shall isolate                    P1 Approved
                    recoverable                             
                    subsystem                               
                    failures where                          
@@ -1064,7 +1078,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    unrelated                               
                    capabilities.                           
 
-  FR-103           LIA shall attempt                    P1 Draft
+  FR-103           LIA shall attempt                    P1 Approved
                    recovery of                             
                    eligible failed                         
                    subsystems                              
@@ -1072,7 +1086,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    defined recovery                        
                    policy.                                 
 
-  FR-104           LIA shall report                     P1 Draft
+  FR-104           LIA shall report                     P1 Approved
                    significant                             
                    failures and                            
                    degraded                                
@@ -1081,7 +1095,7 @@ Those topics belong to P2.2--P2.6 and P3.
                    understandable                          
                    manner.                                 
 
-  FR-105           LIA shall expose                     P1 Draft
+  FR-105           LIA shall expose                     P1 Approved
                    enough diagnostic                       
                    information to                          
                    support                                 
@@ -1101,12 +1115,12 @@ The desktop is treated as LIA's environment, not merely as a collection of unrel
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| FR-110 | LIA shall be able to represent the available desktop topology, including monitors, display boundaries, workspaces and supported coordinate spaces. | P0 | Draft |
-| FR-111 | LIA shall be able to maintain spatial information about windows and supported desktop objects, including position, dimensions, visibility and stacking/layer state where available. | P0 | Draft |
-| FR-112 | LIA shall be able to derive spatial relationships between desktop objects, such as overlap, adjacency, relative position and available screen regions, when sufficient information is available. | P1 | Draft |
-| FR-113 | LIA shall update her spatial representation when relevant desktop changes are observed or when an operation changes the environment. | P0 | Draft |
-| FR-114 | LIA shall be able to relate her own rendered position, orientation and attention target to desktop objects for embodied interaction. | P1 | Draft |
-| FR-115 | LIA shall distinguish directly available geometric information from inferred or uncertain spatial relationships. | P0 | Draft |
+| FR-110 | LIA shall be able to represent the available desktop topology, including monitors, display boundaries, workspaces and supported coordinate spaces. | P0 | Approved |
+| FR-111 | LIA shall be able to maintain spatial information about windows and supported desktop objects, including position, dimensions, visibility and stacking/layer state where available. | P0 | Approved |
+| FR-112 | LIA shall be able to derive spatial relationships between desktop objects, such as overlap, adjacency, relative position and available screen regions, when sufficient information is available. | P1 | Approved |
+| FR-113 | LIA shall update her spatial representation when relevant desktop changes are observed or when an operation changes the environment. | P0 | Approved |
+| FR-114 | LIA shall be able to relate her own rendered position, orientation and attention target to desktop objects for embodied interaction. | P1 | Approved |
+| FR-115 | LIA shall distinguish directly available geometric information from inferred or uncertain spatial relationships. | P0 | Approved |
 
 ## 4.13 Expanded window-management capabilities
 
@@ -1114,12 +1128,12 @@ The full product scope includes discovery, manipulation, organization and lifecy
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| FR-120 | LIA shall be able to discover and enumerate supported windows and retrieve their relevant state and metadata. | P0 | Draft |
-| FR-121 | LIA shall be able to focus, move, resize, minimize, maximize, restore and close windows where supported and authorized. | P0 | Draft |
-| FR-122 | LIA shall be able to arrange, tile, snap and reposition windows across supported monitors and workspaces. | P1 | Draft |
-| FR-123 | LIA shall be able to launch supported applications and manage their windows through available platform mechanisms. | P0 | Draft |
-| FR-124 | When LIA physically represents a window operation through character movement or gestures, the animation shall be coordinated with the actual operation and its result. | P0 | Draft |
-| FR-125 | LIA shall verify the resulting window state when verification is available and shall not represent an unsuccessful operation as completed. | P0 | Draft |
+| FR-120 | LIA shall be able to discover and enumerate supported windows and retrieve their relevant state and metadata. | P0 | Approved |
+| FR-121 | LIA shall be able to focus, move, resize, minimize, maximize, restore and close windows where supported and authorized. | P0 | Approved |
+| FR-122 | LIA shall be able to arrange, tile, snap and reposition windows across supported monitors and workspaces. | P1 | Approved |
+| FR-123 | LIA shall be able to launch supported applications and manage their windows through available platform mechanisms. | P0 | Approved |
+| FR-124 | When LIA physically represents a window operation through character movement or gestures, the animation shall be coordinated with the actual operation and its result. | P0 | Approved |
+| FR-125 | LIA shall verify the resulting window state when verification is available and shall not represent an unsuccessful operation as completed. | P0 | Approved |
 
 ## 4.14 Application interaction and per-application permission model
 
@@ -1127,10 +1141,10 @@ Application support is a product-level capability. The set of applications recei
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| FR-130 | LIA shall be able to interact with supported application controls, including buttons, menus, text fields, forms, tabs, dialogs, toolbars and other interactive elements. | P0 | Draft |
-| FR-131 | Application access shall be configurable per application and distinguish at least observation, interaction and modification capabilities. | P0 | Draft |
-| FR-132 | Application permissions shall be inspectable and revocable, and shall be enforced regardless of the interaction mechanism used. | P0 | Draft |
-| FR-133 | Permission to modify an application shall not automatically authorize every consequential operation within it; sensitive operations may require additional authorization or confirmation. | P0 | Draft |
+| FR-130 | LIA shall be able to interact with supported application controls, including buttons, menus, text fields, forms, tabs, dialogs, toolbars and other interactive elements. | P0 | Approved |
+| FR-131 | Application access shall be configurable per application and distinguish at least observation, interaction and modification capabilities. | P0 | Approved |
+| FR-132 | Application permissions shall be inspectable and revocable, and shall be enforced regardless of the interaction mechanism used. | P0 | Approved |
+| FR-133 | Permission to modify an application shall not automatically authorize every consequential operation within it; sensitive operations may require additional authorization or confirmation. | P0 | Approved |
 
 The three application capability classes are:
 
@@ -1146,13 +1160,13 @@ LIA's product scope includes both direct file-system operations and embodied int
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| FR-140 | LIA shall be able to discover, search, enumerate and inspect files and directories within authorized locations. | P0 | Draft |
-| FR-141 | LIA shall be able to read and understand supported file formats when access is authorized. | P0 | Draft |
-| FR-142 | LIA shall be able to create files, directories and project structures within authorized locations. | P1 | Draft |
-| FR-143 | LIA shall be able to modify supported documents, source files and configuration files within authorized locations. | P1 | Draft |
-| FR-144 | LIA shall be able to copy, move, rename, organize and sort files and directories within authorized locations. | P1 | Draft |
-| FR-145 | LIA shall be able to delete files and use trash or recovery mechanisms where supported and authorized. | P1 | Draft |
-| FR-146 | LIA shall support both direct file-system operations and interactive file-manager operations. Both methods shall enforce the same authorization boundaries and provide verifiable results. | P0 | Draft |
+| FR-140 | LIA shall be able to discover, search, enumerate and inspect files and directories within authorized locations. | P0 | Approved |
+| FR-141 | LIA shall be able to read and understand supported file formats when access is authorized. | P0 | Approved |
+| FR-142 | LIA shall be able to create files, directories and project structures within authorized locations. | P1 | Approved |
+| FR-143 | LIA shall be able to modify supported documents, source files and configuration files within authorized locations. | P1 | Approved |
+| FR-144 | LIA shall be able to copy, move, rename, organize and sort files and directories within authorized locations. | P1 | Approved |
+| FR-145 | LIA shall be able to delete files and use trash or recovery mechanisms where supported and authorized. | P1 | Approved |
+| FR-146 | LIA shall support both direct file-system operations and interactive file-manager operations. Both methods shall enforce the same authorization boundaries and provide verifiable results. | P0 | Approved |
 
 ## 4.16 Desktop-environment navigation and configuration
 
@@ -1160,11 +1174,11 @@ LIA's desktop interaction scope extends beyond individual application windows to
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| FR-150 | LIA shall be able to inspect supported display topology, monitors, workspaces, panels, docks, launchers, desktop icons and relevant desktop objects. | P1 | Draft |
-| FR-151 | LIA shall be able to navigate and organize supported workspaces and monitor arrangements. | P1 | Draft |
-| FR-152 | LIA shall be able to configure supported desktop elements, including workspace arrangements, panels, docks and display settings, when authorized. | P1 | Draft |
-| FR-153 | LIA shall be able to observe and interact with supported desktop notifications and system-level interface elements within the granted permissions. | P1 | Draft |
-| FR-154 | LIA shall report when a desktop configuration operation is unavailable or behaves differently because of platform or desktop-environment limitations. | P0 | Draft |
+| FR-150 | LIA shall be able to inspect supported display topology, monitors, workspaces, panels, docks, launchers, desktop icons and relevant desktop objects. | P1 | Approved |
+| FR-151 | LIA shall be able to navigate and organize supported workspaces and monitor arrangements. | P1 | Approved |
+| FR-152 | LIA shall be able to configure supported desktop elements, including workspace arrangements, panels, docks and display settings, when authorized. | P1 | Approved |
+| FR-153 | LIA shall be able to observe and interact with supported desktop notifications and system-level interface elements within the granted permissions. | P1 | Approved |
+| FR-154 | LIA shall report when a desktop configuration operation is unavailable or behaves differently because of platform or desktop-environment limitations. | P0 | Approved |
 
 ## 4.17 Human-like input and hybrid interaction
 
@@ -1172,13 +1186,13 @@ LIA's eventual input capability includes pointer, keyboard, scrolling, drag-and-
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| FR-160 | LIA shall support pointer movement, hover, clicking, double-clicking, right-clicking, click-and-hold, dragging, dropping, text selection and scrolling where supported and authorized. | P0 | Draft |
-| FR-161 | LIA shall support text entry, individual key input, key combinations, shortcuts and keyboard-driven navigation where supported and authorized. | P0 | Draft |
-| FR-162 | LIA shall be able to interact with recognized application controls through suitable input or semantic interaction mechanisms. | P0 | Draft |
-| FR-163 | LIA shall support a hybrid interaction model combining direct input simulation, accessibility or application interfaces, and visual perception-driven interaction. | P0 | Draft |
-| FR-164 | LIA shall select an appropriate interaction mechanism based on the task, available platform/application capabilities and expected reliability. | P1 | Draft |
-| FR-165 | All interaction mechanisms shall use common authorization, action-planning, execution-result and verification rules. | P0 | Draft |
-| FR-166 | Where an interaction is represented through LIA's physical embodiment, character movement and the actual input or application operation shall remain coordinated. | P1 | Draft |
+| FR-160 | LIA shall support pointer movement, hover, clicking, double-clicking, right-clicking, click-and-hold, dragging, dropping, text selection and scrolling where supported and authorized. | P0 | Approved |
+| FR-161 | LIA shall support text entry, individual key input, key combinations, shortcuts and keyboard-driven navigation where supported and authorized. | P0 | Approved |
+| FR-162 | LIA shall be able to interact with recognized application controls through suitable input or semantic interaction mechanisms. | P0 | Approved |
+| FR-163 | LIA shall support a hybrid interaction model combining direct input simulation, accessibility or application interfaces, and visual perception-driven interaction. | P0 | Approved |
+| FR-164 | LIA shall select an appropriate interaction mechanism based on the task, available platform/application capabilities and expected reliability. | P1 | Approved |
+| FR-165 | All interaction mechanisms shall use common authorization, action-planning, execution-result and verification rules. | P0 | Approved |
+| FR-166 | Where an interaction is represented through LIA's physical embodiment, character movement and the actual input or application operation shall remain coordinated. | P1 | Approved |
 
 The hybrid model is a product-level design direction. It does not select a programming language, accessibility framework, UI automation library or computer-vision implementation; those choices remain for P3.
 
@@ -1188,25 +1202,25 @@ LIA shall maintain an ongoing, inspectable task system. A task may originate fro
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| FR-170 | LIA shall maintain a persistent, user-visible task queue. | P0 | Draft |
-| FR-171 | LIA shall represent work hierarchically as an objective, a plan containing steps, and the individual actions that execute those steps. | P0 | Draft |
-| FR-172 | LIA shall record a task's origin, objective, plan, dependencies, required capabilities and authorization basis, status, progress, execution history, blockers and outcome. | P0 | Draft |
-| FR-173 | LIA shall support task states including Queued, Running, Blocked, Paused, Completed, Cancelled and Failed. | P0 | Draft |
-| FR-174 | LIA shall distinguish task creation, planning and execution as separate operations with separately governed authority. | P0 | Draft |
-| FR-175 | LIA shall use relevant user memory, conversations, preferences, goals and permitted environmental context to identify potentially useful tasks and propose or create them within configured autonomy. | P1 | Draft |
-| FR-176 | LIA shall be able to execute tasks within valid standing authorization without requesting approval for every individual step. | P0 | Draft |
-| FR-177 | Before beginning an autonomously initiated task, LIA shall notify the user. This notification shall not be presented as an approval request when execution is already authorized. | P0 | Draft |
-| FR-178 | When a task requires an operation outside the available authorization scope, LIA shall block that operation and request the necessary authorization or revise the plan. | P0 | Draft |
-| FR-179 | LIA shall distinguish one-time authorization from standing authorization and shall not silently broaden the scope of either. | P0 | Draft |
-| FR-180 | LIA shall support task priority categories of Critical, High, Normal, Low and Someday. | P1 | Draft |
-| FR-181 | LIA shall support immediate, background, idle-time, scheduled, deadline-driven, event-triggered and deferred execution modes. | P1 | Draft |
-| FR-182 | LIA shall support sequential, parallel, conditional, parent-child and recurring task relationships. | P1 | Draft |
-| FR-183 | LIA shall classify execution needs, including background-safe, low-interference, desktop-interactive, user-dependent and resource-intensive work. | P1 | Draft |
-| FR-184 | LIA shall be able to reprioritize and reschedule tasks as circumstances change while respecting explicit user-assigned priorities and communicating meaningful changes. | P0 | Draft |
-| FR-185 | LIA shall be able to checkpoint, pause, cancel and safely resume tasks, verifying the current environment before repeating operations that may already have taken effect. | P0 | Draft |
-| FR-186 | LIA shall distinguish Blocked from Failed, and shall mark a task Completed only when its intended outcome has been verified to the extent possible. | P0 | Draft |
-| FR-187 | LIA shall avoid disrupting active user work with desktop-interactive tasks while allowing suitable background-safe tasks to continue when their authorization and resource conditions are satisfied. | P0 | Draft |
-| FR-188 | LIA shall make task status, blockers, progress and significant execution history available to the user. | P0 | Draft |
+| FR-170 | LIA shall maintain a persistent, user-visible task queue. | P0 | Approved |
+| FR-171 | LIA shall represent work hierarchically as an objective, a plan containing steps, and the individual actions that execute those steps. | P0 | Approved |
+| FR-172 | LIA shall record a task's origin, objective, plan, dependencies, required capabilities and authorization basis, status, progress, execution history, blockers and outcome. | P0 | Approved |
+| FR-173 | LIA shall support task states including Queued, Running, Blocked, Paused, Completed, Cancelled and Failed. | P0 | Approved |
+| FR-174 | LIA shall distinguish task creation, planning and execution as separate operations with separately governed authority. | P0 | Approved |
+| FR-175 | LIA shall use relevant user memory, conversations, preferences, goals and permitted environmental context to identify potentially useful tasks and propose or create them within configured autonomy. | P1 | Approved |
+| FR-176 | LIA shall be able to execute tasks within valid standing authorization without requesting approval for every individual step. | P0 | Approved |
+| FR-177 | Before beginning an autonomously initiated task, LIA shall notify the user. This notification shall not be presented as an approval request when execution is already authorized. | P0 | Approved |
+| FR-178 | When a task requires an operation outside the available authorization scope, LIA shall block that operation and request the necessary authorization or revise the plan. | P0 | Approved |
+| FR-179 | LIA shall distinguish one-time authorization from standing authorization and shall not silently broaden the scope of either. | P0 | Approved |
+| FR-180 | LIA shall support task priority categories of Critical, High, Normal, Low and Someday. | P1 | Approved |
+| FR-181 | LIA shall support immediate, background, idle-time, scheduled, deadline-driven, event-triggered and deferred execution modes. | P1 | Approved |
+| FR-182 | LIA shall support sequential, parallel, conditional, parent-child and recurring task relationships. | P1 | Approved |
+| FR-183 | LIA shall classify execution needs, including background-safe, low-interference, desktop-interactive, user-dependent and resource-intensive work. | P1 | Approved |
+| FR-184 | LIA shall be able to reprioritize and reschedule tasks as circumstances change while respecting explicit user-assigned priorities and communicating meaningful changes. | P0 | Approved |
+| FR-185 | LIA shall be able to checkpoint, pause, cancel and safely resume tasks, verifying the current environment before repeating operations that may already have taken effect. | P0 | Approved |
+| FR-186 | LIA shall distinguish Blocked from Failed, and shall mark a task Completed only when its intended outcome has been verified to the extent possible. | P0 | Approved |
+| FR-187 | LIA shall avoid disrupting active user work with desktop-interactive tasks while allowing suitable background-safe tasks to continue when their authorization and resource conditions are satisfied. | P0 | Approved |
+| FR-188 | LIA shall make task status, blockers, progress and significant execution history available to the user. | P0 | Approved |
 
 **Task priority and scheduling principles:** Priority, urgency and deadline are separate attributes. LIA may adapt execution order when dependencies become available, deadlines approach or circumstances change, but shall not silently downgrade an explicit user priority merely because another task appears more interesting. Meaningful schedule changes should be communicated.
 
@@ -1218,19 +1232,19 @@ Memory is a foundational capability for LIA's persistent identity, cognitive con
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| FR-190 | LIA shall maintain a searchable historical archive of permitted conversations, meaningful experiences, decisions, task events and retained source materials. | P0 | Draft |
-| FR-191 | LIA shall autonomously identify candidate memories from permitted experiences without requiring the user to explicitly issue a remember command each time. | P0 | Draft |
-| FR-192 | LIA shall organize information into complementary memory forms, including episodic, semantic, procedural, working and task memory. | P0 | Draft |
-| FR-193 | LIA shall represent relevant entities and typed relationships in a temporal knowledge graph, including links to source episodes and supporting evidence. | P0 | Draft |
-| FR-194 | Memory records shall preserve provenance and distinguish explicit statements, direct observations, inferred information and confirmed facts. | P0 | Draft |
-| FR-195 | LIA shall maintain distinct measures for association strength, factual confidence, importance and current retrieval activation. | P1 | Draft |
-| FR-196 | LIA shall reinforce meaningful associations when supported by repeated, sufficiently independent experiences or strong explicit evidence, using consolidation thresholds that can be evaluated and calibrated. | P1 | Draft |
-| FR-197 | Association reinforcement shall not be based solely on concepts co-occurring or on a memory being retrieved repeatedly; retrieval alone shall not be treated as new evidence of truth. | P0 | Draft |
-| FR-198 | LIA shall consolidate recurring information into durable memories while preserving the original source history and the distinction between candidate, consolidated and strongly supported associations. | P1 | Draft |
-| FR-199 | LIA shall reconcile contradictory or superseding information while preserving historical records and representing what is currently believed to be valid. | P0 | Draft |
-| FR-200 | Memory records shall distinguish when information was valid from when LIA learned or recorded it, enabling historical and current-state queries. | P1 | Draft |
-| FR-201 | LIA shall support correction, inspection and user-requested deletion of memories, with appropriate propagation to derived summaries, graph relationships and retrieval indexes. | P0 | Draft |
-| FR-202 | LIA shall apply retention and privacy rules to the historical archive. The archive shall not imply unrestricted or indefinite retention of raw microphone streams, screen frames or other sensitive observations. | P0 | Draft |
+| FR-190 | LIA shall maintain a searchable historical archive of permitted conversations, meaningful experiences, decisions, task events and retained source materials. | P0 | Approved |
+| FR-191 | LIA shall autonomously identify candidate memories from permitted experiences without requiring the user to explicitly issue a remember command each time. | P0 | Approved |
+| FR-192 | LIA shall organize information into complementary memory forms, including episodic, semantic, procedural, working and task memory. | P0 | Approved |
+| FR-193 | LIA shall represent relevant entities and typed relationships in a temporal knowledge graph, including links to source episodes and supporting evidence. | P0 | Approved |
+| FR-194 | Memory records shall preserve provenance and distinguish explicit statements, direct observations, inferred information and confirmed facts. | P0 | Approved |
+| FR-195 | LIA shall maintain distinct measures for association strength, factual confidence, importance and current retrieval activation. | P1 | Approved |
+| FR-196 | LIA shall reinforce meaningful associations when supported by repeated, sufficiently independent experiences or strong explicit evidence, using consolidation thresholds that can be evaluated and calibrated. | P1 | Approved |
+| FR-197 | Association reinforcement shall not be based solely on concepts co-occurring or on a memory being retrieved repeatedly; retrieval alone shall not be treated as new evidence of truth. | P0 | Approved |
+| FR-198 | LIA shall consolidate recurring information into durable memories while preserving the original source history and the distinction between candidate, consolidated and strongly supported associations. | P1 | Approved |
+| FR-199 | LIA shall reconcile contradictory or superseding information while preserving historical records and representing what is currently believed to be valid. | P0 | Approved |
+| FR-200 | Memory records shall distinguish when information was valid from when LIA learned or recorded it, enabling historical and current-state queries. | P1 | Approved |
+| FR-201 | LIA shall support correction, inspection and user-requested deletion of memories, with appropriate propagation to derived summaries, graph relationships and retrieval indexes. | P0 | Approved |
+| FR-202 | LIA shall apply retention and privacy rules to the historical archive. The archive shall not imply unrestricted or indefinite retention of raw microphone streams, screen frames or other sensitive observations. | P0 | Approved |
 
 **Memory formation and consolidation principles**
 
@@ -1248,18 +1262,18 @@ The retrieval system shall identify what information is needed for the current c
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| FR-210 | LIA shall determine the information need and create a retrieval plan appropriate to the current query, task or event. | P0 | Draft |
-| FR-211 | LIA shall support complementary retrieval methods, including semantic, lexical, structured, graph-based, temporal and source-archive retrieval. | P0 | Draft |
-| FR-212 | LIA shall be able to traverse typed knowledge-graph relationships to retrieve relevant multi-hop context, with bounded and task-appropriate expansion. | P1 | Draft |
-| FR-213 | LIA shall rank candidate memories using relevant signals such as semantic and lexical relevance, relationship relevance, temporal validity, source authority, confidence and current context. | P0 | Draft |
-| FR-214 | LIA shall resolve temporal validity and identify stale, superseded, conflicting or incomplete information before using it as current fact. | P0 | Draft |
-| FR-215 | LIA shall retrieve original source material when extracted memories or summaries are insufficient for a reliable answer or action. | P0 | Draft |
-| FR-216 | LIA shall assemble a bounded working context containing relevant memories, source references, temporal status and uncertainty labels. | P0 | Draft |
-| FR-217 | LIA shall distinguish current facts, historical facts, explicit statements, observations and inferences within assembled context. | P0 | Draft |
-| FR-218 | LIA shall be able to retrieve likely relevant context in anticipation of a task or interaction, without treating retrieval itself as authorization to act. | P1 | Draft |
-| FR-219 | LIA shall retain a retrieval trace sufficient to explain which memory sources and relationships contributed to a response or plan. | P1 | Draft |
-| FR-220 | LIA shall acknowledge insufficient or contradictory evidence rather than manufacture a memory or force an unsupported conclusion. | P0 | Draft |
-| FR-221 | LIA shall refresh relevant live environmental state before acting when historical memory cannot establish the current state of an application, window, process or file. | P0 | Draft |
+| FR-210 | LIA shall determine the information need and create a retrieval plan appropriate to the current query, task or event. | P0 | Approved |
+| FR-211 | LIA shall support complementary retrieval methods, including semantic, lexical, structured, graph-based, temporal and source-archive retrieval. | P0 | Approved |
+| FR-212 | LIA shall be able to traverse typed knowledge-graph relationships to retrieve relevant multi-hop context, with bounded and task-appropriate expansion. | P1 | Approved |
+| FR-213 | LIA shall rank candidate memories using relevant signals such as semantic and lexical relevance, relationship relevance, temporal validity, source authority, confidence and current context. | P0 | Approved |
+| FR-214 | LIA shall resolve temporal validity and identify stale, superseded, conflicting or incomplete information before using it as current fact. | P0 | Approved |
+| FR-215 | LIA shall retrieve original source material when extracted memories or summaries are insufficient for a reliable answer or action. | P0 | Approved |
+| FR-216 | LIA shall assemble a bounded working context containing relevant memories, source references, temporal status and uncertainty labels. | P0 | Approved |
+| FR-217 | LIA shall distinguish current facts, historical facts, explicit statements, observations and inferences within assembled context. | P0 | Approved |
+| FR-218 | LIA shall be able to retrieve likely relevant context in anticipation of a task or interaction, without treating retrieval itself as authorization to act. | P1 | Approved |
+| FR-219 | LIA shall retain a retrieval trace sufficient to explain which memory sources and relationships contributed to a response or plan. | P1 | Approved |
+| FR-220 | LIA shall acknowledge insufficient or contradictory evidence rather than manufacture a memory or force an unsupported conclusion. | P0 | Approved |
+| FR-221 | LIA shall refresh relevant live environmental state before acting when historical memory cannot establish the current state of an application, window, process or file. | P0 | Approved |
 
 **Retrieval principles**
 
@@ -1271,54 +1285,156 @@ The retrieval engine shall explain why a memory was selected sufficiently to sup
 
 **Technology boundary:** Vector indexes, lexical indexes, graph traversal, temporal indexes and structured search are capability concepts. The concrete database, graph engine, embedding model, indexing infrastructure and orchestration framework have not been selected and remain for P3.
 
-# 5. P2.1 review questions and decisions to resolve
 
-This section tracks unresolved decisions. Product-level design direction can be approved while first-release scope and detailed acceptance criteria remain open.
+**Requirement register note:** FR identifiers are stable and are not
+recycled. Numeric gaps (for example, FR-007–FR-009 or FR-203–FR-209) are
+reserved/unassigned, not missing requirements. The register contains
+169 assigned FRs.
+
+## 4.21 Cross-cutting interaction integrity requirements
+
+The following requirements clarify safe behavior across window management,
+desktop interaction and embodiment. They apply to direct user requests and
+autonomous operations alike, subject to the authorization policy.
+
+| ID | Requirement | Priority | Status |
+|---|---|---:|---|
+| FR-222 | Before manipulating a window, LIA shall identify the intended target and refresh its relevant state; when target identity or destination is ambiguous, stale or unsupported, LIA shall request clarification or report the limitation rather than guess. | P0 | Approved |
+| FR-223 | LIA shall not force-close a window or discard unsaved user work. If an application reports unsaved changes, or safe close state cannot be established, LIA shall stop the close operation and obtain the required user decision. | P0 | Approved |
+| FR-224 | The user shall be able to drag/reposition, show/hide and pin/lock LIA's character representation. LIA may reposition herself for a direct embodied operation only when permitted by the user's positioning controls; a pinned/locked or manually placed position takes precedence, and unprompted roaming is disabled by default. | P0 | Approved |
+
+
+# 5. P2.1 decisions and closure
+
+P2.1 product behavior and first-vertical-slice scope have been reviewed.
+All product-level decisions in this workstream are closed. Details assigned
+to P2.2, P2.3, P2.4, P2.6, P2.7 and P3 are planned dependencies, not open
+P2.1 decisions.
 
 ## 5.1 Resolved design decisions
 
-- **P2.1-D01 — Voice modes:** Push-to-talk, continuous conversation, wake-word activation and text interaction are all supported as independently configurable modes. See ADR-012.
-- **P2.1-D02 — Desktop awareness:** Default metadata awareness, on-demand screen perception and optional continuous screen perception are supported as distinct levels. Continuous perception requires a visible indicator, configurable scope and immediate pause control. See ADR-013.
-- **P2.1-D03 — Task queue:** A persistent, user-visible task queue with Queued, Running, Blocked, Paused, Completed, Cancelled and Failed states is part of the product direction. Objectives, plans and individual actions are represented separately.
-- **P2.1-D09 — Busy-user behavior:** Suitable background-safe work may continue while the user is busy. Desktop-interactive work should avoid disrupting active user activity. Tasks should be paused, checkpointed or deferred when safe execution conditions are not satisfied. Exact thresholds and interruption rules remain for P2.2 and P2.4.
-
-## 5.2 Remaining decisions
-
-| ID | Question | Why it matters | Status |
+| ID | Decision | Resolution | Status |
 |---|---|---|---|
-| P2.1-D04 | Which window operations belong in the first vertical slice? The full product scope includes discovery, focus, move, resize, minimize, maximize, restore, close, launch and window arrangement. | Selects a small but convincing first implementation. | Open |
-| P2.1-D05 | Should file-system operations be included in the first vertical slice, or should the first OS action remain limited to window interaction? | Controls risk and scope of the first working loop. | Open |
-| P2.1-D06 | Which memory categories or data classes require explicit user approval before retention, and which may be autonomously retained under standing memory preferences? | Autonomous memory formation is approved, but sensitivity, retention and consent boundaries remain to be defined in P2.5/P2.6. | Open |
-| P2.1-D07 | Should the character itself be user-draggable, and under what conditions may LIA reposition herself? | Defines control of LIA's own desktop position and spatial behavior. | Open |
-| P2.1-D08 | Which input and interaction capabilities belong in the first vertical slice? The full product uses a hybrid model. | Separates eventual capability from initial implementation scope. | Open |
-| P2.1-D10 | Which application categories should receive early integration support? | Prevents the first release from implicitly promising support for every application. | Open |
+| P2.1-D01 | Voice interaction modes | Full product supports independently configurable push-to-talk, continuous conversation, wake-word activation and text interaction. Microphone access remains user-controlled and visible. | Closed |
+| P2.1-D02 | Desktop awareness | Full product supports default desktop metadata, permissioned on-demand screen perception and optional continuous screen perception with visible indicator, configurable scope and immediate pause. | Closed |
+| P2.1-D03 | Task management | Full product uses a persistent user-visible Objective → Plan → Actions task model and the defined task states. | Closed |
+| P2.1-D04 | First-slice window operations | Discover the active or explicitly selected window, inspect supported geometry and move one window within the same display while preserving its dimensions. | Closed |
+| P2.1-D05 | File operations in first slice | File-system and file-manager operations remain full-product capabilities but are excluded from the first vertical slice. | Closed |
+| P2.1-D06 | Memory retention and consent | Settled by P2.5: autonomous memory formation is governed by source permissions, sensitivity classes, user controls, retention rules and temporary mode. No further P2.1 decision is required. | Closed |
+| P2.1-D07 | Character positioning | The user can drag/reposition, show/hide and pin/lock the character. LIA may reposition for a direct embodied operation only within user-configured controls; user placement takes precedence and unprompted roaming is off by default. | Closed |
+| P2.1-D08 | First-slice interaction modes | Push-to-talk, text input, spoken output, interruption and explicit session pause/end. Continuous-conversation and wake-word modes remain full-product capabilities but are excluded from the first slice. | Closed |
+| P2.1-D09 | Busy-user behavior | Suitable background-safe work may continue when permitted; desktop-interactive work must avoid disrupting active user activity. Tasks checkpoint, pause or defer when safe conditions are absent. | Closed |
+| P2.1-D10 | Early application integration order | After the first slice, prioritize web browsers, file managers, code editors and terminals; then document/PDF and office tools, communication/collaboration apps, and creative/media or specialist applications. | Closed |
+| P2.1-D11 | Platform implementation sequence | Build the first vertical slice on Linux. Linux and Windows remain first-class product platforms and must be represented in the shared-core/adapter design; macOS is a future extension. | Closed |
+| P2.1-D12 | First-slice perception | Use supported desktop metadata and window geometry only. Screen-content capture, text extraction and continuous screen perception are excluded from the first slice. | Closed |
+| P2.1-D13 | First-slice proactive autonomy | No unsolicited social conversations, independent scheduled/event-triggered work or autonomous desktop tasks in the first slice. Direct user-requested interaction is supported. | Closed |
+| P2.1-D14 | Initial autonomy defaults | Social Off; cognitive On; operational Restricted to direct user requests and currently valid grants; temporal Off. Each dimension is independently configurable. | Closed |
+| P2.1-D15 | Ambiguous window targets | LIA refreshes target state and requests clarification rather than guessing when target identity or destination is ambiguous or stale. | Closed |
+| P2.1-D16 | Unsaved user work | LIA never force-closes a window or silently discards unsaved work; uncertain close safety stops the operation for a user decision. | Closed |
 
-# 6. Candidate first vertical slice
+## 5.2 Deferred details owned by later workstreams
 
-This is a proposed integration target, not a finalized release
-commitment.
+The following are deliberately deferred and do not prevent P2.1 closure:
 
-The first vertical slice should prove one complete interaction loop
-across the major subsystems without attempting the entire product:
+| Detail | Owning phase/workstream |
+|---|---|
+| Quantitative latency, resource, startup, storage and reliability targets | P2.2 |
+| Detailed perception scope, freshness and source-event policy | P2.3 |
+| Detailed interruption, embodiment, movement and interaction UX | P2.4 |
+| Permission grant schema, revocation, risk tiers and confirmation policy | P2.6 |
+| Detailed test cases, test fixtures and execution of acceptance criteria | P2.7 |
+| Platform APIs, window-control implementation, application adapters, IPC, databases, models and service topology | P3 |
 
-1.  LIA appears as a desktop character and performs idle animation.
-2.  The user initiates a voice conversation.
-3.  LIA listens, responds, and speaks.
-4.  The character's expressions and body language react to the
-    interaction.
-5.  LIA obtains basic desktop context, such as the active window,
-    through the platform adapter.
-6.  The user asks LIA to perform one supported window operation.
-7.  LIA checks authorization, performs the operation, verifies the
-    result where possible, and coordinates the character's movement or
-    expression with the operation.
-8.  LIA retains one appropriate conversational or task detail across a
-    restart.
+No unresolved product-level P2.1 decision remains.
 
-The exact operation and memory behavior remain subject to P2.1 review
-and later acceptance criteria.
+# 6. First vertical slice — approved scope
 
-------------------------------------------------------------------------
+**Status:** Approved engineering vertical-slice baseline  
+**Purpose:** Prove one complete embodied interaction loop across presence,
+conversation, desktop context, OS interaction, authorization, verification
+and persistent memory.
+
+The first vertical slice is a technical integration proof. It is not a
+feature-complete MVP and does not redefine the full product capabilities
+specified in Section 4. It intentionally exercises one safe, observable
+computer operation end to end.
+
+## 6.1 Included scope
+
+| Area | First-slice scope | Related functional requirements |
+|---|---|---|
+| Presence and embodiment | LIA starts as a desktop character, restores permitted presentation configuration, idles and visibly expresses listening, speaking, thinking and acting states. User can hide/show, drag/reposition and pin/lock the character. | FR-001–006, FR-030–037, FR-224 |
+| Communication | Push-to-talk voice input, text input, spoken response, multi-turn context within the active session, interruption and user-accessible pause/end. | FR-020–025, FR-028–029 |
+| Desktop awareness | Identify the active application/window and retrieve available window identity, title, position, dimensions and display association. Refresh relevant metadata immediately before a window action. | FR-010–011, FR-016, FR-018, FR-110–111, FR-113, FR-115, FR-120, FR-221–222 |
+| Window operation | Move one active or explicitly selected supported window to a user-specified position or supported region on the same display. Preserve its dimensions and current workspace. No resizing or cross-display/workspace movement. | FR-040–043, FR-046–048, FR-120–121, FR-124–125, FR-222 |
+| Authorization and outcome | Check the currently applicable permission before the operation. A direct instruction authorizes only the requested operation within its scope, not a standing grant. Report actual outcome and verify resulting geometry where supported. | FR-029, FR-046–048, FR-093–095, FR-132, FR-165, FR-222 |
+| Embodied operation | When permitted and not pinned/locked, LIA may position herself for the requested window interaction. The character's approach, grab/push, movement and release correspond to the real operation. A failed or unsupported operation must not be depicted as successful. | FR-032, FR-035, FR-124–125, FR-166, FR-224 |
+| Memory continuity | Under the approved P2.5 policy and enabled user controls, retain one ordinary low-sensitivity detail from a permitted interaction, persist it across restart, retrieve it with provenance, and expose it to inspection and deletion. | FR-060–068, FR-190–202, FR-210–220 |
+| User control and autonomy | Global pause/stop and clear capability state. Initial autonomy defaults are social Off, cognitive On, operational Restricted and temporal Off. No unprompted social initiation or autonomous task execution in this slice. | FR-003–006, FR-075–079, FR-090–097 |
+
+### Window-movement constraints
+
+The first-slice operation is deliberately narrow:
+
+- One supported window at a time.
+- Target is the active window or a user-explicitly selected window.
+- If more than one plausible target exists, LIA asks for clarification.
+- The destination is expressed as a clear position or supported screen region.
+- Window dimensions and workspace remain unchanged.
+- The destination must be supported and within the current display work area; LIA must not silently substitute a different destination.
+- The operation must be authorized, attempted, reported and verified to the extent the platform permits.
+- A stale target or geometry is refreshed before execution; if current state cannot be established, the operation is deferred or declined with an explanation.
+- Closing, deleting, resizing, launching, tiling, maximizing, minimizing, restoring, arbitrary keyboard/pointer automation and multi-window sequences are not part of this slice.
+
+### Platform boundary
+
+The first implementation targets one supported Linux desktop environment and one display. The platform adapter must report its actual capabilities and limitations; this slice does not claim universal compatibility across Linux compositors or display servers.
+
+Windows remains a first-class product platform and must be represented in the shared-core/adapter contract established in P3. Windows runtime validation is a separate platform verification milestone before cross-platform support is claimed. macOS remains a future extension.
+
+### Explicit exclusions from the first slice
+
+- Continuous-conversation and wake-word activation modes.
+- On-demand screen-content analysis, screen text extraction and continuous screen perception.
+- Multiple monitors, workspace changes and desktop-environment configuration.
+- Window resize, close, launch, minimize, maximize, restore, tiling, snapping and multi-window arrangement.
+- Application-specific controls, browser navigation, file-manager workflows and generic accessibility/UI automation.
+- Direct file-system read, create, modify, move, rename or delete operations.
+- Independent proactive social conversations, autonomous task creation, scheduling, background task execution and event-triggered actions.
+- Full memory graph retrieval, advanced associative consolidation and comprehensive memory export UI; the slice proves one policy-compliant persisted memory and its source-level inspection/deletion path.
+- Windows/macOS implementation or claims of platform parity.
+
+These exclusions are sequencing decisions only. The corresponding full-product requirements remain in the approved Section 4 baseline.
+
+## 6.2 First-slice acceptance conditions
+
+The following high-level acceptance conditions define what the vertical slice must demonstrate. P2.7 will turn them into detailed test procedures, fixtures and execution records.
+
+| ID | Acceptance condition | Requirement trace |
+|---|---|---|
+| AC-001 | LIA starts, renders the character, restores permitted presentation settings and exposes a truthful lifecycle/capability state. | FR-001–006, FR-030–037, FR-090, FR-096, FR-224 |
+| AC-002 | The user can initiate push-to-talk or text interaction, receive spoken/text output, interrupt speech and pause/end the active session. No voice capture is represented as active when it is not. | FR-020–025, FR-028–029 |
+| AC-003 | LIA identifies the active window and obtains supported current metadata and geometry without requiring screen-content capture. | FR-010–011, FR-016, FR-018, FR-110–115, FR-120, FR-221 |
+| AC-004 | LIA identifies the intended window and destination; ambiguity, stale state or unsupported targets lead to clarification or a truthful limitation report, not a guessed action. | FR-018, FR-047–048, FR-120, FR-222 |
+| AC-005 | Before moving the window, LIA checks the applicable current authorization. A user request does not create a standing grant or bypass capability restrictions. | FR-029, FR-093–095, FR-132, FR-165, FR-178–179 |
+| AC-006 | LIA moves one supported window on the same display to the specified supported destination, preserving dimensions and workspace, or reports why it cannot. | FR-042–043, FR-046–048, FR-121–125, FR-222 |
+| AC-007 | Character movement is synchronized with the actual window operation; the animation stops or changes truthfully when the operation fails, is unsupported or cannot be verified. | FR-032, FR-035–036, FR-046–047, FR-124–125, FR-166 |
+| AC-008 | LIA does not force-close windows or discard unsaved work; stale state, unsupported operations and runtime failures produce explicit non-success outcomes. | FR-006, FR-046–048, FR-101–105, FR-223 |
+| AC-009 | One permitted low-sensitivity memory survives restart, can be retrieved with provenance, and can be inspected and deleted through the available user controls. | FR-005, FR-060–068, FR-190–202, FR-210–220 |
+| AC-010 | The user can hide, reposition, pin/lock and pause/stop LIA; user placement takes precedence over task-bound character repositioning. | FR-003, FR-037, FR-090–096, FR-224 |
+| AC-011 | The slice operates only within its declared Linux/display capability envelope and reports unsupported platform operations rather than claiming parity or success. | FR-006, FR-040, FR-046–048, FR-154 |
+
+## 6.3 Post-slice application integration order
+
+After the vertical slice proves the desktop/window interaction loop, application integration should proceed in this order:
+
+1. Web browsers, file managers, code editors and terminals.
+2. Document/PDF tools and office suites.
+3. Communication and collaboration applications.
+4. Creative, media and specialist applications.
+5. Visual/perception-driven best-effort interaction for applications without dedicated integration, with explicit capability limitations.
+
+This is an integration priority, not a promise that every application in a category will be supported identically.
 
 # 7. Requirements traceability
 
@@ -1370,8 +1486,27 @@ phases are completed.
 | FR-150–159 | Desktop environment configuration | P2.3 context; P2.6 permissions; P3 platform adapters |
 | FR-160–169 | Hybrid input interaction | P2.4 interaction; P2.6 authorization; P3 interaction abstraction |
 | FR-170–189 | Task management and scheduling | P2.2 performance/resources; P2.6 authority; P3 scheduler and task runtime |
-| FR-190–209 | Memory formation, retrieval and context assembly | P2.5 memory specification; P2.6 privacy/governance; P2.7 evaluation |
+| FR-222–224 | Window-target integrity, unsaved-work protection and embodied character positioning | P2.6 authorization integration; P2.7 acceptance tests; P3 OS/character interaction contracts |
+| FR-190–221 | Memory formation, retrieval, continuity and context assembly | P2.5 approved memory baseline; P2.6 authorization integration; P2.7 acceptance testing |
 | SEC-001–038 | Memory governance, integrity and user control | P2.5 baseline; P2.6 authorization integration; P2.7 acceptance tests; P3 implementation |
+
+
+### First vertical-slice acceptance traceability
+
+| Acceptance criteria | Primary functional requirements |
+|---|---|
+| AC-001 — Presence and lifecycle | FR-001–006, FR-030–037, FR-090, FR-096, FR-224 |
+| AC-002 — Voice and text interaction | FR-020–025, FR-028–029 |
+| AC-003 — Window metadata and geometry | FR-010–011, FR-016, FR-018, FR-110–115, FR-120, FR-221 |
+| AC-004 — Target/destination resolution | FR-018, FR-047–048, FR-120, FR-222 |
+| AC-005 — Authorization | FR-029, FR-093–095, FR-132, FR-165, FR-178–179 |
+| AC-006 — One-window movement | FR-042–043, FR-046–048, FR-121–125, FR-222 |
+| AC-007 — Embodied synchronization | FR-032, FR-035–036, FR-046–047, FR-124–125, FR-166 |
+| AC-008 — Safe failure and unsaved work | FR-006, FR-046–048, FR-101–105, FR-223 |
+| AC-009 — Persistent memory proof | FR-005, FR-060–068, FR-190–202, FR-210–220 |
+| AC-010 — User and character control | FR-003, FR-037, FR-090–096, FR-224 |
+| AC-011 — Platform capability reporting | FR-006, FR-040, FR-046–048, FR-154 |
+
 
 # 8. Decision register
 
@@ -1662,6 +1797,44 @@ LIA distinguishes confirmed persistent writes from session-only context, exposes
 
 Stored or retrieved documents, webpages, messages, source code and other content are evidence or context, not instructions that can override governing rules, grant permissions or authorize execution. Current authority remains with the permission system and the user's applicable authorization.
 
+
+### ADR-047 — First vertical-slice scope
+
+**Status:** Approved
+
+The first vertical slice proves an end-to-end embodied interaction loop: desktop character presence; push-to-talk and text interaction with spoken responses; active-window metadata and geometry; one authorized same-display window move preserving dimensions and workspace; synchronized character behavior; truthful execution verification; and one permitted persisted low-sensitivity memory with provenance and user inspection/deletion. The slice is a technical integration proof, not a feature-complete MVP. Full-product requirements remain in Section 4.
+
+### ADR-048 — Platform implementation sequence
+
+**Status:** Approved
+
+The first vertical slice is implemented on one supported Linux desktop environment and one display. Linux and Windows remain first-class product platforms and must be represented in the shared-core/adapter contract in P3. Windows runtime validation is required before cross-platform support is claimed. macOS remains a future extension.
+
+### ADR-049 — Initial autonomy defaults
+
+**Status:** Approved
+
+Initial defaults are Social Off, Cognitive On, Operational Restricted to direct user requests and currently valid grants, and Temporal Off. Each autonomy dimension is independently configurable. These defaults do not replace current authorization checks or user pause/stop controls.
+
+### ADR-050 — User control of character positioning
+
+**Status:** Approved
+
+The user can drag/reposition, show/hide and pin/lock the character. LIA may reposition for a direct embodied operation only within user-configured controls. Manual placement and pin/lock take precedence. Unprompted roaming is disabled by default.
+
+### ADR-051 — Ambiguous window targets and safe closure
+
+**Status:** Approved
+
+LIA refreshes target state before manipulation and asks for clarification rather than guessing when the target or destination is ambiguous or stale. LIA shall not force-close a window or discard unsaved user work; uncertain close safety requires a user decision.
+
+### ADR-052 — P2.1 functional baseline closure
+
+**Status:** Approved
+
+All functional requirements in Section 4 are approved as the product-level P2.1 baseline. First-slice membership is defined separately in Section 6. Approval records agreed behavior; it does not imply implementation, platform parity or verification. Detailed authorization, non-functional targets and acceptance-test execution remain assigned to their respective Phase 2 workstreams.
+
+
 # 9. Change log
 
   ------------------------------------------------------------------------
@@ -1736,14 +1909,17 @@ Stored or retrieved documents, webpages, messages, source code and other content
 
 **1.3.0 — 13 Nov 2026:** Completed the P2.5 memory requirements and governance baseline. Added uncertainty-aware memory states; freshness and temporal validity rules; provenance, versioning and conservative entity resolution; permitted-source capture and data minimization; granular access operations and derived-memory restrictions; automatic cross-project promotion policy; memory transparency, user controls and portability; account isolation, external-processing minimization, untrusted-source handling, persistence/failure safeguards; P2.5 acceptance criteria and explicit phase boundaries.
 
+**1.4.0 — 13 Nov 2026:** Completed the P2.1 functional requirements review. Approved the full product-functional baseline; clarified voice-mode behavior and policy-controlled memory continuity; settled all P2.1 scope decisions; defined the first vertical slice, exclusions and AC-001–AC-011; added window-target ambiguity and unsaved-work safeguards, character-positioning controls and initial autonomy defaults; updated requirements traceability and ADR-047–ADR-052.
+
 
 # 10. Current working state
 
 **Current phase:** P2 — Requirements Engineering  
-**Active workstream:** P2.1 — Functional Requirements (remaining formal review and first-vertical-slice scope)  
+**Active workstream:** P2.2 — Non-functional Requirements  
+**P2.1 status:** Complete — functional requirements and first-vertical-slice scope approved and traceable  
 **P2.5 status:** Complete — memory requirements and governance design baseline approved  
-**Overall status:** Phase 2 remains in progress. P2.1 review is not closed; P2.2–P2.7 remain to be completed. P2.5 implementation, measurable performance targets and test execution remain assigned to P3, P2.2 and P2.7 respectively.  
-**Next action:** Resume the remaining P2.1 review and close first-release scope decisions. Then complete the remaining requirements workstreams, using the P2.5 baseline as an input to P2.6 permission design and P2.7 acceptance testing.
+**Overall status:** Phase 2 remains in progress. P2.2, P2.3, P2.4, P2.6 and P2.7 remain to be completed. P2.1 and P2.5 are design/requirements closures, not implementation or verification claims.  
+**Next action:** Define measurable non-functional requirements in P2.2. Continue through the remaining Phase 2 workstreams and do not begin P3 system architecture until all Phase 2 exit criteria are satisfied.
 
 
 ## Phase 2 exit criteria
