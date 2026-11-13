@@ -4,7 +4,7 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.2.1\
+> **Version:** 1.2.2\
 > **Last updated:** 13 November 2026\
 > **Current phase:** P2 --- Requirements Engineering\
 > **Current workstream:** P2.5 --- Memory Requirements (governance and integrity)\
@@ -335,7 +335,7 @@ implementation architecture.
 
 ## 3.4 Phase dependency graph
 
-``` mermaid
+```mermaid
 flowchart TD
     P0["P0 — Concept and vision"] --> P1["P1 — Product definition"]
     P1 --> P2["P2 — Requirements engineering"]
@@ -1648,6 +1648,12 @@ Memory records historical and learned information. A separate authoritative perm
                                                   synchronized the current
                                                   workstream indicator
                                                   with P2.5.
+
+  1.2.2                   13 Nov 2026             Normalized the Mermaid
+                                                  opening-fence syntax so
+                                                  all architecture and
+                                                  process diagrams render
+                                                  consistently.
 
   ------------------------------------------------------------------------
 
