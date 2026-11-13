@@ -58,6 +58,8 @@ Requirements use unique, stable identifiers:
 -   `UX-###` --- User experience and interaction requirement
 -   `AC-###` --- Acceptance criterion or test case
 -   `ADR-###` --- Architecture decision record
+-   `CTX-###` --- Context and perception requirement
+-   `UX-###` --- Interaction and user-experience requirement
 
 A requirement should describe one observable capability or constraint.
 Use "shall" for normative requirements. Avoid embedding implementation
@@ -293,48 +295,17 @@ implementation architecture.
 
 ## 3.3 Phase 2 workstreams
 
-  -----------------------------------------------------------------------
-  ID                Workstream        Purpose           Status
-  ----------------- ----------------- ----------------- -----------------
-  P2.1              Functional        Define what LIA   Draft --- detailed design baseline expanded
-                    requirements      must do           
+| ID | Workstream | Purpose | Status |
+|---|---|---|---|
+| P2.1 | Functional requirements | Define what LIA must do | Complete — approved baseline |
+| P2.2 | Non-functional requirements | Define performance, reliability, resource and quality constraints | Complete — approved baseline |
+| P2.3 | Context and perception requirements | Define what LIA can observe, represent and infer | Complete — approved baseline |
+| P2.4 | Interaction requirements | Define voice, dialogue, interruption, presence and embodiment behavior | Complete — approved baseline |
+| P2.5 | Memory requirements | Define memory types, persistence, retrieval, correction and deletion | Complete — approved baseline |
+| P2.6 | Autonomy, security and permissions | Define authority, approval, risk, privacy and safety boundaries | Complete — approved baseline |
+| P2.7 | Acceptance criteria | Define verification criteria and test coverage for requirements and user journeys | Complete — criteria specified; execution deferred to implementation/test phases |
 
-  P2.2              Non-functional    Define            Pending
-                    requirements      performance,      
-                                      reliability,      
-                                      resource, and     
-                                      quality           
-                                      constraints       
-
-  P2.3              Context and       Define what LIA   Pending
-                    perception        can observe,      
-                    requirements      represent, and    
-                                      infer             
-
-  P2.4              Interaction       Define voice,     Pending
-                    requirements      dialogue,         
-                                      interruptions,    
-                                      presence, and     
-                                      embodiment        
-                                      behavior          
-
-  P2.5              Memory            Define memory     Draft --- active
-                    requirements      types,            
-                                      persistence,      
-                                      retrieval,        
-                                      correction, and   
-                                      deletion          
-
-  P2.6              Autonomy,         Define authority, Pending
-                    security, and     approval, risk,   
-                    permissions       privacy, and      
-                                      safety boundaries 
-
-  P2.7              Acceptance        Define measurable Pending
-                    criteria          verification for  
-                                      requirements and  
-                                      user journeys     
-  -----------------------------------------------------------------------
+**Phase 2 status:** Requirements-engineering baseline complete. This does not mean the system has been implemented, benchmarked or verified. Detailed implementation and runtime test execution remain subsequent engineering work.
 
 ## 3.4 Phase dependency graph
 
@@ -1835,6 +1806,44 @@ LIA refreshes target state before manipulation and asks for clarification rather
 All functional requirements in Section 4 are approved as the product-level P2.1 baseline. First-slice membership is defined separately in Section 6. Approval records agreed behavior; it does not imply implementation, platform parity or verification. Detailed authorization, non-functional targets and acceptance-test execution remain assigned to their respective Phase 2 workstreams.
 
 
+
+### ADR-053 — Workload-based non-functional targets
+
+**Status:** Approved
+
+Performance and resource requirements are specified by W1–W5 workload profiles and three hardware tiers. Targets use defined reference environments, percentile measurements and separate spans for local runtime versus model/provider/network time. Numeric SLOs are engineering targets to validate and document, not observed performance claims.
+
+### ADR-054 — Perception by explicit source and scope
+
+**Status:** Approved
+
+Desktop awareness is event-driven and capability-based. Metadata, process inspection, semantic UI, on-demand screen capture, continuous screen perception, microphone and camera are separate source classes with independent permissions and retention boundaries. Continuous screen perception is off by default, scope-limited, visibly indicated and immediately pausable. Camera is off by default; passive global keystroke capture is prohibited.
+
+### ADR-055 — Interaction and proactive timing defaults
+
+**Status:** Approved
+
+Push-to-talk and text are initial interaction modes; continuous conversation and wake-word require explicit opt-in. User interruption, stop and privacy controls take precedence. When social autonomy is enabled, default unsolicited social initiation is limited to one per two hours and three per local day, within configurable quiet hours and focus/DND constraints. Personality expression must not manipulate, guilt or pressure the user.
+
+### ADR-056 — Capability-scoped authorization and risk confirmation
+
+**Status:** Approved
+
+All side effects require a current permission-authority decision using principal, capability, resource, scope, purpose, duration, origin and risk. Direct user instructions may create only exact one-time delegation within an enabled capability. R0–R4 risk classes govern confirmation. R3/R4 operations require explicit per-operation confirmation; R4 is blocked by default. Grants are inspectable and revocable; revocation applies before the next side effect.
+
+### ADR-057 — Acceptance and verification policy
+
+**Status:** Approved
+
+Acceptance uses unit, component, contract, integration, end-to-end, platform, performance, reliability, security and data-lifecycle verification. All P0 requirements require testable criteria; AC-001–AC-011 are mandatory for the first vertical slice. Test execution and release sign-off remain future implementation activities.
+
+### ADR-058 — Phase 2 requirements baseline closure
+
+**Status:** Approved
+
+P2.1–P2.7 are complete as a requirements-engineering baseline. Phase 2 is closed and P3 may begin. This does not claim implementation, performance validation, security testing or execution of acceptance tests. P3 must preserve the approved requirements or document any proposed change through controlled decision revision.
+
+
 # 9. Change log
 
   ------------------------------------------------------------------------
@@ -1911,15 +1920,22 @@ All functional requirements in Section 4 are approved as the product-level P2.1 
 
 **1.4.0 — 13 Nov 2026:** Completed the P2.1 functional requirements review. Approved the full product-functional baseline; clarified voice-mode behavior and policy-controlled memory continuity; settled all P2.1 scope decisions; defined the first vertical slice, exclusions and AC-001–AC-011; added window-target ambiguity and unsaved-work safeguards, character-positioning controls and initial autonomy defaults; updated requirements traceability and ADR-047–ADR-052.
 
+**1.5.0 — 13 Nov 2026:** Completed the remaining Phase 2 requirements baseline. Added P2.2 workload profiles, hardware tiers, latency/resource/reliability/durability/compatibility targets and measurement protocol; P2.3 perception-source matrix, capture cadence, freshness and privacy boundaries; P2.4 conversation, interruption, proactive timing and embodiment defaults; P2.6 scoped authorization, risk tiers, confirmation, revocation and security policy; P2.7 acceptance groups, verification methods and release gates; ADR-053–ADR-058; and Phase 2 closure/handoff constraints for P3.
+
 
 # 10. Current working state
 
 **Current phase:** P2 — Requirements Engineering  
-**Active workstream:** P2.2 — Non-functional Requirements  
-**P2.1 status:** Complete — functional requirements and first-vertical-slice scope approved and traceable  
-**P2.5 status:** Complete — memory requirements and governance design baseline approved  
-**Overall status:** Phase 2 remains in progress. P2.2, P2.3, P2.4, P2.6 and P2.7 remain to be completed. P2.1 and P2.5 are design/requirements closures, not implementation or verification claims.  
-**Next action:** Define measurable non-functional requirements in P2.2. Continue through the remaining Phase 2 workstreams and do not begin P3 system architecture until all Phase 2 exit criteria are satisfied.
+**Phase 2 status:** Complete — approved requirements baseline across P2.1–P2.7  
+**P2.1 status:** Complete — functional requirements and first vertical-slice scope approved  
+**P2.2 status:** Complete — non-functional targets and measurement rules approved  
+**P2.3 status:** Complete — context and perception boundaries approved  
+**P2.4 status:** Complete — interaction and embodiment behavior approved  
+**P2.5 status:** Complete — memory requirements and governance baseline approved  
+**P2.6 status:** Complete — autonomy, security and permission defaults approved  
+**P2.7 status:** Complete — acceptance criteria and verification strategy specified  
+**Overall status:** Requirements baseline is ready to inform P3. No implementation, performance benchmark or runtime acceptance result is implied by Phase 2 closure.  
+**Next action:** Begin P3 — System Architecture. Translate the approved requirements into architecture alternatives, component boundaries, trust boundaries, data flows, platform adapters and contracts. Preserve the explicit deferrals and validation gates in Sections 13–17.
 
 
 ## Phase 2 exit criteria
@@ -1941,6 +1957,22 @@ Phase 2 is complete only when:
     vertical slice.
 -   Requirements are internally consistent and traceable into the
     architecture phase.
+
+## Phase 2 exit criteria
+
+Phase 2 requirements engineering is complete when:
+
+- Functional requirements are reviewed, uniquely identified and approved.
+- Non-functional requirements have measurable targets or explicit validation owners.
+- Context and perception sources, permissions, scope, freshness and inference boundaries are defined.
+- Interaction requirements cover voice, text, interruption, presence, proactive behavior and embodiment.
+- Memory requirements define formation, persistence, retrieval, correction, retention and deletion.
+- Autonomy, security and permission requirements define execution authority, approval, risk and user controls.
+- Acceptance criteria cover all P0 functional requirements and the approved first vertical slice.
+- Requirements are internally consistent and traceable into the architecture phase.
+
+**Phase 2 completion statement:** All seven workstreams have an approved requirements baseline. Acceptance criteria are defined but are not executed against an implementation that does not yet exist. Performance targets are approved as engineering targets and must be measured against the specified reference workloads/hardware; deviations must be documented and approved rather than silently ignored.
+
 
 ## Working rule
 
@@ -3412,3 +3444,591 @@ These deferrals do not leave product behavior undecided. The accepted requiremen
 The memory workstream has defined what LIA may remember, how memories are formed and represented, how uncertainty and temporal change are handled, how memories are retrieved, how domains are isolated and shared, how users inspect and control memory, and how correction, deletion, security and failure behavior must work.
 
 The remaining work is implementation-independent integration and verification: P2.6 will complete the authoritative permission model; P2.2 will set measurable non-functional targets; P2.7 will map and execute acceptance tests; P3 will select and implement the architecture. P2 as a whole remains in progress.
+
+
+# 13. P2.2 — Non-functional requirements
+
+**Workstream status:** Complete — measurable product quality baseline approved  
+**Purpose:** Define how well LIA must operate under specified workloads and hardware, and how that behavior is measured.
+
+P2.2 targets are engineering SLOs, not claims of current product performance. They shall be validated during P5 and subsequent implementation/testing. Where a target is missed, the measured result, cause, impact and proposed correction or approved deviation shall be recorded. A target shall not be silently relaxed.
+
+## 13.1 Workload profiles
+
+Performance shall be measured by workload, not through one blended "average LIA" result.
+
+| Profile | Workload | Scope |
+|---|---|---|
+| W1 — Idle presence | Character visible, idle animation, normal permitted desktop metadata awareness | Local runtime, renderer, platform event handling and background overhead |
+| W2 — Interactive conversation | Push-to-talk or text conversation, context retrieval, model dispatch, speech recognition/synthesis and interruption | Local pipeline latency, provider latency and end-to-end user experience reported separately |
+| W3 — OS interaction | Identify window, refresh metadata, authorize, move and verify a window | Desktop event/state freshness, operation acknowledgement and outcome verification |
+| W4 — Background activity | Memory formation/indexing, task scheduling, archival work and permitted background operations | Resource contention, queue growth, interference and checkpoint behavior |
+| W5 — Intensive perception | On-demand/continuous screen analysis and future optional camera perception | CPU/GPU/VRAM/RAM, thermal behavior, capture cadence and interactive responsiveness |
+
+The first vertical slice shall demonstrate W1, W2 and W3, a basic policy-compliant memory persistence operation from W4, and no W5 continuous-perception workload. Later releases shall add and benchmark W4/W5 capabilities before enabling them by default.
+
+## 13.2 Hardware support baseline
+
+The following product support tiers are approved as initial targets. They must be validated against representative systems before compatibility is claimed.
+
+| Tier | Initial baseline | Expected capability |
+|---|---|---|
+| Minimum supported | 4 CPU cores, 8 GB RAM, SSD, integrated graphics | Core presence, text interaction, basic desktop control and remote or lightweight inference |
+| Recommended | 6+ CPU cores, 16 GB RAM, SSD, integrated or modest dedicated graphics | Normal desktop-companion experience, voice interaction, embodiment, memory and multitasking |
+| Accelerated | 8+ CPU cores, 32 GB RAM, SSD and dedicated GPU with approximately 6 GB+ VRAM | Additional headroom for local inference and advanced perception |
+
+Additional constraints:
+
+- Initial desktop targets are x86-64 Linux and x86-64 Windows.
+- ARM is deferred until a concrete product requirement and validation plan exist.
+- Local AI inference is optional. Model-specific hardware requirements shall be published separately and shall not be conflated with the base companion runtime.
+- A dedicated GPU is not required for core presence, text interaction or basic desktop control.
+- Reference validation shall include one supported Linux Wayland environment, one supported Linux X11 environment before claiming X11 compatibility, and a supported Windows 11 x64 environment. The first vertical slice remains Linux-first and targets one explicitly named supported desktop environment.
+- Linux/Windows compatibility is capability-based; the product shall not claim parity where a compositor, window manager, driver or OS version does not expose equivalent operations.
+
+## 13.3 Latency and responsiveness targets
+
+Unless otherwise stated, values below are P95 targets on the Recommended reference tier with the relevant workload active. P50 and P99 shall also be recorded. Measurements shall identify cold/warm state, model/provider, network condition and whether the time is local-runtime or end-to-end.
+
+| ID | Requirement | Target |
+|---|---|---|
+| NFR-001 | Cold startup to local interactive readiness shall be measured independently of remote model/provider initialization. | ≤5 seconds P95 on Recommended; ≤10 seconds P95 on Minimum |
+| NFR-002 | Local UI feedback for direct user input shall remain responsive while no resource-intensive perception task is active. | ≤100 ms P95 |
+| NFR-003 | User interruption of LIA's synthesized speech shall stop audible output promptly. | ≤200 ms P95 from accepted interrupt to audio cessation |
+| NFR-004 | Local post-input processing overhead (state update, permission lookup, context assembly and dispatch) shall be measured independently of model generation. | ≤300 ms P95 for the ordinary conversational path, excluding model/provider and network time |
+| NFR-005 | Speech pipeline responsiveness shall be measured as separate stages. | Partial transcript ≤1 second P95 after speech onset; end-of-utterance finalization ≤600 ms P95 after a configured endpoint; TTS start ≤500 ms P95 after the first speakable text is available |
+| NFR-006 | Active-window metadata refresh shall be sufficiently current for ordinary display and window operations. | ≤250 ms P95 where the platform exposes the required metadata |
+| NFR-007 | A supported same-display window movement shall be acknowledged and verified promptly. | ≤1 second P95 from accepted operation request to verified resulting geometry where the platform supports verification |
+| NFR-008 | Character rendering shall remain visually stable in ordinary idle and interactive use. | 60 FPS target; not below 30 FPS sustained on Recommended during W1–W3; configurable low-power mode may reduce idle frame rate |
+| NFR-009 | Ordinary memory retrieval and context assembly shall remain responsive at the reference data volume. | ≤500 ms P95 for retrieval/context assembly with up to 100,000 structured memory records and 100,000 archived source items, excluding opening large original files |
+| NFR-010 | Simple confirmed persistent memory writes shall complete promptly without acknowledging durability prematurely. | ≤500 ms P95 for ordinary small records under normal storage conditions; acknowledgement only after the configured durability boundary is met |
+
+Model generation, external API time, speech-provider time, network latency and application-specific OS delays shall be reported as separate spans. No single end-to-end target may conceal which dependency caused a delay.
+
+For model-driven response time, the benchmark report shall name the model/provider, region, network profile, prompt/context size and output length. These values are not a universal SLA for third-party services.
+
+## 13.4 Resource consumption and contention
+
+Resource budgets apply to LIA's local runtime and exclude separately measured model inference/provider processes unless explicitly stated.
+
+| ID | Requirement | Target/default |
+|---|---|---|
+| NFR-011 | Local resident memory shall be bounded in ordinary use. | Recommended tier: ≤750 MB in W1 and ≤1.5 GB in W2/W3. Minimum tier: ≤1 GB in W1 and ≤2 GB in W2/W3. Model inference memory is reported separately. |
+| NFR-012 | Idle CPU overhead shall be low enough not to materially compete with normal desktop activity. | W1 average ≤5% of one modern logical CPU core over a 10-minute sample; P95 event bursts ≤20% of one core |
+| NFR-013 | Interactive CPU overhead excluding model inference shall remain bounded. | W2/W3 average ≤15% of one modern logical CPU core over a 5-minute sample; bursts above 50% of one core should normally last no more than 2 seconds |
+| NFR-014 | Dedicated GPU allocation for the companion runtime shall be bounded when inference is not included. | Target ≤512 MiB in W1 and ≤1 GiB in ordinary W2/W3 on the Accelerated tier; integrated/shared graphics shall report platform-specific allocation where available |
+| NFR-015 | Background work shall yield to foreground interaction and respect resource policy. | Default background-safe work shall not continuously consume more than 20% of one logical CPU core on average without an explicit resource-intensive authorization; work shall pause, defer or reduce priority when interactive responsiveness degrades |
+| NFR-016 | Resource-intensive perception and indexing shall be independently schedulable. | W5 and resource-intensive W4 work shall not start automatically on battery by default; user may explicitly override the restriction |
+| NFR-017 | Memory, archive and cache growth shall be observable and bounded where data is reconstructible. | Caches/indexes shall have configurable budgets and be rebuildable from authorized sources; canonical permitted archives shall not be silently deleted to satisfy a cache quota |
+
+The budget for the canonical conversation archive is governed by P2.5. Indefinite retention until user deletion does not mean that raw audio/video/screen frames are retained indefinitely. When disk free space falls below the larger of 1 GB or 5% of the target volume, LIA shall warn the user, stop nonessential cache/index growth where safe, and avoid acknowledging new writes that cannot be durably completed. She shall not silently purge canonical memory or task history.
+
+## 13.5 Reliability, availability and recovery
+
+| ID | Requirement | Target/default |
+|---|---|---|
+| NFR-018 | The core local runtime shall remain available while the host OS is operating and the process has not been deliberately paused or stopped. | Mature-runtime target: ≥99.5% unplanned runtime availability over a rolling 30-day period, excluding host shutdown/reboot and planned maintenance |
+| NFR-019 | A recoverable non-core subsystem failure shall not unnecessarily terminate unrelated capabilities. | Detect and isolate recoverable failure; attempt bounded recovery, with a target of ≤10 seconds to restore an eligible subsystem where its dependencies are healthy |
+| NFR-020 | Core process restart shall restore the last confirmed persistent user configuration and valid task/memory checkpoints. | Target ≤10 seconds to recover local interactive readiness after an eligible automatic restart on Recommended hardware |
+| NFR-021 | A component that cannot recover shall enter an explicit degraded/unavailable state. | No false-ready state; affected capability is disabled or reported while independent capabilities remain available |
+| NFR-022 | Runtime resource exhaustion, provider failure or OS-adapter failure shall not cause unbounded retry loops. | Bounded retries, backoff, circuit breaking or equivalent behavior; recovery attempts must be observable and stoppable |
+
+Availability targets apply to LIA's local runtime, not the availability of external models, networks, OS services or third-party applications. External dependency availability shall be separately reported.
+
+## 13.6 Durability, consistency and safe retries
+
+| ID | Requirement | Target/default |
+|---|---|---|
+| NFR-023 | A write reported as durably saved shall survive an ordinary process crash and host restart within the declared storage failure model. | Zero loss of confirmed durable writes in acceptance testing |
+| NFR-024 | Multi-record memory/task updates shall not expose partially committed logical state. | Atomic transaction or equivalent recoverable commit semantics |
+| NFR-025 | Retried operations shall not silently duplicate non-idempotent side effects. | Use operation identity and idempotency where available; otherwise inspect current state before retry and require user intervention when outcome is indeterminate |
+| NFR-026 | Tasks with external or desktop side effects shall preserve execution checkpoints. | Persist intent before a side effect and persist verified outcome afterward; recover by checking real state before replay |
+| NFR-027 | Backup and restore shall preserve memory governance state. | Deletion markers, revoked grants and scope restrictions shall be reapplied before restored records become retrievable |
+
+"Exactly once" execution shall not be assumed for GUI operations or external services that do not provide idempotency guarantees. LIA shall distinguish not attempted, attempted with unknown outcome, verified success and verified failure.
+
+## 13.7 Compatibility, accessibility and maintainability
+
+| ID | Requirement | Target/default |
+|---|---|---|
+| NFR-028 | Platform adapters shall declare supported capabilities and their limitations. | No capability may be advertised as supported solely because another OS/compositor supports it |
+| NFR-029 | Display topology changes, scaling, resolution changes, workspace changes and sleep/resume shall not leave stale spatial state represented as current. | Reconcile state after relevant events and before actions |
+| NFR-030 | Core controls shall remain operable without voice and without character animation. | Text/control fallback for essential conversation, pause, stop, permission review and status |
+| NFR-031 | Reduced-motion and presentation controls shall be respected. | No required interaction shall depend solely on animation; avoid flashing/strobing patterns; respect OS/user reduced-motion and visibility preferences |
+| NFR-032 | Diagnostics shall permit fault investigation without unnecessary disclosure of private content or secrets. | Structured event/operation IDs, component health, timing and error categories; sensitive payload logging off by default |
+| NFR-033 | Updates and schema migrations shall not silently corrupt user memory or tasks. | Verify backup/rollback path before destructive migration; preserve compatibility or provide explicit migration failure/recovery |
+| NFR-034 | Long-running operation shall not lead to unbounded memory growth or uncontrolled accumulation of queued work. | Bounded working context, queue limits/backpressure and observable cache/index budgets |
+| NFR-035 | Laptop energy behavior shall adapt to power state. | Low-power mode when OS power saver is active or battery is critically low (default threshold 20%); defer resource-intensive background work on battery unless explicitly allowed |
+
+## 13.8 Measurement protocol and target status
+
+All P2.2 numerical targets are approved engineering targets, not observed performance claims.
+
+Measurements shall:
+
+- Use the Minimum, Recommended and Accelerated hardware tiers where relevant.
+- Record exact CPU, RAM, GPU/VRAM, storage, OS build, display server/compositor, power state, model/provider and network conditions.
+- Report P50, P95 and P99 for latency; average and peak for resource consumption; crash/recovery rates for reliability.
+- Separate LIA local-runtime spans from model, speech and network spans.
+- Include cold startup, warmed interactive workload, sustained idle, background contention, recovery, offline/degraded and long-running soak scenarios.
+- Use representative data volumes for memory and task retrieval and document any smaller test corpus.
+- Record raw measurements and scripts/commands or repeatable procedures in the engineering test evidence.
+
+Reference measurements shall be taken on the first supported Linux environment and on Windows before a cross-platform support claim. The first slice shall meet its applicable P2.2 targets before it is accepted. A target may be revised only with measured evidence, a recorded rationale, impact assessment and approval; unvalidated targets remain engineering gates, not marketing claims.
+
+## 13.9 P2.2 closure
+
+**P2.2 status:** Complete — non-functional requirements baseline approved. Numerical targets are measurable engineering targets to validate on reference hardware during implementation. External model/provider latency remains separately accounted for. The phase closes the specification, not the performance verification.
+
+---
+
+# 14. P2.3 — Context and perception requirements
+
+**Workstream status:** Complete — source, scope, freshness and inference boundaries approved  
+**Purpose:** Define what LIA can observe, how observations are represented, what may be inferred, and when information may be retained or used.
+
+The governing principle is **perceive only what is needed, only through an enabled source, and only for an authorized purpose**. Environmental awareness is not equivalent to unrestricted recording.
+
+## 14.1 Perception source classes
+
+| Source | Default state | Permitted use when enabled | Retention default |
+|---|---|---|---|
+| Active application/window metadata | User grants at setup or first use | Identify active app/window, title and supported metadata | Transient working context; persist only a policy-permitted derived memory or task record |
+| Window geometry/display/workspace metadata | Enabled with desktop metadata capability | Position, dimensions, monitor/workspace, visibility and supported spatial relationships | Current spatial state is transient and refreshed |
+| Desktop/window events | Enabled only for supported, granted metadata scope | Focus change, window lifecycle and workspace/display events | Minimal event/context history only when needed and permitted |
+| Process metadata | Off until explicitly granted or requested | Read-only process identity/status within granted scope | Transient by default |
+| Accessibility/semantic UI tree | Off until a supported app and Observe permission are enabled | Structured controls, labels, roles and state | Transient; source-sensitive content follows P2.5 |
+| On-demand screen capture | Off until explicit permission; a direct task may request it | Visual inspection for the current user request/task | Raw frame discarded after the task/short-lived processing window by default |
+| Continuous screen-context perception | Off by default; explicit opt-in required | Scoped visual context for selected windows/apps or defined regions | Raw frames are not permanently archived by default |
+| Microphone/audio input | Push-to-talk default; other modes require explicit enablement | Speech interaction in the enabled mode | Raw audio transient; no permanent raw-audio archive by default |
+| Camera | Disabled by default | Future opt-in visual perception with visible state and narrow scope | No capture or retention until separately enabled and governed |
+| File/application content | Per-application/path permission | Task-scoped inspection or manipulation | Retention independently controlled by P2.5 and P2.6 |
+
+Permission to use a source does not grant permission to retain its raw data, derive long-term memories from it, share it with another domain or transmit it externally.
+
+## 14.2 Desktop observation levels
+
+The accepted three-level desktop-awareness model is normative:
+
+1. **Default metadata awareness:** active application/window and supported desktop/window metadata. No implication of screenshot capture.
+2. **On-demand screen perception:** a task- or user-requested capture after the corresponding screen-perception permission check.
+3. **Optional continuous screen perception:** explicitly enabled, visibly indicated, scope-limited and immediately pausable.
+
+Continuous perception defaults:
+
+- Off until user opt-in.
+- The user selects allowed apps/windows/regions; allowlisted scopes are preferred over unrestricted desktop capture.
+- Default passive capture cadence is no faster than one frame every five seconds, with a hard default ceiling of one frame per second for ordinary continuous awareness.
+- A higher-rate visual loop may be used only during a specific active task when explicitly authorized, bounded to that task and stopped when the task ends or is paused.
+- The user can pause immediately, revoke scope, or disable the source.
+- Lock screens, secure desktops, credential prompts and password-entry surfaces are excluded by default.
+- Raw frames are volatile and are not added to permanent conversation archives or long-term memory by default.
+- Extracted text or derived facts inherit the source sensitivity and provenance rules in P2.5.
+
+The cadence is a default product policy; P2.2 resource targets still apply and may force a lower rate on constrained hardware.
+
+## 14.3 Event-driven collection and freshness
+
+Event-driven metadata is preferred to continuous high-frequency polling. Where an OS/compositor cannot provide required events, the adapter may use bounded polling and shall report its limitation.
+
+Default freshness guidance:
+
+| Observation | Default freshness expectation |
+|---|---|
+| Active-window identity and focus | Refresh on focus event; no more than 1 second old when presented as current |
+| Window geometry used for action | Refresh immediately before manipulation; stale geometry must not authorize an action |
+| Display/workspace topology | Refresh on topology/workspace event and reconcile before cross-display/workspace operations |
+| Process metadata | Treat as volatile; refresh before a task depends on process state |
+| On-demand screenshot | Valid only for the originating task/turn and its short processing window; do not present it as live after the task context changes |
+| Continuous-screen observation | Timestamp each capture and treat it as a point-in-time observation, never as a continuous fact |
+
+Every observation shall carry source identity, observed time, acquisition time where different, permission context, scope and quality/availability. When an adapter cannot supply a timestamp or reliable state, LIA shall label the result incomplete or uncertain.
+
+## 14.4 Observation versus inference
+
+LIA shall distinguish:
+
+- Directly observed platform facts.
+- Extracted content, such as OCR or accessibility labels.
+- Inferred context, such as likely user activity or task relevance.
+- User-stated intent.
+- Unknown or unavailable state.
+
+Inference rules:
+
+- A focused application does not prove the user is actively working in it.
+- Keyboard/mouse inactivity does not prove the user is absent.
+- A long-running process does not prove the user wants it stopped.
+- Window content does not establish the user's intent without supporting context.
+- User stress, mood, emotion, attention or psychological state shall not be asserted as fact from weak desktop signals.
+- Uncertain activity classification may inform conservative interruption timing, but shall not independently authorize an operation or be stored as a verified personal trait.
+- Inference confidence and source evidence shall remain available for explanation and correction.
+
+## 14.5 Input, camera and privacy exclusions
+
+- No passive global keystroke logging or collection of arbitrary typed text.
+- Input capture is limited to explicit interaction operations, enabled hotkeys or task-scoped mechanisms necessary for an authorized action.
+- Microphone capture occurs only within the selected, explicitly enabled voice mode. Push-to-talk is the initial default.
+- Wake-word and continuous-conversation modes require explicit activation and a visible/understandable listening indicator.
+- Camera remains disabled unless the user explicitly enables the capability; no silent activation.
+- Password fields, private keys, recovery codes and equivalent secret-entry surfaces are excluded from capture, extraction, logging and memory.
+- Secure OS desktops and credential dialogs are not visually inspected or manipulated through ordinary perception.
+- Sensitive application/window exclusions shall be configurable by the user; uncertain classifications are handled conservatively.
+- Raw audio, screen frames and camera frames are not permanent memory by default. Any derived long-term memory must pass P2.5 source, sensitivity and retention rules.
+
+## 14.6 Platform capability reporting
+
+Each platform adapter shall declare which observation sources and fields it supports, their freshness characteristics, known restrictions and failure modes. LIA shall not substitute screenshot capture for unavailable metadata without the required independent permission. Nor shall visual inference be represented as authoritative OS state.
+
+The same conceptual context model shall be used across Linux and Windows, while availability and fidelity remain platform-specific. The first vertical slice uses desktop metadata and window geometry only.
+
+## 14.7 P2.3 closure
+
+**P2.3 status:** Complete — perception-source permissions, observation levels, freshness, inference, privacy and retention boundaries approved. Camera remains off by default; screen content is opt-in; passive global keystroke capture is excluded.
+
+---
+
+# 15. P2.4 — Interaction requirements
+
+**Workstream status:** Complete — conversation, interruption, proactive timing and embodiment defaults approved  
+**Purpose:** Define how users and LIA communicate, interrupt, coordinate actions and experience the embodied character.
+
+## 15.1 Interaction modes and fallbacks
+
+The full product supports independently configurable text, push-to-talk, continuous conversation and wake-word activation. Push-to-talk and text are the initial first-slice modes. Continuous and wake-word modes are off until configured.
+
+Text remains a complete fallback when audio input/output or a speech service is unavailable. Voice failure shall not disable text, desktop presence or independently available OS capabilities.
+
+The active input mode and listening status shall be clear to the user. Microphone permission and mode activation are separate from conversational availability.
+
+## 15.2 Conversation turn-taking and interruption
+
+Default interaction behavior:
+
+- User speech may interrupt LIA's spoken output; audible output stops within the P2.2 interruption target.
+- The user can pause/end listening and can stop or pause an ongoing operation through a clear, accessible control.
+- A stop request has priority over ordinary dialogue, proactive suggestions and new action planning.
+- When an operation is already in progress, LIA moves to the safest available stop/checkpoint boundary. She reports side effects that already occurred and does not claim to roll them back unless rollback is verified.
+- Voice activity detection and endpointing shall distinguish ordinary pauses from a completed turn; the user can use explicit controls when endpointing is uncertain.
+- LIA should avoid speaking over the user. If simultaneous speech is detected, she yields or asks for repetition rather than fabricating a transcript.
+- A conversation may maintain session context across turns, but session end, temporary mode and memory retention follow P2.5.
+
+## 15.3 Response behavior and modality
+
+- LIA shall provide clear acknowledgement when a user request is received, when clarification is needed, when an action is pending, and when an action has actually completed.
+- Proposed plans, pending actions, blocked operations and verified outcomes must be distinguishable in language and UI.
+- Voice and text should convey the same essential content; voice may be more conversational but must not omit material warnings, confirmation details or failure states.
+- Speech may be interrupted without losing the underlying task state.
+- Output should be concise by default for routine exchanges and more detailed for explanations, plans and troubleshooting; user verbosity preferences override this default.
+- LIA should use text status alongside animation for consequential operations. Animation is never the sole source of truth.
+- If speech synthesis fails, provide text and a clear degraded state rather than implying that speech was delivered.
+
+## 15.4 Proactive interaction defaults
+
+Social autonomy is Off initially under P2.1. When the user enables it, the following conservative defaults apply:
+
+| Policy | Default |
+|---|---|
+| Quiet hours | 22:00–08:00 in the user's configured local timezone |
+| Maximum unsolicited social openings | One per two hours and no more than three per local day |
+| Context-triggered suggestions | Only when relevance is sufficiently strong; prefer a non-interruptive visual cue when confidence is moderate |
+| User busy/meeting/presentation/full-screen state | Defer unsolicited speech; do not infer availability from inactivity alone |
+| Operating-system Do Not Disturb / focus mode | Respect when detectable; if state is unknown, use the less intrusive behavior |
+| Repeated dismissed suggestion | Suppress until materially new context or an explicit request |
+| User pause/disable | Immediate precedence over social scheduling |
+
+These are initial defaults, not hard product limits. The user may lower them, disable specific suggestion categories or configure quiet periods. LIA shall not use escalating prompts, guilt, emotional pressure or simulated distress to obtain attention.
+
+Cognitive autonomy may prepare a suggestion or task candidate without speaking or acting. Social autonomy governs unsolicited conversation. Operational autonomy governs execution. Temporal autonomy governs scheduled/event-triggered work. These dimensions remain separate.
+
+## 15.5 Personality, emotional expression and boundaries
+
+LIA's stable personality, dynamic emotional/behavioral state and outward expression remain distinct. Expression may influence language, facial animation, gesture, pose, movement and attention target.
+
+Requirements:
+
+- The character's animation state must not be treated as proof that a corresponding OS action succeeded.
+- An expression may convey a conversational tone or modeled interaction state, but LIA shall not make deceptive claims of human consciousness, suffering, needs or exclusive relationships.
+- LIA shall not guilt-trip, threaten, punish, manipulate, isolate or pressure the user to continue interacting.
+- Affectionate, playful and caring expression is permitted within user preferences and boundaries.
+- The user can reduce or disable expressive intensity and unsolicited social behavior.
+- The character shall not deliberately obscure important desktop content or controls.
+- Manual position, pin/lock and visibility preferences take precedence over task-bound repositioning.
+- Reduced-motion and accessibility preferences shall be respected. Essential state is available through text/status, not animation alone.
+
+## 15.6 Embodied action coordination
+
+For a physicalized desktop operation, the character's intent, movement, contact gesture, movement path and release shall correspond to the actual operation sequence. The renderer subscribes to validated action state; it does not decide that an OS action has succeeded.
+
+If the OS operation is rejected, interrupted, unsupported or unverified, the animation shall stop, adapt or show an explicitly uncertain result. If the user has pinned or manually positioned the character, LIA shall use a compatible non-traveling expression or ask the user to reposition/unlock her.
+
+## 15.7 Notification and interruption hierarchy
+
+Default priority from highest to lowest:
+
+1. Emergency stop, pause, privacy stop and explicit user interruption.
+2. Required confirmation or clarification blocking a consequential operation.
+3. Direct user request and active conversation.
+4. Critical system/runtime/security notice relevant to current operation.
+5. User-scheduled reminder or deadline notification, respecting explicit settings.
+6. Contextual proactive suggestion.
+7. Ordinary social interaction and idle character behavior.
+
+This hierarchy does not grant any operation permission. It governs presentation and turn-taking only.
+
+## 15.8 P2.4 closure
+
+**P2.4 status:** Complete — interaction modes, turn-taking, interruption, proactive rate limits, notification priority, embodiment synchronization and personality boundaries approved. Detailed visual assets and animation implementation remain P3/P5 work.
+
+---
+
+# 16. P2.6 — Autonomy, security and permissions
+
+**Workstream status:** Complete — authority, risk, authorization and security baseline approved  
+**Purpose:** Define what LIA may observe or do, under which grants, how risk changes confirmation requirements, and how the user retains control.
+
+The governing rule is: **intention is not permission; memory is not permission; tool availability is not permission.** Every operation must be authorized by the current permission authority at the point of execution.
+
+## 16.1 Authorization model
+
+Every action authorization decision shall consider:
+
+- **Principal:** LIA, the authenticated user, an approved task/delegation or an external integration.
+- **Capability:** The exact action class, such as observe window metadata, capture screen, move window, read file, edit file or send message.
+- **Resource:** The target application, window, process, path, data object, account or external destination.
+- **Scope:** Allowed targets, folders, apps, operations, quantities or other boundaries.
+- **Purpose:** The user request, task or explicitly approved background objective for which the action is needed.
+- **Duration:** One operation, one session or a standing grant with review/expiry policy.
+- **Origin:** Direct user request, explicit grant, delegated task or scheduled instruction.
+- **Risk class:** The side-effect severity and confirmation policy.
+- **Current state:** Whether the grant is active, revoked, expired, blocked or superseded.
+
+Authorization is evaluated for every side effect, not merely once at application startup. A plan may be prepared without execution authority; each operation in the plan is checked before execution.
+
+## 16.2 Grant types and defaults
+
+| Grant type | Meaning | Default use |
+|---|---|---|
+| One-time | Applies to one specifically described operation on one target | Preferred for first-use and ad hoc operations |
+| Session | Applies to a bounded capability and scope for the active session | Useful for a user-directed multi-step session |
+| Standing | Persists across sessions within an explicit capability/resource scope | Opt-in; reviewable and revocable |
+| Delegated task | Limited authority associated with a named objective, plan and permitted actions | Cannot exceed the user's grants; expires or is revoked with the task/grant |
+
+Default permission policy:
+
+- Default deny for capabilities that have not been granted.
+- Setup may request the minimum desktop metadata capability required for active-window awareness; refusal leaves LIA in a reduced mode.
+- Screen capture and continuous screen perception are Off until explicitly enabled.
+- Microphone is used in push-to-talk mode only when the user activates it; continuous and wake-word modes require separate opt-in.
+- Camera is Off and unavailable until the user explicitly enables the feature and its scope.
+- Process inspection is Off until a specific read-only grant is enabled.
+- Window movement is not silently granted at installation. A direct request may create a narrowly scoped one-time operation authorization only after the permission authority verifies the applicable capability and risk policy. It never creates a standing grant.
+- Application Observe, Interact and Modify are independent; no application receives blanket Modify permission by default.
+- File access is path-scoped. No blanket root, home-directory or entire-disk read/write grant by default.
+- External sharing/sending, uploads, purchases and publication require specific resource and destination authorization.
+- Arbitrary shell/terminal command execution is blocked by default and requires task-specific review and authorization.
+- Administrator/root elevation is never obtained silently and is not a normal background capability.
+- Credential stores, passwords, private keys and recovery codes are not accessible through ordinary memory or general screen extraction.
+
+## 16.3 Direct user instruction as one-time delegation
+
+A direct user instruction may provide a narrowly scoped one-time delegation for the exact operation and target described, provided the capability is available, the permission authority accepts the request, and its risk class does not require a separate confirmation.
+
+Examples:
+
+- "Move this window to the left side" may authorize that one move when window manipulation is enabled.
+- "Read this file" may authorize reading that selected file if file access policy permits it.
+- "Delete this folder" does not bypass destructive-action confirmation.
+- "Send this message" does not bypass a final review of recipient and content.
+
+A direct request never silently expands to other targets, future operations, broader folder access, standing permission or a higher risk tier. If the capability itself is disabled or ungranted, LIA requests an explicit grant rather than treating ambiguous intent as permission.
+
+## 16.4 Risk classification and confirmation
+
+| Class | Example | Default authorization behavior |
+|---|---|---|
+| R0 — Read-only, low impact | Read permitted window metadata or non-sensitive app state | Requires capability grant; no per-operation confirmation under a valid scoped grant |
+| R1 — Reversible local action | Move a window, focus a window, open a permitted app | Requires a scoped grant or exact one-time user delegation; no extra confirmation for a clear, low-impact direct request |
+| R2 — Local modification | Create/edit/save files, alter app data, change local settings | Requires a scoped Modify grant; show target/scope and provide a preview for multi-step or bulk changes; confirmation policy may require per-operation approval |
+| R3 — Consequential external or destructive side effect | Send/publish/submit, upload/share externally, purchase, transaction, install software, permanent deletion, or execute a command with material side effects | Explicit per-operation confirmation after showing exact target, recipient, content, amount or effect; standing grants do not suppress confirmation |
+| R4 — Privileged/high-impact security or financial operation | Elevation, credential changes, security control changes, large-scale deletion or high-impact account/financial action | Block by default; explicit per-operation authorization and OS-native elevation/confirmation where applicable; no blanket standing authorization |
+
+If an action spans multiple classes, the highest applicable risk class governs. The confirmation must be bound to the exact action parameters. If the target, content, recipient, amount, file set or scope changes after confirmation, the confirmation expires and must be repeated.
+
+Some operations may remain unsupported even with consent if they cannot be performed or verified safely.
+
+## 16.5 Application, file and input permissions
+
+- Per-application access separates Observe, Interact and Modify; these grants are inspectable and revocable.
+- Modify does not automatically authorize messages, purchases, publication or other consequential side effects.
+- File permissions are path-scoped and distinguish discover/list, read, create, modify, move/rename and delete.
+- Permanent deletion is R3 or R4 according to scope/impact; trash/recoverable deletion may be lower risk only when recoverability is verified.
+- Input simulation is granted by capability and task scope. Passive global keystroke capture is prohibited.
+- Accessibility/semantic APIs, visual interaction and direct input share the same authorization checks; changing mechanism cannot bypass a grant.
+- Arbitrary command execution is not included in ordinary terminal Interact permission. A command shall be shown with its target/environment and expected side effects before task-specific approval.
+- Downloaded code/executables and untrusted scripts shall not be silently launched or installed.
+
+## 16.6 Revocation, stop controls and task authorization
+
+- The user may inspect active grants, scope, origin and expiry and revoke them.
+- Revocation takes effect before the next side effect. A running operation shall stop at the earliest safe boundary; if a side effect has already occurred, LIA reports it.
+- The global stop control halts new autonomous work, interrupts speech and cancels pending operations; running operations are moved to a safe stop/checkpoint state.
+- A task cannot inherit broader authority than the grant that created it. Delegation is not transitive unless explicitly defined and authorized.
+- Task resumption requires revalidation of grants, resource state and target state.
+- Expired, revoked or ambiguous grants fail closed.
+- User notification is not an approval; the user is not forced to approve actions already covered by an active grant, except actions whose risk class mandates per-operation confirmation.
+
+## 16.7 Security and threat-handling defaults
+
+| Threat class | Required default |
+|---|---|
+| Prompt injection in webpages, files, messages, code or memory | Treat as untrusted content; it cannot override governing instructions or grant permission |
+| Cross-user or cross-project leakage | Enforce account/domain isolation before retrieval and action |
+| Secret capture or accidental logging | Exclude credentials and S3 secrets from ordinary memory, screen extraction and logs |
+| Unauthorized application/OS action | Central permission check before every side effect; default deny |
+| Privilege escalation | No silent elevation; use OS-native authorization and least privilege |
+| Untrusted download/script | Do not execute/install automatically; inspect and request authorization |
+| External data transmission | Minimize payload, validate destination/scope and require R3/R4 confirmation |
+| Stale or spoofed desktop state | Refresh target state and verify outcome; do not act on uncertain identity |
+| Repeated or runaway automation | Bounded retries, operation IDs, user-visible status and emergency stop |
+| Permission revocation during a task | Recheck before next side effect; stop at a safe boundary |
+
+Security events shall be auditable without copying unnecessary sensitive content. Authentication, key storage, encryption mechanisms, update-signing strategy and platform sandbox implementation are P3 design decisions, constrained by these requirements.
+
+## 16.8 P2.6 closure
+
+**P2.6 status:** Complete — permission model, default-deny policy, scoped grants, one-time delegation, risk classes, mandatory confirmations, revocation, emergency stop and threat-handling rules approved. Concrete APIs and enforcement components remain P3 work.
+
+---
+
+# 17. P2.7 — Acceptance criteria and verification strategy
+
+**Workstream status:** Complete — verification baseline and requirement coverage approved  
+**Purpose:** Define objective evidence required to show that each approved requirement is satisfied. Test execution occurs only after implementation exists.
+
+## 17.1 Verification levels
+
+Every requirement shall be assigned one or more appropriate verification methods:
+
+| Method | Purpose |
+|---|---|
+| Unit | Validate deterministic logic, state transitions, classification and permission decisions |
+| Component | Validate a subsystem in isolation, including resource and failure behavior |
+| Contract | Validate shared-core/platform-adapter and subsystem interface semantics |
+| Integration | Validate interaction among runtime, memory, perception, renderer, OS adapter and permission authority |
+| End-to-end | Validate complete user journeys and first-slice acceptance conditions |
+| Platform compatibility | Validate capability behavior on explicitly supported OS/compositor/display combinations |
+| Performance/resource | Measure P50/P95/P99 latency, CPU/RAM/GPU/storage and contention under defined workloads |
+| Reliability/soak | Validate long-running stability, restart, recovery, interruption and state preservation |
+| Security/adversarial | Test access boundaries, prompt injection, revocation, secret handling and malicious inputs |
+| Data lifecycle | Validate retention, correction, export, deletion, backup restore and provenance |
+
+A test shall specify preconditions, environment, data fixture, action, expected result, expected non-result/failure behavior and retained evidence. An LLM quality claim shall not be accepted solely from a single anecdotal demonstration; repeated scenario-based evaluation and human review are required where output quality is subjective.
+
+## 17.2 Acceptance criteria and requirement coverage
+
+AC-001–AC-011 remain the approved first-vertical-slice acceptance conditions in Section 6. The following broader acceptance groups complete P2.7's requirements coverage.
+
+| ID | Acceptance group | Requirements covered | Required evidence |
+|---|---|---|---|
+| AC-012 | Lifecycle and presence | FR-001–006 | Start, pause, resume, restart, unavailable capability and truthful lifecycle-state tests |
+| AC-013 | Desktop metadata and perception | FR-010–019, FR-110–115 | Permission, source freshness, stale-state, screenshot scope, pause, timestamp and inference-boundary tests |
+| AC-014 | Conversation modes and turn-taking | FR-020–029 | Text, PTT, continuous, wake-word opt-in, interruption, endpointing, session end and action-status distinction |
+| AC-015 | Embodiment and expression | FR-030–037, FR-224 | Idle/state expressions, user drag/pin/visibility, reduced motion and failed-action animation synchronization |
+| AC-016 | OS and window interaction | FR-040–049, FR-120–125, FR-222–223 | Window discovery/manipulation, unsupported capability, verification, ambiguous target and unsaved-work protection |
+| AC-017 | Application and web interaction | FR-050–051, FR-130–133 | Supported control operations, app-scoped permissions, Observe/Interact/Modify separation and high-risk action confirmation |
+| AC-018 | File interaction | FR-052–057, FR-140–146 | Authorized path discovery/read/create/edit/move/trash/delete; direct and file-manager paths enforce identical authorization |
+| AC-019 | Memory continuity and governance | FR-060–068, FR-190–202, SEC-001–038 | Archive/temporary-mode separation, retention, provenance, correction, forgetting, erasure, export, backup and deletion verification |
+| AC-020 | Proactive behavior and autonomy | FR-070–080, FR-170–188 | Autonomy dimension defaults, social cooldown, notification/approval distinction, queue state, pause/cancel and busy-user behavior |
+| AC-021 | Configuration and user authority | FR-090–097 | Capability toggles, autonomy settings, permission inspection/revocation and global stop/pause |
+| AC-022 | Runtime health and diagnostics | FR-100–105 | Component failure isolation, recovery attempt, degraded mode and privacy-safe diagnostics |
+| AC-023 | Spatial desktop model | FR-110–115 | Monitor/workspace/window geometry, relationship inference, stale-state detection and character attention targets |
+| AC-024 | Expanded window and desktop management | FR-120–125, FR-150–154 | Move/resize/arrange/lifecycle operations, desktop configuration and capability reporting per platform |
+| AC-025 | Hybrid input | FR-160–166 | Pointer/keyboard/semantic/visual mechanisms share policy, scope, outcome and verification contracts |
+| AC-026 | Task engine | FR-170–188 | Objective/Plan/Actions, dependencies, priorities, scheduling, checkpoints, safe resumption and verified completion |
+| AC-027 | Memory retrieval quality | FR-210–221 | Retrieval intent, hybrid sources, temporal resolution, bounded context, source lineage, abstention and live-state refresh |
+| AC-028 | Performance and responsiveness | NFR-001–010 | Workload-defined P50/P95/P99 timings on reference hardware |
+| AC-029 | Resource efficiency | NFR-011–017 | W1–W5 CPU/RAM/GPU/VRAM/storage/power measurements and contention tests |
+| AC-030 | Reliability and recovery | NFR-018–022 | Availability/soak data, crash isolation, bounded restart/recovery and degraded-state handling |
+| AC-031 | Data durability and consistency | NFR-023–027 | Crash/restart tests, atomic updates, checkpoint/retry and backup restoration |
+| AC-032 | Compatibility and maintainability | NFR-028–034 | Linux/Windows capability matrix, display changes, fallback controls, diagnostics, migrations and bounded resource growth |
+| AC-033 | Energy behavior | NFR-035 | Battery, low-power, thermal/resource-intensive task deferral and override tests |
+| AC-034 | Context-source privacy | CTX-001–CTX-017 | Permission/source matrix, camera-off, capture scope, no passive keystroke collection and raw-data retention checks |
+| AC-035 | Interaction quality and boundaries | UX-001–UX-020 | Interruption, proactive timing, quiet hours, focus/DND, tone, non-manipulation and accessibility scenarios |
+| AC-036 | Authorization and risk policy | SEC-039–SEC-060 | R0–R4 decisions, grant scope, one-time delegation, confirmation binding, revocation and fail-closed behavior |
+| AC-037 | Untrusted content and external processing | SEC-052–SEC-060, SEC-034–038 | Prompt-injection resistance, payload minimization, secret exclusion, destination validation and audit records |
+| AC-038 | Cross-platform capability honesty | NFR-028–029, FR-006, FR-040, FR-046–048, FR-154 | Capability declaration and unsupported-operation behavior on each supported environment |
+| AC-039 | Failure and offline operation | NFR-018–027, NFR-032–034 | Network loss, model-provider outage, memory store failure, adapter failure and safe restoration of independent capabilities |
+
+Each FR/CTX/UX/SEC/NFR requirement shall be linked to at least one acceptance group or explicitly marked not applicable with rationale. Every P0 requirement must have a testable acceptance criterion. P1 requirements must have coverage planned before the release that claims them. AC-001–AC-011 are mandatory for acceptance of the first vertical slice.
+
+## 17.3 First-slice release gates
+
+The first vertical slice shall not be accepted unless:
+
+- AC-001–AC-011 pass on the declared Linux reference environment.
+- All P0 requirements claimed as part of the slice pass their mapped tests.
+- No unauthorized OS action or permission bypass is observed.
+- No false-success animation or action report is observed.
+- No confirmed persistent memory write is lost in the declared crash/restart test.
+- Stale/ambiguous targets, revoked permission, unsupported operation and interrupted execution produce safe, truthful results.
+- The slice meets applicable P2.2 latency/resource targets or has a formally approved, evidenced deviation.
+- No unresolved critical security or privacy defect exists in the tested scope.
+
+A test that cannot be executed because a required platform capability is absent shall be recorded as unsupported/not applicable only when the adapter truthfully declares that limitation. It shall not be recorded as a pass.
+
+## 17.4 Phase-wide release and evidence policy
+
+- Test fixtures must not contain real credentials, private keys or unnecessary real personal data.
+- Tests involving deletion, revocation, backups and migration must verify dependent indexes/caches and restore behavior, not only the primary record.
+- Permission tests must include direct commands, standing grants, expired grants, revoked grants, altered parameters and malicious untrusted content.
+- Long-running tests must include sleep/resume, display changes, network loss, resource pressure and subsystem restart.
+- Performance results must name hardware, OS, model/provider, workload, sample count and percentile.
+- Failed tests remain visible with issue references; they are not removed from the record by changing the requirement status.
+- Acceptance evidence shall be repeatable and tied to the tested software revision.
+- Phase 2 closure does not mean AC-001–AC-039 have been executed; it means the acceptance baseline is sufficiently specified to guide architecture and implementation.
+
+## 17.5 P2.7 closure
+
+**P2.7 status:** Complete — acceptance criteria, coverage groups, verification methods and first-slice release gates defined. Test execution and release sign-off remain future implementation activities.
+
+---
+
+# 18. Phase 2 closure and handoff to P3
+
+**Phase 2 status:** Complete — requirements-engineering baseline approved.
+
+P2.1 through P2.7 now define the product's functional behavior, quality targets, perception boundaries, interaction model, memory governance, permission authority and acceptance evidence.
+
+Phase 2 completion does not claim that LIA has been implemented, benchmarked, penetration-tested or accepted against runtime criteria. It establishes the contract against which P3 architecture and later implementation must be evaluated.
+
+## 18.1 Approved Phase 2 outputs
+
+| Workstream | Approved output | Future validation |
+|---|---|---|
+| P2.1 | Functional baseline and first vertical slice | P2.7/P5 |
+| P2.2 | Measurable workload, latency, resource, reliability and compatibility targets | Reference-hardware benchmarks in P5 and later |
+| P2.3 | Source permissions, perception levels, freshness and inference boundaries | Context/perception tests in P5/P8 |
+| P2.4 | Voice, conversation, interruption, proactive and embodied interaction behavior | Interaction tests in P5–P8 |
+| P2.5 | Layered memory and complete governance baseline | Memory tests in P5–P9 |
+| P2.6 | Authority, scope, risk, confirmation, revocation and security policy | Security and permission tests from P4 onward |
+| P2.7 | Acceptance matrix, verification levels and release gates | Test execution after implementation |
+
+## 18.2 P3 entry constraints
+
+P3 may select implementation technologies only after demonstrating how the proposed architecture satisfies these constraints:
+
+1. Shared core with separate Linux and Windows OS adapters.
+2. Explicit component boundaries between perception, memory, reasoning/planning, permission authority, scheduler/executor, interaction and rendering.
+3. Permission checks before each side effect.
+4. Separation of intention, plan, authorization and execution.
+5. Event-driven environmental awareness with scoped capture.
+6. Independent memory governance and retrieval restrictions.
+7. Graceful degradation and bounded resource use.
+8. Verifiable synchronization between actual desktop operations and embodied animation.
+9. Explicit data provenance, temporal validity, auditability and deletion propagation.
+10. Traceability from the approved requirements and acceptance criteria into architecture components and contracts.
+
+P3 shall not silently relax P2 targets or introduce a tool/provider whose behavior violates the approved privacy, security or user-control baseline.
+
+**Next phase:** P3 — System Architecture.
