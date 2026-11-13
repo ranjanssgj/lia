@@ -1047,7 +1047,7 @@ Those topics belong to P2.2--P2.6 and P3.
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| FR-097 | Unless changed by the user, initial configuration shall set social autonomy to Off, cognitive autonomy to On, operational autonomy to Restricted (direct user requests and currently valid grants only), and temporal autonomy to Off. Each dimension shall remain independently configurable; these defaults shall not replace the authoritative permission check. | P0 | Approved |
+| FR-097 | Unless changed by the user, initial configuration shall set social autonomy to Off, cognitive autonomy to On, operational autonomy to Restricted (direct user requests may execute only when the current permission authority grants the required capability), and temporal autonomy to Off. Each dimension shall remain independently configurable; these defaults shall not replace the authoritative permission check. | P0 | Approved |
 
 
 ## 4.11 Runtime self-management
@@ -1328,7 +1328,7 @@ P2.1 decisions.
 | P2.1-D11 | Platform implementation sequence | Build the first vertical slice on Linux. Linux and Windows remain first-class product platforms and must be represented in the shared-core/adapter design; macOS is a future extension. | Closed |
 | P2.1-D12 | First-slice perception | Use supported desktop metadata and window geometry only. Screen-content capture, text extraction and continuous screen perception are excluded from the first slice. | Closed |
 | P2.1-D13 | First-slice proactive autonomy | No unsolicited social conversations, independent scheduled/event-triggered work or autonomous desktop tasks in the first slice. Direct user-requested interaction is supported. | Closed |
-| P2.1-D14 | Initial autonomy defaults | Social Off; cognitive On; operational Restricted to direct user requests and currently valid grants; temporal Off. Each dimension is independently configurable. | Closed |
+| P2.1-D14 | Initial autonomy defaults | Social Off; cognitive On; operational Restricted (direct user requests may execute only when the current permission authority grants the required capability); temporal Off. Each dimension is independently configurable. | Closed |
 | P2.1-D15 | Ambiguous window targets | LIA refreshes target state and requests clarification rather than guessing when target identity or destination is ambiguous or stale. | Closed |
 | P2.1-D16 | Unsaved user work | LIA never force-closes a window or silently discards unsaved work; uncertain close safety stops the operation for a user decision. | Closed |
 
@@ -1368,8 +1368,8 @@ computer operation end to end.
 | Desktop awareness | Identify the active application/window and retrieve available window identity, title, position, dimensions and display association. Refresh relevant metadata immediately before a window action. | FR-010–011, FR-016, FR-018, FR-110–111, FR-113, FR-115, FR-120, FR-221–222 |
 | Window operation | Move one active or explicitly selected supported window to a user-specified position or supported region on the same display. Preserve its dimensions and current workspace. No resizing or cross-display/workspace movement. | FR-040–043, FR-046–048, FR-120–121, FR-124–125, FR-222 |
 | Authorization and outcome | Check the currently applicable permission before the operation. A direct instruction authorizes only the requested operation within its scope, not a standing grant. Report actual outcome and verify resulting geometry where supported. | FR-029, FR-046–048, FR-093–095, FR-132, FR-165, FR-222 |
-| Embodied operation | When permitted and not pinned/locked, LIA may position herself for the requested window interaction. The character's approach, grab/push, movement and release correspond to the real operation. A failed or unsupported operation must not be depicted as successful. | FR-032, FR-035, FR-124–125, FR-166, FR-224 |
-| Memory continuity | Under the approved P2.5 policy and enabled user controls, retain one ordinary low-sensitivity detail from a permitted interaction, persist it across restart, retrieve it with provenance, and expose it to inspection and deletion. | FR-060–068, FR-190–202, FR-210–220 |
+| Embodied operation | When task-bound repositioning is enabled and the user has not manually placed or pinned/locked the character, LIA may position herself for the requested window interaction. If the user has manually placed or pinned/locked the character, that position takes precedence; LIA must use an animation compatible with the position or request that the user reposition/unlock her. The character's approach, grab/push, movement and release correspond to the real operation. A failed or unsupported operation must not be depicted as successful. | FR-032, FR-035, FR-124–125, FR-166, FR-224 |
+| Memory continuity | Under the approved P2.5 policy and enabled user controls, retain one explicitly stated ordinary low-sensitivity preference from a permitted interaction, persist it across restart, retrieve it with provenance, and expose it to inspection and deletion. | FR-060–068, FR-190–202, FR-210–220 |
 | User control and autonomy | Global pause/stop and clear capability state. Initial autonomy defaults are social Off, cognitive On, operational Restricted and temporal Off. No unprompted social initiation or autonomous task execution in this slice. | FR-003–006, FR-075–079, FR-090–097 |
 
 ### Window-movement constraints
@@ -1420,7 +1420,7 @@ The following high-level acceptance conditions define what the vertical slice mu
 | AC-006 | LIA moves one supported window on the same display to the specified supported destination, preserving dimensions and workspace, or reports why it cannot. | FR-042–043, FR-046–048, FR-121–125, FR-222 |
 | AC-007 | Character movement is synchronized with the actual window operation; the animation stops or changes truthfully when the operation fails, is unsupported or cannot be verified. | FR-032, FR-035–036, FR-046–047, FR-124–125, FR-166 |
 | AC-008 | LIA does not force-close windows or discard unsaved work; stale state, unsupported operations and runtime failures produce explicit non-success outcomes. | FR-006, FR-046–048, FR-101–105, FR-223 |
-| AC-009 | One permitted low-sensitivity memory survives restart, can be retrieved with provenance, and can be inspected and deleted through the available user controls. | FR-005, FR-060–068, FR-190–202, FR-210–220 |
+| AC-009 | One explicitly stated permitted low-sensitivity preference survives restart, can be retrieved with provenance, and can be inspected and deleted through the available user controls. | FR-005, FR-060–068, FR-190–202, FR-210–220 |
 | AC-010 | The user can hide, reposition, pin/lock and pause/stop LIA; user placement takes precedence over task-bound character repositioning. | FR-003, FR-037, FR-090–096, FR-224 |
 | AC-011 | The slice operates only within its declared Linux/display capability envelope and reports unsupported platform operations rather than claiming parity or success. | FR-006, FR-040, FR-046–048, FR-154 |
 
@@ -1486,8 +1486,8 @@ phases are completed.
 | FR-150–159 | Desktop environment configuration | P2.3 context; P2.6 permissions; P3 platform adapters |
 | FR-160–169 | Hybrid input interaction | P2.4 interaction; P2.6 authorization; P3 interaction abstraction |
 | FR-170–189 | Task management and scheduling | P2.2 performance/resources; P2.6 authority; P3 scheduler and task runtime |
-| FR-222–224 | Window-target integrity, unsaved-work protection and embodied character positioning | P2.6 authorization integration; P2.7 acceptance tests; P3 OS/character interaction contracts |
 | FR-190–221 | Memory formation, retrieval, continuity and context assembly | P2.5 approved memory baseline; P2.6 authorization integration; P2.7 acceptance testing |
+| FR-222–224 | Window-target integrity, unsaved-work protection and embodied character positioning | P2.6 authorization integration; P2.7 acceptance tests; P3 OS/character interaction contracts |
 | SEC-001–038 | Memory governance, integrity and user control | P2.5 baseline; P2.6 authorization integration; P2.7 acceptance tests; P3 implementation |
 
 
@@ -1814,7 +1814,7 @@ The first vertical slice is implemented on one supported Linux desktop environme
 
 **Status:** Approved
 
-Initial defaults are Social Off, Cognitive On, Operational Restricted to direct user requests and currently valid grants, and Temporal Off. Each autonomy dimension is independently configurable. These defaults do not replace current authorization checks or user pause/stop controls.
+Initial defaults are Social Off, Cognitive On, Operational Restricted (direct user requests may execute only when the current permission authority grants the required capability), and Temporal Off. Each autonomy dimension is independently configurable. These defaults do not replace current authorization checks or user pause/stop controls.
 
 ### ADR-050 — User control of character positioning
 
