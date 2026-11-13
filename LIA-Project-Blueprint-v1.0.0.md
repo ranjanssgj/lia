@@ -4,7 +4,7 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.2.0\
+> **Version:** 1.2.1\
 > **Last updated:** 13 November 2026\
 > **Current phase:** P2 --- Requirements Engineering\
 > **Current workstream:** P2.5 --- Memory Requirements (governance and integrity)\
@@ -1642,6 +1642,13 @@ Memory records historical and learned information. A separate authoritative perm
                                                   compartmentalization and
                                                   cross-domain sharing.
 
+  1.2.1                   13 Nov 2026             Corrected Mermaid code
+                                                  fences in the expanded
+                                                  design records and
+                                                  synchronized the current
+                                                  workstream indicator
+                                                  with P2.5.
+
   ------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
@@ -1649,7 +1656,7 @@ Memory records historical and learned information. A separate authoritative perm
 # 10. Current working state
 
 **Current phase:** P2 --- Requirements Engineering\
-**Active workstream:** P2.1 --- Functional Requirements\
+**Active workstream:** P2.5 --- Memory Requirements (governance and integrity)\
 **Current status:** P2.1 detailed design record consolidated; P2.5 governance and integrity design recorded, with formal requirements and acceptance criteria still under review\
 **Next action:** Continue P2.5 with access-control edge cases, memory correction/deletion verification and governance acceptance criteria. Then complete the remaining P2.1 reviews, P2.2–P2.7 requirements and phase-wide traceability. Do not move to technology selection yet.
 
@@ -1712,7 +1719,7 @@ An embodied action has two coordinated layers:
 
 The character's movement must correspond to the actual operation. If the OS operation fails, LIA must not finish an animation that falsely communicates success. She should react to the actual result.
 
-{fence}mermaid
+```mermaid
 flowchart TD
     A["LIA selects an intended desktop action"] --> B["Resolve target object and current state"]
     B --> C["Check capability and authorization"]
@@ -1724,7 +1731,7 @@ flowchart TD
     G -->|No| I["Stop or adapt animation and represent failure"]
     H --> J["Update task and spatial state"]
     I --> J
-{fence}
+```
 
 Not every operation requires a literal physical metaphor. Dragging and resizing can be represented as direct physical interactions. Minimizing or focusing a window may use a gesture or animation appropriate to the operation. In every case, the representation must not contradict the real desktop result.
 
@@ -1750,7 +1757,7 @@ Perception and spatial awareness are related but distinct:
 
 LIA must distinguish directly available geometry from inferred spatial relationships. Spatial state must be refreshed when relevant desktop changes occur and before actions that depend on potentially stale positions.
 
-{fence}mermaid
+```mermaid
 flowchart TD
     A["Desktop observations and platform geometry"] --> B["Identify monitors and workspaces"]
     B --> C["Identify windows and desktop objects"]
@@ -1760,7 +1767,7 @@ flowchart TD
     F --> G["Plan navigation or manipulation"]
     G --> H["Observe desktop changes"]
     H --> D
-{fence}
+```
 
 ## 11.3 Window management as object interaction
 
@@ -1915,7 +1922,7 @@ For example, an accessibility interface may reliably identify a button, while po
 
 All three mechanisms must obey the same authorization, action-planning, execution-result and verification rules. The hybrid model is an implementation-independent product direction; it does not select a particular automation framework or API.
 
-{fence}mermaid
+```mermaid
 flowchart TD
     A["Understand intended action"] --> B["Identify target"]
     B --> C["Understand current state"]
@@ -1934,7 +1941,7 @@ flowchart TD
     M -->|Yes| N["Update task state"]
     M -->|No| O["Recover, retry safely or report failure"]
     O --> N
-{fence}
+```
 
 The choice of mechanism must not change the permission required. If the requested operation is unsupported, LIA must not silently substitute a materially different operation.
 
@@ -1954,7 +1961,7 @@ Individual actions may include identifying a PDF, moving it into a destination d
 
 A large objective may contain dozens of actions across multiple applications. LIA must track the overall objective while independently managing each step.
 
-{fence}mermaid
+```mermaid
 flowchart TD
     A["Objective: Organize Downloads"] --> B["Plan"]
     B --> C["Inspect files"]
@@ -1963,7 +1970,7 @@ flowchart TD
     E --> F["Move files"]
     F --> G["Verify destinations"]
     G --> H["Verify objective completion"]
-{fence}
+```
 
 ### Task record
 
@@ -2002,7 +2009,7 @@ The agreed task states are:
 
 Blocked and Failed are not interchangeable. Paused and Blocked are also distinct.
 
-{fence}mermaid
+```mermaid
 stateDiagram-v2
     [*] --> Queued
     Queued --> Running: Eligible to execute
@@ -2020,7 +2027,7 @@ stateDiagram-v2
     Failed --> Queued: Explicit retry or recovery
     Completed --> [*]
     Cancelled --> [*]
-{fence}
+```
 
 ### Task origins and memory-informed initiative
 
@@ -2110,7 +2117,7 @@ Resumption must verify the actual environment before repeating operations that m
 
 The scheduler should manage state, dependencies, execution eligibility and resource constraints through deterministic rules. LIA's reasoning may identify opportunities, formulate plans and recommend priorities, but should not independently mutate task state outside the scheduler's controlled transitions.
 
-{fence}mermaid
+```mermaid
 flowchart TD
     A["Persistent task queue"] --> B["Evaluate priority, urgency and deadline"]
     B --> C["Check dependencies and conditions"]
@@ -2127,7 +2134,7 @@ flowchart TD
     M --> A
     H --> A
     L --> A
-{fence}
+```
 
 The scheduler should reconsider tasks when circumstances change: a dependency becomes available, a deadline approaches, an event occurs, an objective becomes irrelevant or resource conditions change. Reprioritization must respect explicit user priorities.
 
@@ -2148,7 +2155,7 @@ The historical archive preserves original context. Organized memories make infor
 
 This does not mean indefinitely recording every screen frame, microphone stream or transient desktop observation. Raw observations have separate permission and retention requirements.
 
-{fence}mermaid
+```mermaid
 flowchart TD
     A["Permitted conversations and meaningful events"] --> B["Historical experience archive"]
     A --> C["Memory formation and extraction pipeline"]
@@ -2157,7 +2164,7 @@ flowchart TD
     D --> E["Source references and provenance"]
     E --> B
     D --> F["Retrieval and context assembly"]
-{fence}
+```
 
 ### Memory component 1 — Source and experience archive
 
@@ -2243,7 +2250,7 @@ Potential relationship types include:
 
 Example:
 
-{fence}mermaid
+```mermaid
 flowchart TD
     U["User"] -->|"WORKS_ON"| L["Project LIA"]
     L -->|"HAS_COMPONENT"| A["Animation system"]
@@ -2252,7 +2259,7 @@ flowchart TD
     A -->|"USES"| G["Godot"]
     L -->|"HAS_DECISION"| D["Separation of concerns"]
     D -->|"ORIGINATED_FROM"| E["Previous implementation experience"]
-{fence}
+```
 
 This graph should represent semantic relationships, not merely the fact that two topics appeared in the same conversation. RELATED_TO, DEPENDS_ON and SUPERSEDES must retain distinct meanings.
 
@@ -2324,7 +2331,7 @@ Autonomous memory formation should operate as an ongoing pipeline over permitted
 
 Most extraction and consolidation can occur asynchronously. Important decisions and task-state changes may require prompt persistence. Failure to extract a memory must not silently corrupt the original archive.
 
-{fence}mermaid
+```mermaid
 flowchart TD
     A["Permitted experience or event"] --> B["Capture"]
     B --> C["Segment meaningful episodes"]
@@ -2336,7 +2343,7 @@ flowchart TD
     H --> I["Update retrieval indexes"]
     I --> J["Consolidate summaries and patterns"]
     J --> K["Preserve source provenance"]
-{fence}
+```
 
 ### Associative memory reinforcement
 
@@ -2401,7 +2408,7 @@ The system should also avoid runaway reinforcement:
 
 A strong association can guide retrieval without proving a causal relationship or a personal inference.
 
-{fence}mermaid
+```mermaid
 flowchart TD
     A["New meaningful experience"] --> B["Extract entities and candidate relationship"]
     B --> C["Check existing graph and source evidence"]
@@ -2415,7 +2422,7 @@ flowchart TD
     H --> J["Update connected memories and provenance"]
     J --> K["Periodic maintenance"]
     K --> L["Reconcile, normalize or reduce retrieval activation"]
-{fence}
+```
 
 ### Context-aware memory retrieval and assembly
 
@@ -2439,7 +2446,7 @@ Memory formation, consolidation, retrieval and context assembly are separate res
 7. Retrieve original source material when needed.
 8. Assemble a bounded working context.
 
-{fence}mermaid
+```mermaid
 flowchart TD
     A["Conversation, task or event"] --> B["Understand information need"]
     B --> C["Create retrieval plan"]
@@ -2451,7 +2458,7 @@ flowchart TD
     H --> I["Assemble bounded working context"]
     I --> J["Reason, respond or act"]
     J --> K["Record outcome and feedback"]
-{fence}
+```
 
 #### Retrieval by information need
 
@@ -2555,7 +2562,7 @@ LongMemEval and LoCoMo are potential external benchmark references; they do not 
 
 ### Memory architecture diagram
 
-{fence}mermaid
+```mermaid
 flowchart TB
     A["Permitted information sources"]
     A1["Conversations and experiences"]
@@ -2593,7 +2600,7 @@ flowchart TB
     L --> M["Bounded context assembly"]
     M --> N["LIA reasoning and interaction"]
     N --> B
-{fence}
+```
 
 ## 11.11 P2.1 and P2.5 boundaries
 
@@ -2640,7 +2647,7 @@ While temporary mode is active:
 
 If LIA performs an authorized computer operation during a temporary session, minimal operational records may be necessary for execution integrity and security. Such records must not preserve the sensitive conversational content. A separately authorized persistent task may have its own task record, but that must not silently archive the temporary conversation.
 
-{fence}mermaid
+```mermaid
 flowchart TD
     A["Conversation begins"] --> B{"Temporary mode requested or accepted?"}
     B -->|No| C["Apply ordinary archive and memory policy"]
@@ -2650,7 +2657,7 @@ flowchart TD
     F --> G["Discard temporary conversational context at end"]
     G --> H["Retain only separately permitted minimal operational records"]
     C --> I["Apply sensitivity and retention classification"]
-{fence}
+```
 
 ## 12.2 Memory sensitivity classification
 
@@ -2715,7 +2722,7 @@ Deletion must cover the canonical record and its dependent representations, incl
 
 LIA must distinguish deletion from active memory, deletion from primary storage, expiration of backup copies and removal from external providers. She must not claim complete erasure until all applicable deletion work has actually completed or clearly disclose what remains outstanding.
 
-{fence}mermaid
+```mermaid
 flowchart TD
     A["User requests memory change"] --> B["Determine scope: fact, experience or domain"]
     B --> C["Identify source records"]
@@ -2730,7 +2737,7 @@ flowchart TD
     I --> J["Propagate to indexes, caches and applicable backups/providers"]
     J --> K["Track completion and outstanding copies"]
     K --> L["Report actual deletion status"]
-{fence}
+```
 
 ## 12.5 Memory compartments and controlled cross-domain sharing
 
@@ -2767,7 +2774,7 @@ Access decisions should consider three dimensions:
 
 ### Controlled memory-sharing model
 
-{fence}mermaid
+```mermaid
 flowchart TD
     U["User memory"] -->|Permitted user-level preferences| P1["Project A memory"]
     U -->|Permitted user-level preferences| P2["Project B memory"]
@@ -2782,7 +2789,7 @@ flowchart TD
     X -. governs .-> P2
     X -. governs .-> T
     X -. governs .-> E
-{fence}
+```
 
 The diagram expresses permitted flows, not automatic access. The access-control decision must be evaluated for each retrieval.
 
@@ -2818,7 +2825,7 @@ These components remain separate:
 
 They may reference one another, but must not inherit one another's authority.
 
-{fence}mermaid
+```mermaid
 flowchart TD
     A["Memory: proposed or remembered task"] --> B["Task planner"]
     B --> C["Task scheduler"]
@@ -2828,7 +2835,7 @@ flowchart TD
     E -->|No| G["Block operation and request authorization or revise plan"]
     F --> H["Record outcome in task history"]
     H --> I["Memory formation may retain permitted outcome"]
-{fence}
+```
 
 ## 12.7 Memory governance requirements
 
@@ -2859,7 +2866,7 @@ The following security and governance requirements are part of the P2.5/P2.6 des
 
 ## 12.8 Memory governance workflow
 
-{fence}mermaid
+```mermaid
 flowchart TD
     A["Information received or memory operation requested"] --> B["Determine ownership and sensitivity"]
     B --> C["Check source and processing permissions"]
@@ -2871,7 +2878,7 @@ flowchart TD
     H --> I["Propagate change to dependent memories and indexes"]
     I --> J["Track backup and external-provider status"]
     J --> K["Report verified outcome and outstanding work"]
-{fence}
+```
 
 ## 12.9 P2.5 completion boundary
 
