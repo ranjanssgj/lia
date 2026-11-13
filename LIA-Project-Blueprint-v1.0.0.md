@@ -4,10 +4,10 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.1.0\
+> **Version:** 1.2.0\
 > **Last updated:** 13 November 2026\
 > **Current phase:** P2 --- Requirements Engineering\
-> **Current workstream:** P2.1 --- Functional Requirements\
+> **Current workstream:** P2.5 --- Memory Requirements (governance and integrity)\
 > **Document status:** Active; P1 baseline approved, P2.1 draft for
 > review
 
@@ -293,7 +293,7 @@ implementation architecture.
   -----------------------------------------------------------------------
   ID                Workstream        Purpose           Status
   ----------------- ----------------- ----------------- -----------------
-  P2.1              Functional        Define what LIA   Draft --- active
+  P2.1              Functional        Define what LIA   Draft --- detailed design baseline expanded
                     requirements      must do           
 
   P2.2              Non-functional    Define            Pending
@@ -315,7 +315,7 @@ implementation architecture.
                                       embodiment        
                                       behavior          
 
-  P2.5              Memory            Define memory     Pending
+  P2.5              Memory            Define memory     Draft --- active
                     requirements      types,            
                                       persistence,      
                                       retrieval,        
@@ -383,6 +383,29 @@ This tracker records design direction established during P2.1 discussions. "Agre
 | Memory and continuity | Hybrid architecture direction agreed | Governance, retention, correction, deletion and tests |
 | Embodiment and character behavior | Initial conceptual model established | Detailed interaction and animation requirements |
 | Runtime self-management | Product scope identified | Detailed functional review |
+
+
+## 3.6 P2.5 memory requirements progress
+
+P2.5 has moved into active design. The following product-level directions have been accepted during discussion. Formal requirement wording, implementation-independent acceptance criteria and detailed policy edge cases are still being developed.
+
+| Memory area | Design status | Remaining work |
+|---|---|---|
+| Autonomous memory formation | Agreed | Define capture boundaries, extraction quality and failure handling |
+| Historical archive | Agreed | Define archive schema, access controls and deletion verification |
+| Episodic and semantic memory | Agreed | Formalize memory records and consolidation behavior |
+| Procedural and working memory | Agreed | Define lifecycle and task integration |
+| Temporal knowledge graph | Agreed | Define entity resolution, edge semantics and temporal validity |
+| Associative reinforcement | Agreed conceptually | Calibrate evidence thresholds, reinforcement and decay |
+| Hybrid retrieval | Agreed conceptually | Define retrieval policies, ranking, evidence validation and context budgets |
+| Conversation retention | Agreed | Ordinary permitted conversation archive retained indefinitely until user deletion |
+| Temporary conversations | Agreed | Manual activation and LIA suggestion, with explicit user consent |
+| Sensitivity classes | Agreed as initial policy | Define classification, processing and retention controls |
+| Correction and contradiction handling | Agreed direction | Define propagation, authority and temporal reconciliation |
+| Forgetting and erasure | Agreed direction | Define deletion scope, propagation and completion reporting |
+| Compartmentalization | Agreed | Define domain boundaries and access-control rules |
+| Cross-domain sharing | Agreed direction | Define explicit sharing, defaults, revocation and non-transitive access |
+| Memory/permission separation | Agreed | Define authoritative permission checks and audit behavior |
 
 # 4. P2.1 --- Functional requirements
 
@@ -1522,6 +1545,49 @@ LIA's retrieval engine determines the information need, plans retrieval across s
 
 Memory retrieval should expose why information was selected and retain enough trace information to debug extraction, entity resolution, graph traversal, ranking, temporal resolution and context assembly. Evaluation must include exact recall, multi-session recall, multi-hop reasoning, temporal reasoning, contradiction handling, provenance, abstention, correction, deletion and task resumption.
 
+
+### ADR-029 — Controlled cross-domain memory sharing
+
+**Status:** Approved design direction
+
+Memory domains remain logically compartmentalized but may share permitted, relevant information. Non-sensitive user-level preferences may be available across projects when the user's memory preferences and access policy allow it. Project-specific or confidential information remains scoped unless sharing is authorized. Graph relationships do not grant access, and sharing is not transitive by default.
+
+### ADR-030 — Ordinary conversation archive retention
+
+**Status:** Approved
+
+Ordinary permitted conversation archives are retained indefinitely until the user requests deletion, subject to sensitivity classification and applicable privacy policy. This does not imply indefinite raw audio, screen-frame or transient-observation retention.
+
+### ADR-031 — Temporary conversation mode
+
+**Status:** Approved
+
+Temporary mode may be activated by the user or suggested by LIA, but requires explicit user consent. Temporary conversational content is excluded from permanent conversation archives and autonomous long-term memory formation. Separately disclosed minimal operational records may be retained where necessary for execution integrity and security.
+
+### ADR-032 — Memory sensitivity classification
+
+**Status:** Approved initial policy
+
+Memory uses four initial classes: S0 Ordinary, S1 Personal, S2 Sensitive and S3 Highly Sensitive Secrets. S0 and S1 may be retained under user memory preferences. S2 requires explicit authorization for long-term retention. S3 secrets are excluded from ordinary memory and require a separate secure credential mechanism if supported.
+
+### ADR-033 — Distinct forgetting and erasure operations
+
+**Status:** Approved
+
+LIA supports forgetting a fact, erasing an experience and erasing a memory domain. Forgetting removes the information from active use and derived representations while leaving the historical source archive unless separately requested. Erasure propagates to the source and dependent representations within the requested scope. A minimal non-content deletion marker may prevent accidental re-import.
+
+### ADR-034 — Compartmentalized memory access
+
+**Status:** Approved design direction
+
+Memory is logically compartmentalized into user, project, task, experience and procedural domains. Access decisions consider ownership, sensitivity and contextual purpose. Domains remain interlinked, but retrieval is least-privilege and relationship edges do not themselves grant access.
+
+### ADR-035 — Separation of memory and permission authority
+
+**Status:** Approved
+
+Memory records historical and learned information. A separate authoritative permission service determines current execution authority. Historical approvals, inferred preferences and memory associations do not substitute for checking current permissions before execution.
+
 # 9. Change log
 
   ------------------------------------------------------------------------
@@ -1560,6 +1626,22 @@ Memory retrieval should expose why information was selected and retain enough tr
                                                   associative reinforcement
                                                   and retrieval design.
 
+  1.2.0                   13 Nov 2026             Expanded the blueprint
+                                                  into a detailed design
+                                                  record with P2.1
+                                                  interaction, spatial
+                                                  desktop, application,
+                                                  file-system, hybrid input,
+                                                  task hierarchy and
+                                                  scheduling diagrams;
+                                                  expanded P2.5 memory
+                                                  architecture, associative
+                                                  learning, retrieval,
+                                                  governance, retention,
+                                                  temporary mode, deletion,
+                                                  compartmentalization and
+                                                  cross-domain sharing.
+
   ------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
@@ -1568,8 +1650,8 @@ Memory retrieval should expose why information was selected and retain enough tr
 
 **Current phase:** P2 --- Requirements Engineering\
 **Active workstream:** P2.1 --- Functional Requirements\
-**Current status:** P2.1 design baseline expanded; detailed functional requirements remain under review\
-**Next action:** Continue P2.1 with memory governance and integrity, then review embodiment and runtime self-management. Resolve remaining first-release questions and formalize acceptance criteria in P2.7. Do not move to technology selection yet.
+**Current status:** P2.1 detailed design record consolidated; P2.5 governance and integrity design recorded, with formal requirements and acceptance criteria still under review\
+**Next action:** Continue P2.5 with access-control edge cases, memory correction/deletion verification and governance acceptance criteria. Then complete the remaining P2.1 reviews, P2.2–P2.7 requirements and phase-wide traceability. Do not move to technology selection yet.
 
 ## Phase 2 exit criteria
 
@@ -1597,3 +1679,1214 @@ When a decision changes, update the relevant section, decision register,
 and change log. Keep requirement IDs stable; do not recycle IDs when
 requirements are removed. Mark obsolete requirements as rejected or
 superseded and record the replacement ID.
+
+
+# 11. Detailed P2.1 design records
+
+This section preserves the full design reasoning and capability scope discussed during P2.1. The functional requirement tables above provide stable, testable identifiers; this section records the accompanying intent, examples, interaction models and diagrams so that the specification does not collapse into a progress tracker.
+
+## 11.1 The desktop is LIA's environment
+
+LIA is intended to inhabit the desktop as a persistent embodied entity. The desktop is not merely a backdrop behind a character, and window management is not her only form of OS interaction.
+
+The product-level interaction domains are:
+
+| Domain | What LIA interacts with |
+|---|---|
+| Window management | Windows, their positions, dimensions and states |
+| Application interaction | Buttons, menus, text fields, tabs and controls inside applications |
+| File-system interaction | Files, folders and their contents |
+| Desktop environment | Workspaces, monitors, panels and desktop objects |
+| Input interaction | Keyboard, pointer, scrolling and other input mechanisms |
+
+These are eventual product capabilities, subject to the user's permissions for the relevant application, file location, desktop capability or operation. They are not a commitment to implement every capability in the first release.
+
+The design intent is to treat the desktop as LIA's environment, windows as manipulable objects, and applications as spaces she can enter and interact with.
+
+### 11.1.1 Two synchronized layers of embodied desktop interaction
+
+An embodied action has two coordinated layers:
+
+1. **Character embodiment:** What the user sees LIA physically do, such as approaching a window, reaching toward its title bar, grabbing it, dragging it and releasing it.
+2. **OS interaction:** What the computer actually does, such as identifying the target window, issuing the move operation and reporting the resulting position.
+
+The character's movement must correspond to the actual operation. If the OS operation fails, LIA must not finish an animation that falsely communicates success. She should react to the actual result.
+
+{fence}mermaid
+flowchart TD
+    A["LIA selects an intended desktop action"] --> B["Resolve target object and current state"]
+    B --> C["Check capability and authorization"]
+    C --> D["Coordinate character movement with OS operation"]
+    D --> E["Platform adapter executes operation"]
+    E --> F["Verify actual result where possible"]
+    F --> G{"Did the operation succeed?"}
+    G -->|Yes| H["Complete synchronized animation"]
+    G -->|No| I["Stop or adapt animation and represent failure"]
+    H --> J["Update task and spatial state"]
+    I --> J
+{fence}
+
+Not every operation requires a literal physical metaphor. Dragging and resizing can be represented as direct physical interactions. Minimizing or focusing a window may use a gesture or animation appropriate to the operation. In every case, the representation must not contradict the real desktop result.
+
+## 11.2 Spatial desktop awareness
+
+Spatial awareness is a first-class capability, not merely a side effect of screen perception.
+
+**Definition:** LIA's ability to understand the spatial arrangement, relative positions, dimensions, boundaries and relationships of objects within the desktop environment, and to use that understanding when navigating or manipulating those objects.
+
+Spatial awareness includes:
+
+- **Desktop geometry:** Screen boundaries, monitor arrangement, display resolution, workspaces and available desktop regions.
+- **Window geometry:** Window positions, dimensions, boundaries, visibility, stacking/layering and relevant window state.
+- **Spatial relationships:** Which windows overlap, which are adjacent, which occupy most of the screen, where free space exists, and how objects are positioned relative to one another.
+- **Character positioning:** Where LIA is rendered, which objects she is facing, where she can move, and how she should approach a target.
+- **Spatial interaction:** Approaching, pointing, grabbing, dragging, pushing, releasing and repositioning desktop objects.
+- **Dynamic awareness:** Understanding that the environment changes when windows move, monitors change, applications open or the user rearranges the desktop.
+
+Perception and spatial awareness are related but distinct:
+
+- **Perception:** What am I looking at? What application, window, control or object is present?
+- **Spatial awareness:** Where is it? How is it positioned relative to other things? Where can I move? How can I interact with it?
+
+LIA must distinguish directly available geometry from inferred spatial relationships. Spatial state must be refreshed when relevant desktop changes occur and before actions that depend on potentially stale positions.
+
+{fence}mermaid
+flowchart TD
+    A["Desktop observations and platform geometry"] --> B["Identify monitors and workspaces"]
+    B --> C["Identify windows and desktop objects"]
+    C --> D["Build object geometry"]
+    D --> E["Derive spatial relationships"]
+    E --> F["Relate LIA's position and attention target"]
+    F --> G["Plan navigation or manipulation"]
+    G --> H["Observe desktop changes"]
+    H --> D
+{fence}
+
+## 11.3 Window management as object interaction
+
+LIA's eventual window-management capability includes three broad categories.
+
+### Discovery
+
+- Identify the active window.
+- Enumerate supported windows.
+- Obtain window metadata, including title, identity, position, dimensions and state when available.
+- Identify visible, minimized, maximized, restored and focused windows.
+- Identify the monitor or virtual desktop containing a window where supported.
+
+### Manipulation and organization
+
+- Focus a window and bring it to the foreground.
+- Move a window by interacting with its title bar or through an appropriate platform operation.
+- Resize a window through its edges or corners.
+- Push or reposition windows to make space.
+- Minimize, maximize and restore windows.
+- Arrange, tile and snap windows.
+- Move windows between monitors and virtual desktops where supported.
+- Switch focus between windows and organize their spatial arrangement.
+
+### Lifecycle
+
+- Launch supported applications.
+- Open and manage their windows.
+- Close windows gracefully.
+- Restore or reopen applications where supported.
+- Identify unresponsive applications or windows.
+- Handle dialogs and prompts associated with window operations.
+
+Closing a window must not silently become forceful process termination. Unsaved work and confirmation dialogs must be respected. Window operations must report their execution result, and the system should verify the resulting state when possible.
+
+The first vertical slice may implement a much smaller subset, such as identifying a target window, approaching it visually, grabbing it and moving it while synchronizing character animation with the actual OS operation. This validates the connection between spatial representation, embodiment, platform control and result verification without reducing the eventual product scope to only window movement.
+
+## 11.4 Application interaction and per-application authorization
+
+LIA should be able to enter supported applications and interact with their interface: buttons, menus, text fields, forms, dropdowns, selection menus, tabs, navigation elements, dialog boxes, confirmation prompts, toolbars, sidebars, context menus, checkboxes, sliders, toggles and other interactive controls.
+
+Application access must be independently configurable per application. The capability classes are:
+
+| Permission class | Meaning |
+|---|---|
+| **Observe** | Inspect the permitted application state and understand its visible or otherwise authorized contents |
+| **Interact** | Navigate, click controls, switch tabs, type, scroll and operate interface elements |
+| **Modify** | Change content or application data, save changes, submit forms, upload or download files and perform other data-altering operations |
+
+These classes are independent. Permission to observe does not imply permission to interact. Permission to interact does not imply permission to modify. Permission to modify does not automatically authorize every consequential operation.
+
+For example, Firefox might be configured to allow observation and navigation while restricting form submission or data modification. A password manager might have no access, while a code editor might have broader access for an authorized development workflow. These are illustrative configurations, not defaults.
+
+Sensitive actions such as purchases, sending external communications, permanent deletion or consequential transactions may require additional authorization or confirmation even when the application has a general Modify grant.
+
+Permissions must apply regardless of whether LIA uses visual interaction, direct input simulation or a semantic application interface. The detailed permission service, scopes, defaults, revocation and confirmation policy are specified in P2.6.
+
+## 11.5 File-system interaction: direct and interactive operation
+
+LIA shall support both direct file-system operations and embodied interaction through a file-manager application. These are two methods for performing the same authorized file-system capabilities.
+
+The intended scope includes:
+
+- **Discovery:** Search, locate, enumerate and inspect files and directories.
+- **Reading:** Open, preview, read and understand supported file formats.
+- **Creation:** Create files, directories and project structures.
+- **Modification:** Edit supported documents, source code, configuration files and other supported content.
+- **Organization:** Copy, move, rename, sort and organize files and directories.
+- **Removal and recovery:** Delete files, manage trash and restore files where supported.
+
+For example, when organizing a project directory, LIA could use direct operations to move and rename files efficiently. Alternatively, she could open the file manager, navigate to the directory and manipulate the files through its interface.
+
+The execution method may depend on the task, reliability, available platform capabilities and user preference. Both methods must enforce the same path and operation permissions. Direct access must not be used as a way to bypass restrictions imposed on interactive access.
+
+Destructive or difficult-to-reverse operations require the appropriate safeguards, and outcomes must be verified where possible.
+
+## 11.6 Desktop-environment navigation and configuration
+
+LIA's environment extends beyond application windows. Eventual capabilities include:
+
+| Area | Intended capability |
+|---|---|
+| Monitors | Discover displays, understand their arrangement and move windows between them |
+| Workspaces | Switch, create, organize and manage virtual desktops |
+| Panels and docks | Interact with taskbars, docks, launchers and system panels |
+| Desktop objects | Interact with icons, shortcuts and supported desktop elements |
+| Notifications | Observe and interact with supported system notifications |
+| Display configuration | Access and modify supported display settings |
+
+LIA shall eventually be able to configure the desktop environment, not only navigate its existing arrangement. This includes supported workspace arrangements, panels, docks and display settings, subject to platform support and appropriate permissions.
+
+Spatial awareness applies across the display topology. For example, LIA should understand that a window is on the left monitor, another workspace exists on the right, and moving a window between them differs from moving it within one display.
+
+Platform and desktop-environment differences must be exposed honestly. A capability that is unavailable under a particular Linux compositor or Windows configuration must not be represented as universally supported.
+
+## 11.7 Human-like computer input
+
+LIA's eventual input capability includes the actions a person commonly performs with a computer.
+
+### Pointer and mouse
+
+- Move the pointer to arbitrary screen positions.
+- Hover over elements and respond to hover states.
+- Left-click, right-click and double-click.
+- Click and hold.
+- Drag and drop files, windows and interface elements.
+- Scroll vertically and horizontally.
+- Select objects and text.
+- Interact with context menus.
+- Perform supported pointer gestures.
+
+### Keyboard
+
+- Type text into input fields and documents.
+- Press individual keys and key combinations.
+- Execute keyboard shortcuts.
+- Navigate interfaces using keyboard controls.
+- Select, copy, cut, paste and replace text.
+- Navigate and edit documents.
+- Use application-specific shortcuts.
+- Perform keyboard-driven workflows without relying on the mouse.
+
+### Interface controls
+
+LIA should recognize and operate buttons, text fields, forms, dropdowns, selection menus, tabs, navigation elements, dialogs, confirmation prompts, toolbars, sidebars, checkboxes, sliders, toggles and other interactive controls.
+
+She should understand what an element does, not merely where it appears.
+
+### Complex interaction sequences
+
+A user goal may require multiple coordinated actions. For example, uploading a document can involve locating the application, opening its upload interface, navigating to the appropriate directory, locating and selecting the document, confirming the upload and verifying that the application received it.
+
+LIA should represent this as one objective with a plan and individually tracked actions, rather than as an unstructured sequence of clicks.
+
+### Embodiment
+
+The character's physical behavior should participate in desktop interaction. When moving a window, she may approach and grab it. When pointing at a control, her gaze or hand movement may correspond to the target. When typing, her animation may reflect the action.
+
+The animation and actual input must remain synchronized. LIA must not perform a visual gesture that falsely indicates a computer action succeeded.
+
+## 11.8 Hybrid interaction model
+
+The product shall combine three execution mechanisms:
+
+1. **Direct input simulation:** Actual pointer and keyboard input, including clicks, typing, dragging, scrolling and other input events.
+2. **Accessibility and semantic interaction:** Use available accessibility interfaces or application interfaces to identify and operate controls through their meaning and structure.
+3. **Visual interaction:** Understand the visible interface through screen perception and select targets based on visual appearance and spatial location.
+
+LIA should use the most appropriate mechanism for the operation, based on task requirements, available interfaces, platform support and expected reliability. She may combine mechanisms within one task.
+
+For example, an accessibility interface may reliably identify a button, while pointer input is used to drag an object. Visual perception may be necessary for an application that exposes no suitable semantic interface.
+
+All three mechanisms must obey the same authorization, action-planning, execution-result and verification rules. The hybrid model is an implementation-independent product direction; it does not select a particular automation framework or API.
+
+{fence}mermaid
+flowchart TD
+    A["Understand intended action"] --> B["Identify target"]
+    B --> C["Understand current state"]
+    C --> D["Check current authorization"]
+    D --> E{"Authorized?"}
+    E -->|No| F["Request authorization or stop"]
+    E -->|Yes| G["Select interaction mechanism"]
+    G --> H["Direct input simulation"]
+    G --> I["Accessibility or application interface"]
+    G --> J["Visual perception-driven interaction"]
+    H --> K["Execute operation"]
+    I --> K
+    J --> K
+    K --> L["Verify resulting state"]
+    L --> M{"Expected result?"}
+    M -->|Yes| N["Update task state"]
+    M -->|No| O["Recover, retry safely or report failure"]
+    O --> N
+{fence}
+
+The choice of mechanism must not change the permission required. If the requested operation is unsupported, LIA must not silently substitute a materially different operation.
+
+## 11.9 Task management: objective, plan and actions
+
+LIA's task system should represent a user's desired outcome separately from the plan and the operations used to achieve it.
+
+- **Objective:** The outcome LIA is supposed to achieve.
+- **Plan:** The sequence or structure of steps LIA determines are necessary.
+- **Actions:** Individual operations that execute the plan.
+
+Example objective: "Organize my Downloads folder."
+
+Possible plan: inspect files, classify them, create appropriate folders, move files, and verify the result.
+
+Individual actions may include identifying a PDF, moving it into a destination directory and confirming that it exists at the destination.
+
+A large objective may contain dozens of actions across multiple applications. LIA must track the overall objective while independently managing each step.
+
+{fence}mermaid
+flowchart TD
+    A["Objective: Organize Downloads"] --> B["Plan"]
+    B --> C["Inspect files"]
+    C --> D["Classify files"]
+    D --> E["Create folders"]
+    E --> F["Move files"]
+    F --> G["Verify destinations"]
+    G --> H["Verify objective completion"]
+{fence}
+
+### Task record
+
+A task should contain:
+
+| Property | Purpose |
+|---|---|
+| Objective | What needs to be achieved |
+| Origin | User request, delegated objective, schedule, event or LIA initiative |
+| Plan | Steps required to achieve the objective |
+| Dependencies | Actions or conditions that must be satisfied first |
+| Required capabilities | Applications, files, services and operations needed |
+| Authorization basis | One-time grant or valid standing authorization and its scope |
+| Status | Current task state |
+| Priority | Importance assigned to the task |
+| Schedule | Timing or execution condition |
+| Progress | Completed and remaining steps |
+| Execution history | Actions taken and their results |
+| Checkpoint | State required for safe resumption |
+| Blocker | Why execution cannot proceed |
+| Outcome | Verified result or failure explanation |
+
+The user should be able to inspect what LIA actually did, not merely rely on a natural-language summary.
+
+### Task states
+
+The agreed task states are:
+
+- **Queued:** Waiting for execution.
+- **Running:** Currently executing.
+- **Blocked:** Cannot proceed because a dependency, permission, resource, input or other required condition is missing.
+- **Paused:** Execution has deliberately been suspended.
+- **Completed:** Intended outcome verified to the extent possible.
+- **Cancelled:** Execution was deliberately abandoned.
+- **Failed:** Execution could not achieve the intended outcome.
+
+Blocked and Failed are not interchangeable. Paused and Blocked are also distinct.
+
+{fence}mermaid
+stateDiagram-v2
+    [*] --> Queued
+    Queued --> Running: Eligible to execute
+    Queued --> Blocked: Required condition missing
+    Running --> Blocked: Dependency or authorization needed
+    Running --> Paused: User or scheduler pauses
+    Running --> Completed: Outcome verified
+    Running --> Failed: Unrecoverable execution failure
+    Running --> Queued: Requeued after safe checkpoint
+    Blocked --> Queued: Blocker resolved
+    Paused --> Queued: Resume requested or permitted
+    Queued --> Cancelled: Cancel
+    Blocked --> Cancelled: Cancel
+    Paused --> Cancelled: Cancel
+    Failed --> Queued: Explicit retry or recovery
+    Completed --> [*]
+    Cancelled --> [*]
+{fence}
+
+### Task origins and memory-informed initiative
+
+Tasks may originate from:
+
+- Direct user instructions.
+- Previously delegated objectives.
+- Scheduled activities and reminders.
+- Events in the desktop environment.
+- LIA's own observations and initiative, informed by relevant memory.
+
+For example, LIA may remember that the user is developing the LIA project, that research into desktop automation has been identified as useful, and that public web research is covered by a standing permission. She can independently create a research task, prepare a plan, notify the user and execute under that existing authorization.
+
+Task creation, planning and execution are separate capabilities. LIA may be able to create and organize a proposed task without having authority to execute every operation in its plan.
+
+### Notification, approval and confirmation
+
+These are three different behaviors:
+
+- **Notification:** Informing the user that an already-authorized action or autonomous task is about to happen.
+- **Approval:** Obtaining authorization when the operation is not covered by a valid grant.
+- **Confirmation:** Verifying user intent for a particularly consequential operation when the risk policy requires it.
+
+Notification must not be disguised as an approval prompt. LIA should not ask permission for every step of work that is already within valid standing authorization. Conversely, an announcement does not make an unauthorized operation permissible.
+
+The authorization basis must be explicit in the task record. A one-time approval must not silently become unlimited standing permission.
+
+### Scheduling and prioritization
+
+Priority, urgency and deadline are separate attributes.
+
+The agreed priority categories are:
+
+| Priority | Meaning | Illustrative example |
+|---|---|---|
+| P0 — Critical | Time-sensitive or essential | A task with an imminent deadline |
+| P1 — High | Important to an active objective | Research needed for an ongoing project |
+| P2 — Normal | Useful work that should progress regularly | Organizing project documentation |
+| P3 — Low | Useful but not immediately necessary | Exploring an interesting technical subject |
+| P4 — Someday | Optional ideas and opportunities | Investigating an unrelated project idea |
+
+The user may assign priorities. LIA may recommend or adapt priorities using explicit user goals, deadlines, project importance, dependencies and current circumstances. She must not silently downgrade an explicit user priority simply because another activity appears more interesting. Meaningful scheduling changes should be communicated.
+
+Supported execution modes are:
+
+- Immediate: start when authorization and execution conditions are satisfied.
+- Background: continue without taking over the user's active desktop interaction.
+- Idle-time: execute when the computer or user reaches a suitable idle condition.
+- Scheduled: execute at a specified time or recurring interval.
+- Deadline-driven: schedule work backwards from a deadline.
+- Event-triggered: start when a specified event or condition occurs.
+- Deferred: retain the task until an appropriate opportunity becomes available.
+
+These are scheduling properties, not mutually exclusive task types.
+
+### Dependencies
+
+The task system should support:
+
+- Sequential dependencies: B begins after A.
+- Parallel tasks: B and C may execute simultaneously.
+- Conditional dependencies: a step begins only when a specified condition is satisfied.
+- Parent-child tasks: a larger objective contains independently tracked subtasks.
+- Recurring tasks: an objective can generate new task instances periodically.
+
+### Resource and interaction classes
+
+| Execution class | Examples | Scheduling behavior |
+|---|---|---|
+| Background-safe | Research, summarization and permitted file reading | May run while the user works |
+| Low-interference | Preparing documents and organizing authorized data | May run in the background with safeguards |
+| Desktop-interactive | Moving windows, navigating applications and typing | Must consider active user interaction |
+| User-dependent | Tasks needing clarification or a decision | Wait for user input |
+| Resource-intensive | Large computations, local inference and heavy indexing | Consider system load and resource availability |
+
+LIA should not stop working merely because the user is busy. She should avoid interfering with the user's active work. For example, she may conduct research in the background while the user codes, but should not move application windows or type into the user's editor while the user is actively controlling it.
+
+### Interruption, checkpoint and resumption
+
+Interruption is a normal task condition, not necessarily a failure.
+
+If the user begins interacting with a directory that LIA is organizing, LIA should pause conflicting file operations, preserve completed work, record remaining work and resume when conditions permit.
+
+Resumption must verify the actual environment before repeating operations that may already have taken effect. A research task may resume from its last completed research step; a partially completed file operation must inspect the filesystem before attempting the move again.
+
+### Scheduler model
+
+The scheduler should manage state, dependencies, execution eligibility and resource constraints through deterministic rules. LIA's reasoning may identify opportunities, formulate plans and recommend priorities, but should not independently mutate task state outside the scheduler's controlled transitions.
+
+{fence}mermaid
+flowchart TD
+    A["Persistent task queue"] --> B["Evaluate priority, urgency and deadline"]
+    B --> C["Check dependencies and conditions"]
+    C --> D["Check authoritative permissions"]
+    D --> E["Evaluate resources and user activity"]
+    E --> F{"Execution suitable?"}
+    F -->|Yes| G["Schedule or execute"]
+    F -->|No| H["Defer, pause or mark Blocked"]
+    G --> I["Monitor action and task state"]
+    I --> J["Checkpoint and verify"]
+    J --> K{"Objective completed?"}
+    K -->|Yes| L["Record verified outcome"]
+    K -->|No| M["Re-evaluate remaining plan"]
+    M --> A
+    H --> A
+    L --> A
+{fence}
+
+The scheduler should reconsider tasks when circumstances change: a dependency becomes available, a deadline approaches, an event occurs, an objective becomes irrelevant or resource conditions change. Reprioritization must respect explicit user priorities.
+
+## 11.10 Memory architecture: complete conceptual design
+
+Memory is foundational to LIA's persistent identity, cognitive continuity and autonomous initiative. The recommended direction is a hybrid, multi-layered, temporal memory system with a knowledge graph as its relational backbone.
+
+No individual store or retrieval method is expected to provide all required memory capabilities.
+
+### Two complementary memory capabilities
+
+LIA needs both:
+
+1. **Remembering what happened:** A searchable historical archive of permitted conversations, meaningful experiences, decisions, task events and retained source materials.
+2. **Remembering what she learned:** Organized long-term memories containing distilled facts, preferences, relationships, procedures, project knowledge and patterns.
+
+The historical archive preserves original context. Organized memories make information easier to use during reasoning. Derived memories should refer back to their original evidence whenever possible.
+
+This does not mean indefinitely recording every screen frame, microphone stream or transient desktop observation. Raw observations have separate permission and retention requirements.
+
+{fence}mermaid
+flowchart TD
+    A["Permitted conversations and meaningful events"] --> B["Historical experience archive"]
+    A --> C["Memory formation and extraction pipeline"]
+    C --> D["Organized long-term memories"]
+    B <--> D
+    D --> E["Source references and provenance"]
+    E --> B
+    D --> F["Retrieval and context assembly"]
+{fence}
+
+### Memory component 1 — Source and experience archive
+
+The archive is the historical record from which other memories are derived. It can include:
+
+- Conversation transcripts and session records.
+- Important interaction events.
+- Decisions and their original discussions.
+- Task plans, execution steps and outcomes.
+- Permitted application and desktop observations.
+- Imported documents and reference materials.
+- Relevant external research and its sources.
+
+The record should be append-oriented. New events are recorded, and existing evidence is not silently overwritten when a derived memory changes. Corrections and superseding decisions should be represented as new events or versioned state changes with provenance.
+
+Retention is governed separately by sensitivity and user policy. The ordinary conversation archive is retained indefinitely until the user requests deletion. Temporary conversations are excluded from permanent archive and long-term memory formation.
+
+### Memory component 2 — Episodic memory
+
+Episodic memory preserves meaningful experiences in chronological context.
+
+An episode may contain:
+
+- What happened.
+- When the underlying event occurred.
+- When LIA learned or recorded it.
+- The participants, projects and entities involved.
+- The context and outcome.
+- Related tasks and decisions.
+- Links to the original conversation, document or event.
+
+Example:
+
+**Episode: Desktop awareness decision**
+
+- Event date: 12 November 2026.
+- Context: Discussion of the extent of desktop awareness.
+- Event: User approved three levels of awareness.
+- Outcome: Default desktop metadata, on-demand screen perception and optional continuous screen perception.
+- Related entities: LIA, Desktop Awareness, Screen Perception and User Permissions.
+- Source: Original discussion and approved decision record.
+
+Episodic memory enables questions such as "What did we decide during our last architecture discussion?", "When did we discuss this?" and "What was happening when this preference was established?"
+
+### Memory component 3 — Semantic memory
+
+Semantic memory stores what LIA currently understands to be true or established.
+
+It includes:
+
+| Domain | Example |
+|---|---|
+| User profile | Interests, preferences, goals and routines |
+| Projects | Objectives, current state and decisions |
+| Technology | Technologies used by a project |
+| Relationships | Relevant people and their associations |
+| Preferences | Preferred interaction and working styles |
+| Knowledge | Established facts and concepts |
+
+Semantic memory should use both concise, frequently accessed profiles and independently addressable records. A project summary can provide quick context while individual records preserve supporting decisions, dates and source evidence.
+
+A single continually rewritten profile risks losing historical nuance. A collection of isolated facts risks making comprehensive retrieval difficult. The two representations should work together.
+
+### Memory component 4 — Temporal knowledge graph
+
+The knowledge graph is the relational backbone of LIA's memory. It represents entities as nodes and meaningful typed relationships as edges.
+
+Potential entities include User, LIA, Person, Project, Application, Technology, File, Conversation, Experience, Task, Decision, Preference and Skill.
+
+Potential relationship types include:
+
+- WORKS_ON
+- USES
+- PREFERS
+- DECIDED
+- DEPENDS_ON
+- RELATED_TO
+- SUPERSEDES
+- PARTICIPATED_IN
+- CREATED
+- ORIGINATED_FROM
+- APPLIES_TO
+
+Example:
+
+{fence}mermaid
+flowchart TD
+    U["User"] -->|"WORKS_ON"| L["Project LIA"]
+    L -->|"HAS_COMPONENT"| A["Animation system"]
+    L -->|"HAS_COMPONENT"| B["Agent runtime"]
+    A -->|"INDEPENDENT_OF"| B
+    A -->|"USES"| G["Godot"]
+    L -->|"HAS_DECISION"| D["Separation of concerns"]
+    D -->|"ORIGINATED_FROM"| E["Previous implementation experience"]
+{fence}
+
+This graph should represent semantic relationships, not merely the fact that two topics appeared in the same conversation. RELATED_TO, DEPENDS_ON and SUPERSEDES must retain distinct meanings.
+
+The graph should support multi-hop questions. For example, a question about why animation must remain independent of agent cognition can lead from the LIA project to the animation system, the agent runtime, the separation-of-concerns decision and the original implementation experience.
+
+#### Temporal graph semantics
+
+The memory model should distinguish:
+
+- **Valid time:** When was this information true in the world or in the user's circumstances?
+- **Transaction time:** When did LIA learn or record this information?
+
+If the user tells LIA on 13 November that a desktop-environment change actually happened on 1 November, both dates matter.
+
+The graph should preserve historical facts while identifying what is currently believed to be valid. New facts may supersede older facts without erasing them.
+
+### Memory component 5 — Procedural memory
+
+Procedural memory stores how LIA performs tasks, not merely what she knows.
+
+Examples include:
+
+- How to organize a software project.
+- How to operate a particular application.
+- How to troubleshoot a known error.
+- How to configure a desktop environment.
+- How to execute a recurring user-approved workflow.
+
+A procedure should contain preconditions, required permissions, execution steps, expected outcomes and recovery instructions. LIA must distinguish a successful, verified workflow from something she merely attempted once.
+
+### Memory component 6 — Working and task memory
+
+Working memory is LIA's active cognitive workspace. It contains information needed for current reasoning and execution:
+
+- Current conversation context.
+- Active objectives and plans.
+- Retrieved memories relevant to the current objective.
+- Current application and desktop context, where permitted.
+- Task checkpoints and dependencies.
+- Immediate observations and results.
+
+Working memory must not become an unbounded permanent store. Its lifecycle should be managed independently, while important task checkpoints and persistent state are saved when needed for safe resumption.
+
+### Memory component 7 — Retrieval indexes
+
+Indexes are mechanisms for locating memories, not separate sources of truth.
+
+| Index | Purpose |
+|---|---|
+| Vector index | Find information through semantic similarity |
+| Full-text / BM25 index | Find exact terms, names, identifiers and phrases |
+| Graph index | Find relationships and connected memories |
+| Temporal index | Find events and facts relevant to a period |
+| Structured index | Filter by project, category, source, status and metadata |
+
+These indexes should point to canonical records and source evidence. If an index is stale or inconsistent, it must be repairable from the authoritative records.
+
+### Memory formation pipeline
+
+Autonomous memory formation should operate as an ongoing pipeline over permitted inputs.
+
+1. Capture permitted conversations, events, task outcomes and other relevant information.
+2. Segment the input into meaningful events, topic boundaries and experiences.
+3. Extract candidate facts, preferences, objectives, decisions, relationships and procedural knowledge.
+4. Resolve entities so that information is connected to the correct person, project, application or concept.
+5. Validate and reconcile duplicates, contradictions, outdated information, uncertainty and source evidence.
+6. Store memories in appropriate representations and create graph relationships and retrieval indexes.
+7. Consolidate summaries and frequently used representations without destroying original evidence.
+
+Most extraction and consolidation can occur asynchronously. Important decisions and task-state changes may require prompt persistence. Failure to extract a memory must not silently corrupt the original archive.
+
+{fence}mermaid
+flowchart TD
+    A["Permitted experience or event"] --> B["Capture"]
+    B --> C["Segment meaningful episodes"]
+    C --> D["Extract facts, events and candidate relationships"]
+    D --> E["Resolve entities and sources"]
+    E --> F["Validate, deduplicate and reconcile"]
+    F --> G["Store episodic, semantic and procedural memories"]
+    G --> H["Update temporal knowledge graph"]
+    H --> I["Update retrieval indexes"]
+    I --> J["Consolidate summaries and patterns"]
+    J --> K["Preserve source provenance"]
+{fence}
+
+### Associative memory reinforcement
+
+LIA's memory graph should support experience-dependent strengthening of meaningful relationships. This is inspired by associative-learning principles such as Hebbian learning, but is a computational design analogy, not a claim that LIA reproduces biological neural plasticity.
+
+A relationship may become stronger when supported by repeated, sufficiently independent experiences or strong explicit evidence.
+
+Example:
+
+- First experience: The user mentions enjoying Linux internals. LIA records a candidate association between User and Linux Internals.
+- Second experience: The user spends multiple sessions exploring kernel internals, process management and memory management. Independent evidence supports the association and creates useful connections among those concepts.
+- Third experience: The user explicitly states a long-term goal of understanding Linux internals deeply. This explicit statement provides stronger evidence and can establish a durable learning preference with high confidence.
+
+The system should not require repeated statements when the user has explicitly communicated a clear preference or goal.
+
+#### Association development stages
+
+| Stage | Meaning |
+|---|---|
+| Candidate association | A relationship is observed, but evidence is insufficient to treat it as an established pattern |
+| Consolidated association | Multiple independent experiences support the relationship, or strong explicit evidence establishes it |
+| Strong association | The relationship receives consistent support across time, situations and meaningful experiences |
+
+#### Separate memory signals
+
+LIA must maintain distinct values for:
+
+- **Association strength:** How strongly two pieces of information are connected.
+- **Factual confidence:** How certain LIA is that the relationship or statement is correct.
+- **Importance:** How valuable the information is to preserve.
+- **Retrieval activation:** How relevant the memory is to the current situation.
+
+A possible normalized association-strength model is:
+
+S_new = min(1, S_old + ΔS)
+
+ΔS represents the contribution of new supporting evidence. This is a conceptual model, not a finalized update equation or coefficient.
+
+Evidence may have different influence:
+
+| Evidence | Indicative influence |
+|---|---|
+| Explicit user statement | Very high |
+| Repeated independent experiences | High |
+| Consistent behavior across sessions | High |
+| Relevant task completion | Moderate to high |
+| Single contextual observation | Low |
+| Mere co-occurrence of concepts | Very low |
+| Contradictory information | Triggers reconciliation rather than automatic reinforcement |
+
+#### Selective association and maintenance
+
+LIA must not create strong relationships between every concept that appears in the same conversation. Co-occurrence can suggest a candidate relationship, but semantic meaning requires evidence.
+
+The system should also avoid runaway reinforcement:
+
+- Temporal decay may reduce the retrieval activation or relevance of temporary information.
+- Contradictory evidence may challenge a relationship and require reconciliation.
+- Strength normalization should produce diminishing gains from repeated evidence, preventing frequently mentioned topics from dominating the graph.
+- Repeated retrieval alone must not count as new evidence of truth.
+- Historical facts and important decisions must not be erased merely because they are old.
+
+A strong association can guide retrieval without proving a causal relationship or a personal inference.
+
+{fence}mermaid
+flowchart TD
+    A["New meaningful experience"] --> B["Extract entities and candidate relationship"]
+    B --> C["Check existing graph and source evidence"]
+    C --> D["Evaluate independence, explicitness and confidence"]
+    D --> E["Update association evidence"]
+    E --> F{"Consolidation threshold reached?"}
+    F -->|No| G["Retain as candidate"]
+    F -->|Yes| H["Consolidate relationship"]
+    G --> I["Wait for new evidence"]
+    I --> A
+    H --> J["Update connected memories and provenance"]
+    J --> K["Periodic maintenance"]
+    K --> L["Reconcile, normalize or reduce retrieval activation"]
+{fence}
+
+### Context-aware memory retrieval and assembly
+
+The retrieval system should reconstruct the context required for a particular conversation, task or proactive activity. It should not merely return memories that resemble the latest message.
+
+Memory formation, consolidation, retrieval and context assembly are separate responsibilities:
+
+- Formation decides what to remember.
+- Consolidation organizes and connects what is remembered.
+- Retrieval finds relevant records.
+- Context assembly decides what information is supplied to reasoning.
+
+#### Eight retrieval stages
+
+1. Understand the information need.
+2. Create a retrieval plan.
+3. Query relevant memory stores in parallel.
+4. Merge and deduplicate candidate memories.
+5. Expand relevant knowledge-graph connections.
+6. Rerank and validate evidence.
+7. Retrieve original source material when needed.
+8. Assemble a bounded working context.
+
+{fence}mermaid
+flowchart TD
+    A["Conversation, task or event"] --> B["Understand information need"]
+    B --> C["Create retrieval plan"]
+    C --> D["Query memory stores in parallel"]
+    D --> E["Merge and deduplicate candidates"]
+    E --> F["Expand relevant graph connections"]
+    F --> G["Rerank and validate evidence"]
+    G --> H["Retrieve original sources when needed"]
+    H --> I["Assemble bounded working context"]
+    I --> J["Reason, respond or act"]
+    J --> K["Record outcome and feedback"]
+{fence}
+
+#### Retrieval by information need
+
+| Request | Relevant memory sources |
+|---|---|
+| Casual conversation | User profile, preferences and recent relevant episodes |
+| Personal discussion | Relevant episodic memories, preferences and established boundaries |
+| Project discussion | Project summaries, decisions, graph connections and original discussions |
+| Technical research | Relevant knowledge, reference documents and previous research |
+| Task execution | Task state, procedures, current permissions and fresh application context |
+| Task resumption | Checkpoints, execution history, dependencies and latest state |
+| Historical question | Temporal graph, original source episodes and evidence |
+| Proactive initiative | Active goals, unfinished tasks, deadlines, preferences and permitted observations |
+
+#### Hybrid retrieval and ranking
+
+The retrieval planner may query vector, lexical, structured, graph, temporal and source-archive indexes in parallel. Candidate results should be merged and deduplicated before ranking.
+
+Ranking can consider semantic relevance, lexical relevance, graph relevance, temporal relevance, source authority, factual confidence, current validity, contextual relevance and importance.
+
+A conceptual ranking model is:
+
+R(m,q,c) = w_s S + w_l L + w_g G + w_t T + w_p P + w_v V + w_c C
+
+Where m is a candidate memory, q is the information request, c is current context, and the signals represent semantic, lexical, graph, temporal, provenance, validity and contextual relevance. The weights require evaluation and calibration; they are not fixed in the requirements baseline.
+
+Association strength may influence which graph paths deserve exploration, but must not override factual confidence or source evidence.
+
+#### Bounded graph traversal
+
+Graph retrieval should:
+
+- Identify anchor entities in the request.
+- Traverse meaningful typed relationships.
+- Expand progressively from directly connected memories.
+- Use task-appropriate and bounded hop counts.
+- Preserve edge direction and semantics.
+- Apply temporal validity and access controls during traversal.
+- Stop when additional connections no longer contribute useful evidence.
+
+An unrestricted graph walk is not acceptable because it can retrieve excessive or unrelated context.
+
+#### Temporal and contradiction resolution
+
+Before using a memory as current fact, LIA should identify whether it is current, historical, superseded, stale, incomplete or contradictory.
+
+For example, a previous preference for Application A may be superseded by an explicit later preference for Application B. LIA should retain both records and return the current applicable belief when asked about the present, while still answering historical questions accurately.
+
+When evidence conflicts without a clear resolution, LIA must expose the uncertainty rather than force one answer.
+
+#### Context assembly
+
+The final working-context package should include only information needed for the current task and should preserve:
+
+- Current project or conversation state.
+- Relevant established decisions and facts.
+- Relevant historical experiences.
+- Active tasks and unresolved items.
+- Source references.
+- Temporal status.
+- Explicit versus inferred evidence labels.
+- Uncertainty and conflicting evidence.
+- Relevant access restrictions.
+
+It should be bounded by the available context budget. A summary must not be treated as equivalent to its original evidence when exact historical detail matters.
+
+#### Reactive and anticipatory retrieval
+
+**Reactive retrieval** occurs in response to a user message, task or event.
+
+**Anticipatory retrieval** prepares likely relevant context as a task or interaction develops. For example, when the user begins working on a known project, LIA may retrieve its current summary, recent decisions and unfinished tasks, provided the relevant context access is permitted.
+
+Anticipatory retrieval does not authorize execution. It prepares information only.
+
+#### Retrieval traceability
+
+LIA should retain enough retrieval trace information to explain which sources and relationships contributed to a response or plan. This enables debugging across extraction, entity resolution, graph traversal, ranking, temporal resolution and context assembly.
+
+#### Memory evaluation
+
+The memory system should be evaluated using LIA-specific tests:
+
+| Test | Expected behavior |
+|---|---|
+| Exact recall | Retrieve a specific fact and its source |
+| Multi-session recall | Combine information from different conversations |
+| Multi-hop reasoning | Follow relationships between projects, decisions and events |
+| Temporal reasoning | Distinguish historical information from current information |
+| Knowledge updates | Correctly handle changed preferences and decisions |
+| Provenance | Identify the original source of remembered information |
+| Abstention | Acknowledge missing or uncertain information |
+| Task continuity | Resume a task using its actual checkpoint |
+| Correction | Propagate a correction into dependent representations |
+| Deletion | Propagate deletion through authorized stores and indexes |
+| Context isolation | Avoid mixing unrelated projects, people or private domains |
+| Permission separation | Never treat retrieved memory as current execution authorization |
+
+Measurements should include retrieval precision and recall, source accuracy, temporal correctness, context size, latency, unnecessary memory inclusion and the rate of unsupported answers.
+
+LongMemEval and LoCoMo are potential external benchmark references; they do not replace LIA-specific evaluation.
+
+### Memory architecture diagram
+
+{fence}mermaid
+flowchart TB
+    A["Permitted information sources"]
+    A1["Conversations and experiences"]
+    A2["Tasks and actions"]
+    A3["Permitted desktop/application context"]
+    A4["Documents and research"]
+    A --> A1
+    A --> A2
+    A --> A3
+    A --> A4
+
+    A1 --> B["Memory formation pipeline"]
+    A2 --> B
+    A3 --> B
+    A4 --> B
+
+    B --> C["Source and experience archive"]
+    B --> D["Extraction, classification and entity resolution"]
+
+    D --> E["Episodic memory"]
+    D --> F["Semantic memory"]
+    D --> G["Temporal knowledge graph"]
+    D --> H["Procedural memory"]
+    D --> I["Task and working memory"]
+
+    C --> J["Retrieval indexes"]
+    E --> J
+    F --> J
+    G --> J
+    H --> J
+    I --> J
+
+    J --> K["Context-aware retrieval planner"]
+    K --> L["Evidence validation and temporal resolution"]
+    L --> M["Bounded context assembly"]
+    M --> N["LIA reasoning and interaction"]
+    N --> B
+{fence}
+
+## 11.11 P2.1 and P2.5 boundaries
+
+The memory architecture in this section is a conceptual design direction. P2.5 will formalize memory requirements, governance, persistence, retrieval, correction and deletion. P2.6 will define permissions, sensitive-data boundaries and execution authority. P2.2 will define measurable performance and resource constraints. P2.7 will define acceptance tests.
+
+No specific graph database, vector database, embedding model, programming language, memory framework or orchestration system is selected here. Such choices belong in P3.
+
+---
+
+# 12. P2.5 — Memory governance and integrity
+
+**Workstream status:** Active design  
+**Purpose:** Define how LIA retains, classifies, protects, corrects, forgets, deletes, shares and accesses memory throughout its lifecycle.
+
+A sophisticated memory system that remembers everything but cannot reliably correct or forget information would be fundamentally flawed. Governance is therefore part of the memory architecture, not an administrative feature added afterwards.
+
+## 12.1 Historical conversation retention
+
+The user approved the following policy:
+
+- Ordinary permitted conversation archives are retained indefinitely until the user requests deletion.
+- Retention does not imply that every screen frame, raw audio stream or transient desktop observation is permanently recorded.
+- The user can request deletion of individual conversations or broader memory collections.
+- Sensitive information follows stricter classification and retention policies.
+- Temporary conversations are available for the active interaction but are not added to the permanent conversation archive or long-term memory formation.
+
+### Temporary conversations
+
+Temporary conversation mode is available in two ways:
+
+1. The user manually activates it.
+2. LIA may suggest it when a conversation appears especially sensitive.
+
+LIA must never silently activate temporary mode. The user must explicitly consent to enter it.
+
+While temporary mode is active:
+
+- Conversation content remains available in working memory for the active interaction.
+- The conversation is not added to the permanent historical archive.
+- Autonomous extraction and consolidation of its contents into long-term memory are disabled.
+- No episodic, semantic or associative memories are created from the temporary conversation.
+- Temporary conversational context is discarded when the session ends, subject to any separately disclosed operational or security records.
+- Sensitive content must not leak into unrelated summaries or retrieval indexes.
+
+If LIA performs an authorized computer operation during a temporary session, minimal operational records may be necessary for execution integrity and security. Such records must not preserve the sensitive conversational content. A separately authorized persistent task may have its own task record, but that must not silently archive the temporary conversation.
+
+{fence}mermaid
+flowchart TD
+    A["Conversation begins"] --> B{"Temporary mode requested or accepted?"}
+    B -->|No| C["Apply ordinary archive and memory policy"]
+    B -->|Yes| D["Temporary working context"]
+    D --> E["Disable long-term memory formation"]
+    E --> F["Perform permitted interaction"]
+    F --> G["Discard temporary conversational context at end"]
+    G --> H["Retain only separately permitted minimal operational records"]
+    C --> I["Apply sensitivity and retention classification"]
+{fence}
+
+## 12.2 Memory sensitivity classification
+
+The initial proposed classification is:
+
+| Class | Information examples | Default memory policy |
+|---|---|---|
+| **S0 — Ordinary** | General knowledge, public information and ordinary project facts | Autonomous retention allowed |
+| **S1 — Personal** | Interests, preferences, routines and personal context | Autonomous retention under user memory preferences |
+| **S2 — Sensitive** | Private correspondence, financial records and sensitive personal documents | May be processed when authorized; explicit authorization required for long-term retention |
+| **S3 — Highly sensitive secrets** | Passwords, API tokens, private keys, recovery codes and equivalent secrets | Never store in ordinary conversational or semantic memory |
+
+S3 credentials must be handled through a separate secure credential mechanism if the product later supports them. They must not be embedded in the knowledge graph, ordinary memory records or conversational summaries.
+
+Permission to access information does not automatically grant permission to retain it. LIA may be authorized to inspect a financial document for a specific calculation without being authorized to preserve its full contents indefinitely.
+
+Classification must affect the entire memory pipeline, including extraction, summarization, graph construction, indexing, retrieval and sharing. If LIA is uncertain about sensitivity, she should handle the information conservatively and avoid automatic promotion into unrestricted long-term memory.
+
+## 12.3 Correction, contradiction and temporal reconciliation
+
+LIA must correct her understanding without corrupting historical evidence.
+
+Example:
+
+- January: The user prefers Application A.
+- March: The user begins using Application B.
+- April: The user explicitly states that Application B is now preferred.
+
+The current semantic profile should reflect Application B. The historical record should preserve the earlier preference and the transition.
+
+Correction rules:
+
+- Explicit user correction takes precedence over an inference within the scope stated by the user.
+- Context matters: preferring Linux for development does not establish a preference for Linux in every activity.
+- Time matters: earlier information may have been accurate when recorded.
+- Contradictions should remain visible when evidence does not establish a clear resolution.
+- LIA must not invent an explanation for why information changed.
+- Corrections must propagate to derived summaries, graph relationships and retrieval indexes.
+- Historical evidence should remain traceable unless the user separately requests erasure.
+
+## 12.4 Forgetting and deletion operations
+
+The user approved three distinct memory-management operations:
+
+| Operation | Meaning |
+|---|---|
+| **Forget a fact** | Remove the fact from active memory and its derived representations, and prevent it from influencing future reasoning. The original conversation remains unless separately requested for deletion. |
+| **Erase an experience** | Delete the selected conversation or experience and its derived memories, relationships, summaries and retrieval representations. |
+| **Erase a memory domain** | Remove a selected collection, such as a project-memory or personal-interest domain, including derived records within the requested scope. |
+
+A minimal deletion marker may be retained to prevent accidental re-import, but it must not preserve the deleted content itself.
+
+Deletion must cover the canonical record and its dependent representations, including:
+
+- Knowledge graph nodes and relationships.
+- Vector embeddings and lexical indexes.
+- Derived summaries and profiles.
+- Cached working-context representations.
+- Linked episodic and semantic memories.
+- Snapshots and backups according to the applicable deletion policy.
+- External processing or storage providers, subject to their actual deletion capabilities and terms.
+
+LIA must distinguish deletion from active memory, deletion from primary storage, expiration of backup copies and removal from external providers. She must not claim complete erasure until all applicable deletion work has actually completed or clearly disclose what remains outstanding.
+
+{fence}mermaid
+flowchart TD
+    A["User requests memory change"] --> B["Determine scope: fact, experience or domain"]
+    B --> C["Identify source records"]
+    C --> D["Find dependent memories, graph edges and indexes"]
+    D --> E{"Requested operation?"}
+    E -->|Forget fact| F["Remove from active use and derived representations"]
+    E -->|Erase experience| G["Delete source episode and dependent representations"]
+    E -->|Erase domain| H["Delete records within selected domain and scope"]
+    F --> I["Create minimal non-content deletion marker"]
+    G --> I
+    H --> I
+    I --> J["Propagate to indexes, caches and applicable backups/providers"]
+    J --> K["Track completion and outstanding copies"]
+    K --> L["Report actual deletion status"]
+{fence}
+
+## 12.5 Memory compartments and controlled cross-domain sharing
+
+LIA's memory should be logically compartmentalized. The initial domains are:
+
+| Domain | Contents |
+|---|---|
+| User memory | Preferences, goals, routines, interests and personal context |
+| Project memory | Project-specific objectives, decisions, architecture, files and progress |
+| Task memory | Objectives, plans, dependencies, checkpoints and execution history |
+| Experience memory | Conversations, episodes, meaningful events and interaction history |
+| Procedural memory | Reusable workflows, learned application operations and validated procedures |
+
+These compartments must remain interconnected without becoming one unrestricted information pool.
+
+The user approved controlled cross-domain memory sharing.
+
+The intended behavior is:
+
+- Non-sensitive user-level preferences and technical preferences may be available across projects when relevant and permitted by policy.
+- Project-specific or confidential information remains scoped to that project unless sharing is explicitly authorized or covered by a clearly defined user-level sharing rule.
+- A task may retrieve relevant project memory and user preferences without gaining access to unrelated private domains.
+- LIA may know that two projects are related without being entitled to retrieve every private detail from both.
+- A relationship edge does not itself grant access to the connected record.
+- Sharing permissions are not automatically transitive. Access to A and a relationship from A to B does not automatically grant access to all of B.
+- Cross-domain sharing must retain source provenance, sensitivity classification and the purpose for which information is being retrieved.
+- Revoking a sharing grant must prevent future retrieval under that grant and update relevant access indexes or caches.
+
+Access decisions should consider three dimensions:
+
+1. **Ownership:** Which user, project, task or experience owns the memory?
+2. **Sensitivity:** How restricted is the information?
+3. **Contextual access:** Which task or reasoning activity is allowed to retrieve it?
+
+### Controlled memory-sharing model
+
+{fence}mermaid
+flowchart TD
+    U["User memory"] -->|Permitted user-level preferences| P1["Project A memory"]
+    U -->|Permitted user-level preferences| P2["Project B memory"]
+    P1 <--> |Explicitly authorized sharing only| P2
+    T["Task memory"] -->|Scoped retrieval| P1
+    T -->|Scoped retrieval| U
+    E["Experience archive"] -->|Source references subject to access rules| U
+    E -->|Source references subject to access rules| P1
+    E -->|Source references subject to access rules| P2
+    X["Sensitivity and ownership policy"] -. governs .-> U
+    X -. governs .-> P1
+    X -. governs .-> P2
+    X -. governs .-> T
+    X -. governs .-> E
+{fence}
+
+The diagram expresses permitted flows, not automatic access. The access-control decision must be evaluated for each retrieval.
+
+## 12.6 Memory and authorization are separate authorities
+
+Memory records what LIA knows and what happened. A separate permission authority determines what LIA is currently allowed to do.
+
+Example:
+
+Memory records that the user previously authorized LIA to conduct public web research for the LIA project.
+
+The permission authority independently confirms:
+
+- Capability: Public web research.
+- Scope: LIA project.
+- Authority: Standing permission.
+- Status: Active.
+
+LIA may proceed without asking for a new approval if the current permission check succeeds.
+
+If the permission is revoked, the permission authority must reject future execution even though historical memory still records the previous approval.
+
+Likewise, an inferred preference such as "the user usually wants me to do this" must never become authorization.
+
+These components remain separate:
+
+| Component | Responsibility |
+|---|---|
+| Memory system | Knows what has happened and what has been learned |
+| Permission authority | Determines what LIA is currently allowed to do |
+| Task scheduler | Determines when work can execute |
+| Execution system | Performs authorized operations |
+
+They may reference one another, but must not inherit one another's authority.
+
+{fence}mermaid
+flowchart TD
+    A["Memory: proposed or remembered task"] --> B["Task planner"]
+    B --> C["Task scheduler"]
+    C --> D["Authoritative permission check"]
+    D --> E{"Current grant valid?"}
+    E -->|Yes| F["Authorized execution"]
+    E -->|No| G["Block operation and request authorization or revise plan"]
+    F --> H["Record outcome in task history"]
+    H --> I["Memory formation may retain permitted outcome"]
+{fence}
+
+## 12.7 Memory governance requirements
+
+The following security and governance requirements are part of the P2.5/P2.6 design baseline. Their detailed acceptance criteria remain to be completed in P2.7.
+
+| ID | Requirement | Status |
+|---|---|---|
+| SEC-001 | Ordinary permitted conversation archives shall be retained indefinitely until the user requests deletion, subject to sensitivity classification and the applicable retention policy. | Agreed design direction |
+| SEC-002 | LIA shall support user-activated temporary conversations and may suggest temporary mode, but shall not activate it without explicit user consent. | Agreed design direction |
+| SEC-003 | Temporary conversation content shall be excluded from permanent conversation archives and autonomous long-term memory formation, subject to separately disclosed minimal operational records. | Agreed design direction |
+| SEC-004 | Memory records and source information shall be classified by sensitivity before long-term retention, indexing and cross-domain sharing. | Draft |
+| SEC-005 | S2 sensitive information shall require explicit authorization for long-term retention, even when processing access is authorized. | Agreed design direction |
+| SEC-006 | S3 secrets shall not be stored in ordinary conversational, semantic or graph memory. | Agreed design direction |
+| SEC-007 | The system shall distinguish access permission from retention permission. | Draft |
+| SEC-008 | The user shall be able to inspect the source and relationships of retained memories. | Draft |
+| SEC-009 | Explicit user corrections shall take precedence over inferred information within the stated scope and shall propagate to dependent representations. | Draft |
+| SEC-010 | The system shall preserve historical evidence when information is corrected or superseded, unless the user requests erasure. | Draft |
+| SEC-011 | Forgetting a fact shall remove it from active use and derived representations while leaving the original archive intact unless separately requested for deletion. | Agreed design direction |
+| SEC-012 | Erasing an experience shall propagate to its dependent memory records, graph relationships, summaries and retrieval indexes within the requested scope. | Agreed design direction |
+| SEC-013 | Erasing a memory domain shall remove the selected domain and its derived representations within the requested scope. | Agreed design direction |
+| SEC-014 | Deletion status shall distinguish active-storage deletion, primary-store deletion, backup expiration and external-provider deletion. | Draft |
+| SEC-015 | Memory domains shall be logically compartmentalized by ownership, sensitivity and contextual access. | Agreed design direction |
+| SEC-016 | Cross-domain memory sharing shall be controlled, purpose-relevant and subject to sensitivity, ownership and revocable access rules. | Agreed design direction |
+| SEC-017 | Knowledge-graph relationships shall not automatically grant access to connected memory records, and sharing shall not be transitively inherited by default. | Agreed design direction |
+| SEC-018 | The permission authority shall remain separate from memory and shall be consulted for current authorization before execution. | Agreed design direction |
+| SEC-019 | The system shall not claim complete erasure while applicable deletion work remains outstanding or unverified. | Agreed design direction |
+| SEC-020 | If sensitivity or permission status is uncertain, the system shall apply the more restrictive safe handling behavior until resolved. | Draft |
+
+## 12.8 Memory governance workflow
+
+{fence}mermaid
+flowchart TD
+    A["Information received or memory operation requested"] --> B["Determine ownership and sensitivity"]
+    B --> C["Check source and processing permissions"]
+    C --> D["Determine retention and sharing eligibility"]
+    D --> E["Store, restrict, redact or discard"]
+    E --> F["Apply access controls to retrieval"]
+    F --> G["User or system requests correction, forgetting or deletion"]
+    G --> H["Resolve target and scope"]
+    H --> I["Propagate change to dependent memories and indexes"]
+    I --> J["Track backup and external-provider status"]
+    J --> K["Report verified outcome and outstanding work"]
+{fence}
+
+## 12.9 P2.5 completion boundary
+
+The memory governance design is not complete until the following are specified and tested:
+
+- Memory record ownership and sensitivity classification.
+- Retention rules for every memory category and source type.
+- Temporary conversation lifecycle and operational exceptions.
+- Explicit authorization for sensitive-memory retention.
+- Correction and temporal contradiction handling.
+- Forgetting, experience erasure and domain erasure.
+- Deletion propagation, backup handling and external-provider reporting.
+- Compartmentalized access and controlled cross-domain sharing.
+- Permission-authority integration and audit behavior.
+- Retrieval access checks and source-level provenance.
+- User inspection, correction and deletion workflows.
+- Acceptance criteria covering each governance operation.
+
