@@ -60,6 +60,8 @@ Requirements use unique, stable identifiers:
 -   `ADR-###` --- Architecture decision record
 -   `CTX-###` --- Context and perception requirement
 -   `UX-###` --- Interaction and user-experience requirement
+-   `CTX-###` --- Context and perception requirement
+-   `UX-###` --- Interaction and user-experience requirement
 
 A requirement should describe one observable capability or constraint.
 Use "shall" for normative requirements. Avoid embedding implementation
@@ -258,8 +260,8 @@ distinguished from actual runtime suspension or shutdown.
   ------- ---------------------------------- ----------
   P0      Concept and vision                 Complete
   P1      Product definition                 Complete
-  P2      Requirements engineering           Active
-  P3      System architecture                Pending
+  P2      Requirements engineering           Complete — baseline approved
+  P3      System architecture                Next
   P4      Integration contracts              Pending
   P5      First vertical slice               Pending
   P6      Companion integration              Pending
@@ -3589,6 +3591,28 @@ Reference measurements shall be taken on the first supported Linux environment a
 
 The governing principle is **perceive only what is needed, only through an enabled source, and only for an authorized purpose**. Environmental awareness is not equivalent to unrestricted recording.
 
+### P2.3 requirement register — CTX-001 to CTX-017
+
+| ID | Requirement | Priority |
+|---|---|---:|
+| CTX-001 | LIA shall treat each environmental source as a separately identifiable perception capability with its own availability, scope and permission state. | P0 |
+| CTX-002 | LIA shall distinguish permission to observe or process a source from permission to retain, derive long-term memory, share or transmit information from that source. | P0 |
+| CTX-003 | Each retained observation shall preserve source identity, scope, observed/acquired timestamps where available, quality and applicable authorization context. | P0 |
+| CTX-004 | LIA shall prefer event-driven desktop metadata updates and use bounded polling only when platform events are unavailable or insufficient. | P0 |
+| CTX-005 | LIA shall identify the active application/window and retrieve available identity and metadata only when the corresponding desktop metadata capability is enabled. | P0 |
+| CTX-006 | LIA shall maintain supported window/display/workspace geometry and distinguish direct platform geometry from inferred spatial relationships. | P0 |
+| CTX-007 | Process inspection shall be read-only and disabled until separately enabled or requested under a valid permission. | P1 |
+| CTX-008 | Screen-content capture shall occur only for an authorized user request or task and shall remain limited to that purpose and scope. | P0 |
+| CTX-009 | Continuous screen perception shall be off by default, explicitly enabled, scope-limited, visibly indicated and immediately pausable. | P0 |
+| CTX-010 | Ordinary continuous screen awareness shall default to no faster than one capture every five seconds and shall not exceed one frame per second; higher-rate capture requires a bounded, explicitly authorized active task. | P1 |
+| CTX-011 | Secure desktops, credential prompts, password-entry surfaces and configured sensitive windows shall be excluded from ordinary visual capture and extraction by default. | P0 |
+| CTX-012 | LIA shall timestamp observations and shall not present stale or point-in-time screen observations as current live state. | P0 |
+| CTX-013 | LIA shall distinguish direct observations, extracted content, user statements, inferences and unknown/unavailable state in internal context and user-facing explanations where material. | P0 |
+| CTX-014 | LIA shall not assert user intent, attention, emotional state or psychological condition as fact based only on weak desktop activity signals. | P0 |
+| CTX-015 | Microphone capture shall follow the independently configured voice mode; raw audio shall remain transient by default and shall not be permanently archived merely because speech interaction occurred. | P0 |
+| CTX-016 | Camera perception shall remain disabled until explicit user activation and shall expose a clear active state and immediate pause/disable control when later supported. | P0 |
+| CTX-017 | LIA shall not perform passive global keystroke logging or retain arbitrary typed text outside explicit, task-scoped input operations and enabled user controls. | P0 |
+
 ## 14.1 Perception source classes
 
 | Source | Default state | Permitted use when enabled | Retention default |
@@ -3693,6 +3717,31 @@ The same conceptual context model shall be used across Linux and Windows, while 
 **Workstream status:** Complete — conversation, interruption, proactive timing and embodiment defaults approved  
 **Purpose:** Define how users and LIA communicate, interrupt, coordinate actions and experience the embodied character.
 
+### P2.4 requirement register — UX-001 to UX-020
+
+| ID | Requirement | Priority |
+|---|---|---:|
+| UX-001 | LIA shall provide text interaction as a complete fallback when voice input or output is unavailable or disabled. | P0 |
+| UX-002 | Push-to-talk shall be the default voice-input mode for the first vertical slice and shall capture audio only while explicitly activated. | P0 |
+| UX-003 | Continuous-conversation mode shall require explicit user enablement and shall expose an understandable active listening state. | P0 |
+| UX-004 | Wake-word activation shall require explicit user enablement and shall not be inferred from ordinary text or desktop permissions. | P0 |
+| UX-005 | LIA shall visibly communicate when microphone capture/listening is active, paused or stopped. | P0 |
+| UX-006 | The user shall be able to interrupt synthesized speech; the interaction shall not require waiting for a response to finish. | P0 |
+| UX-007 | The user shall have an immediate pause/stop control for listening, proactive activity and pending/running operations, with safe-stop reporting for side effects already performed. | P0 |
+| UX-008 | LIA shall prioritize user speech over her own output and shall avoid speaking over detected user input. | P0 |
+| UX-009 | LIA shall request clarification when a user request or action target is materially ambiguous rather than guessing. | P0 |
+| UX-010 | LIA shall distinguish suggestion, plan, pending action, blocked action, attempted action and verified outcome in both interaction state and user-facing communication. | P0 |
+| UX-011 | Voice and text shall communicate the same essential instructions, confirmations, warnings and outcomes; loss of one modality shall not silently remove material information. | P0 |
+| UX-012 | When social autonomy is enabled, unsolicited social openings shall default to at most one per two hours and three per local day, subject to configured user limits and relevance. | P1 |
+| UX-013 | LIA shall respect configured quiet hours and detectable OS Do Not Disturb/focus state; uncertain availability shall default to less intrusive behavior. | P1 |
+| UX-014 | A dismissed proactive suggestion shall be suppressed until materially new context or an explicit user request justifies raising it again. | P1 |
+| UX-015 | LIA shall distinguish stable personality traits, dynamic behavioral/emotional state and outward expression; an animation state shall not establish an underlying OS result. | P0 |
+| UX-016 | LIA shall not use guilt, threats, simulated distress, possessiveness or emotional pressure to induce user engagement or prevent disengagement. | P0 |
+| UX-017 | Character animation for a desktop operation shall follow the actual operation state and shall adapt truthfully to failure, interruption or uncertain verification. | P0 |
+| UX-018 | The user shall be able to show/hide, drag/reposition and pin/lock the character; manual placement and pin/lock shall take precedence over task-bound repositioning. | P0 |
+| UX-019 | LIA shall respect reduced-motion and relevant accessibility/presentation preferences; essential state shall not be communicated only through animation. | P1 |
+| UX-020 | Notifications and proactive interaction shall follow the priority hierarchy in Section 15.7 and shall not obscure critical desktop controls or content. | P1 |
+
 ## 15.1 Interaction modes and fallbacks
 
 The full product supports independently configurable text, push-to-talk, continuous conversation and wake-word activation. Push-to-talk and text are the initial first-slice modes. Continuous and wake-word modes are off until configured.
@@ -3788,6 +3837,33 @@ This hierarchy does not grant any operation permission. It governs presentation 
 **Purpose:** Define what LIA may observe or do, under which grants, how risk changes confirmation requirements, and how the user retains control.
 
 The governing rule is: **intention is not permission; memory is not permission; tool availability is not permission.** Every operation must be authorized by the current permission authority at the point of execution.
+
+### P2.6 requirement register — SEC-039 to SEC-060
+
+| ID | Requirement | Priority |
+|---|---|---:|
+| SEC-039 | Every operation that observes protected context or causes a side effect shall be evaluated by the authoritative permission service before execution or retrieval. | P0 |
+| SEC-040 | Capabilities without an applicable active grant shall be denied by default. | P0 |
+| SEC-041 | Every grant shall define principal, capability, resource, scope, purpose, duration, origin and applicable risk/confirmation policy. | P0 |
+| SEC-042 | Grants shall be distinguishable as one-time, session, standing or delegated-task grants and shall be inspectable and revocable. | P0 |
+| SEC-043 | A direct user instruction may provide only a one-time delegation for the exact specified operation/target when the underlying capability and risk policy permit it; it shall not create a standing grant or expand scope. | P0 |
+| SEC-044 | Application Observe, Interact and Modify capabilities shall remain independent and shall be checked regardless of the interaction mechanism. | P0 |
+| SEC-045 | Operations shall be assigned risk classes R0–R4; when several classes apply, the highest risk class shall govern. | P0 |
+| SEC-046 | R3 and R4 operations shall require explicit per-operation confirmation bound to the exact parameters and affected resources; changed parameters invalidate the confirmation. | P0 |
+| SEC-047 | Application permissions shall be independently configurable, inspectable and revocable per application and capability class. | P0 |
+| SEC-048 | File-system grants shall be path-scoped and shall distinguish discovery, read, create, modify, move/rename and delete capabilities. | P0 |
+| SEC-049 | Input simulation shall be limited to explicitly enabled or task-scoped operations; passive global keystroke logging is prohibited. | P0 |
+| SEC-050 | Arbitrary shell/terminal command execution shall be blocked by default and require task-specific review of command, target and expected side effects. | P0 |
+| SEC-051 | External transmission, upload, publication or sharing shall validate destination and payload scope; consequential transmission shall follow R3/R4 confirmation policy. | P0 |
+| SEC-052 | Retrieved content from webpages, files, messages, source code or memory shall be treated as untrusted data and shall not override governing instructions or grant authority. | P0 |
+| SEC-053 | Passwords, tokens, private keys and recovery codes shall be excluded from ordinary memory, general extraction and ordinary diagnostic logs. | P0 |
+| SEC-054 | LIA shall not obtain administrator/root elevation silently or use privileged OS authority as a normal background capability. | P0 |
+| SEC-055 | Revocation shall prevent the next side effect under the revoked grant and invalidate relevant cached authorization state. | P0 |
+| SEC-056 | A global stop/pause control shall prevent new autonomous work and move running operations to a safe stop/checkpoint boundary. | P0 |
+| SEC-057 | A delegated task shall not inherit broader authority than its originating grant; task resumption shall revalidate current grants and target/resource state. | P0 |
+| SEC-058 | Missing, expired, revoked, ambiguous or unverifiable authorization shall fail closed. | P0 |
+| SEC-059 | Security and permission decisions shall have sufficient content-minimized audit records to explain actor, scope, decision, reason, time and outcome. | P1 |
+| SEC-060 | Memory and protected local resources shall be isolated to the authenticated OS user profile unless an explicitly supported sharing grant applies. | P0 |
 
 ## 16.1 Authorization model
 
