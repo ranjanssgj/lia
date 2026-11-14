@@ -1549,6 +1549,22 @@ phases are completed.
 | SEC-001–038 | Memory governance, integrity and user control | P2.5 baseline; P2.6 authorization integration; P2.7 acceptance tests; P3 implementation |
 
 
+### Controlled multi-device scope extension traceability
+
+| Requirement range | Product domain | Architecture / requirements follow-up |
+|---|---|---|
+| FR-225–229 | Multi-device identity, enrollment, capability registry and worker selection | P3.2 deployment; P3.3 device identity/connectivity; P2.7 AC-040 |
+| FR-230–231 | Remote PC access, offline behavior and stale-command handling | P3.2/P3.3 secure session topology; P2.6 SEC-063–067; P2.7 AC-041 |
+| FR-232–239 | Durable multi-step and recurring task execution | P3.4 workflow/event architecture; P2.2 NFR-036–044; P2.7 AC-042 |
+| FR-240 | User-routed notification delivery | P3.4 event/notification contracts; P2.6 SEC-069; P2.7 AC-044 |
+| FR-241–242 | Home automation and connected-device actions | P3.6 integration adapters; P2.6 SEC-072; P2.7 AC-045 |
+| FR-243 | Cross-device memory/context synchronization | P3.5 data ownership and synchronization; P2.5 governance; P2.7 AC-046 |
+| FR-244–248 | Autonomous campaigns, external publishing, quality gates and worker reassignment | P3.4 workflow architecture; P2.6 SEC-070–074; P2.7 AC-043 |
+
+The multi-device scope extension is governed by NFR-036–044, SEC-061–074
+and AC-040–046. These identifiers are appended to the completed Phase 2
+registers through controlled change; prior identifiers remain unchanged.
+
 ### First vertical-slice acceptance traceability
 
 | Acceptance criteria | Primary functional requirements |
@@ -1916,7 +1932,7 @@ Push-to-talk and text are initial interaction modes; continuous conversation and
 
 **Status:** Approved
 
-All side effects require a current permission-authority decision using principal, capability, resource, scope, purpose, duration, origin and risk. Direct user instructions may create only exact one-time delegation within an enabled capability. R0–R4 risk classes govern confirmation. R3/R4 operations require explicit per-operation confirmation; R4 is blocked by default. Grants are inspectable and revocable; revocation applies before the next side effect.
+All side effects require a current permission-authority decision using principal, capability, resource, scope, purpose, duration, origin and risk. Direct user instructions may create only exact one-time delegation within an enabled capability. R0–R4 risk classes govern confirmation. R3 operations require explicit per-operation confirmation by default, with a narrow exception for a user-approved, bounded recurring campaign delegation under SEC-070. R4 is blocked by default and always requires per-operation authorization/confirmation. Grants are inspectable and revocable; revocation applies before the next side effect.
 
 ### ADR-057 — Acceptance and verification policy
 
