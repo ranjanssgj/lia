@@ -43,7 +43,7 @@ Every event uses the versioned JSON envelope below. The event type selects a ver
   "classification": {
     "sensitivity": "S0",
     "scope": "account",
-    "retention_class": "operational"
+    "retention_class": "transport_transient"
   },
   "payload_digest_sha256": "hex-encoded SHA-256",
   "data": {}
@@ -81,7 +81,7 @@ The stream wildcard is `lia.v1.account.*.>`. Subject names and ownership are lis
 6. The consumer commits its inbox receipt and resulting domain transition/projection atomically where they share a database transaction. Where they do not share one, a recoverable handoff and idempotent state transition are required.
 7. The consumer acknowledges the broker message only after durable acceptance or durable quarantine. A lost acknowledgement may produce redelivery; the inbox dedupe makes it harmless.
 
-JetStream message deduplication and acknowledgement features do not establish exactly-once application effects. Stable event IDs, inbox uniqueness and domain idempotency remain mandatory.
+JetStream message deduplication and acknowledgement features do not establish exactly-once application effects. The stream is a bounded transport tier; canonical audit/history retention is provided by the owning domain. Stable event IDs, inbox uniqueness and domain idempotency remain mandatory.
 
 ## 5. Ordering, duplicates and gaps
 
@@ -117,6 +117,14 @@ Do not publish:
 - model-generated instructions as executable fields.
 
 S2 content requires purpose/scope approval and should normally be referenced, not embedded. S3 secrets are never event payloads. The event owner determines the correct scope, sensitivity and retention class before publication.
+
+## 7.1 Transport retention versus canonical event history
+
+JetStream is the bounded delivery transport, not the permanent event archive. All messages on the initial LIA_EVENTS_V1 stream use the transport_transient retention class and the stream has a finite configured max_age/max_bytes. Numeric values are pinned in the deployment profile after the P3.5 retention/capacity review and NATS-01 load test; unlimited retention is prohibited.
+
+Canonical audit/business history remains with the owning domain under its data-retention policy. If an event must outlive the JetStream transport window, its owner persists the canonical fact in its own governed event/audit store and publishes only the minimum routing payload or an opaque reference. JetStream stream-level retention cannot enforce a different per-message TTL for messages sharing that stream; event types requiring different transport retention must be routed to separately configured streams in a later version, not assumed to inherit per-message deletion.
+
+Retention/deletion work-item events are coordination signals only. A tombstone event is emitted by the domain that owns the affected record. Consumers use owner revisions and tombstone IDs to purge stale projections/indexes/caches; broker expiry alone never constitutes deletion. NATS replay after the retention boundary is serviced from the canonical owner, not from an infinite broker history.
 
 ## 8. Minimum conformance tests
 

@@ -115,6 +115,30 @@ Request socket connections are short-lived and closed after each synchronous req
 
 No generic Wayland window-control capability is claimed. X11, other compositors, Windows UI Automation and macOS are separate conformance profiles.
 
-## 9. Evidence needed to mark an adapter Supported
+## 9. Windows UI Automation profile
+
+The Windows adapter is a separate OS-specific profile. Its manifest identifies the exact Windows build, process/session context, UI Automation provider availability, supported patterns/events and applicable user/OS accessibility permissions. A desktop UIA resource reference includes the owning process identity, runtime ID where provided, provider/source revision and a LIA generation value so a recreated element cannot be mistaken for the earlier control.
+
+Discovery is a narrowly scoped semantic capability, not unrestricted application inspection. The adapter queries only the control/property/pattern set required by the authorized task and applies bounds to tree depth, element count, text/property retrieval, traversal time and output size. It does not capture screenshots as a substitute, harvest unrelated windows, or expose an entire UI tree merely because the provider returns one. UIA content is treated as S1/S2 according to its actual fields and purpose; raw text is not placed in general events, telemetry or model context without the relevant access/egress decision.
+
+Control actions require a declared supported UI Automation control pattern for the exact element and a separately authorized action capability. A provider that omits a control, pattern or event reports typed unsupported/partial coverage; LIA must not fabricate a clickable target or fall back to global key injection. Provider events are observations and must pass source, account, resource generation and freshness validation.
+
+The adapter respects Windows session, integrity/elevation and protected-desktop boundaries. It does not bypass UAC, secure desktop, process isolation, application security controls or user consent. Elevated targets are reported restricted unless a separately reviewed and explicit supported integration exists. Loss of the target process or provider invalidates the resource reference and requires rediscovery.
+
+The accompanying fixture deliberately reports discovery as permission_required, with OS_ACCESSIBILITY_CONSENT_REQUIRED. That is a schema/example state, not a claim that the adapter or UIA path has been implemented.
+
+Windows profile conformance supplements ADP-001–ADP-024 with:
+- UIA provider missing or omitting a control/pattern → typed unsupported/partial result; no synthetic control is invented.
+- Accessibility consent absent/revoked → permission_required/restricted; no tree traversal.
+- Target process exits and runtime ID is reused → generation mismatch rejects the stale operation.
+- Protected/elevated desktop boundary → restricted; no privilege escalation or bypass.
+- Provider event is duplicated or arrives after the resource expires → deduplicate/expire; do not mutate workflow state.
+- Element action reports accepted but state is unchanged → not verified; re-read supported state and report mismatch/unknown.
+- UIA tree exceeds the declared depth/element/time budget → bounded truncation or typed limit error, never unbounded traversal.
+- High-sensitivity properties are returned for a task without an access/egress decision → reject the context projection and redact diagnostics.
+
+No general Windows desktop automation support is claimed by the fixture. Only the exact Windows build, UIA provider, process/session conditions and capabilities that pass conformance may be marked supported.
+
+## 10. Evidence needed to mark an adapter Supported
 
 A conformance report records contract revision/hash, adapter build digest, OS/runtime/compositor/provider version, manifest fixture, account/device identity using synthetic data, operation ID/command ID/attempt ID, grant/policy conditions, expected/actual results, redacted logs, evidence references, failures, reviewer and date. A capability is marked supported only for the tested matrix; passing Hyprland does not establish general Linux or Windows support.

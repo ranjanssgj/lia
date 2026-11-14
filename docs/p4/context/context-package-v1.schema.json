@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lia.invalid/contracts/context/context-package-v1.schema.json",
+  "title": "LIA Governed Context Package v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "context_id",
+    "revision",
+    "principal",
+    "purpose",
+    "scope",
+    "assembled_at",
+    "expires_at",
+    "instruction_bundle",
+    "data_governance",
+    "token_budget",
+    "source_references",
+    "items",
+    "digest_sha256"
+  ],
+  "properties": {
+    "context_id": { "type": "string", "format": "uuid" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "principal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["principal_id", "principal_type"],
+      "properties": {
+        "principal_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "principal_type": { "type": "string", "enum": ["user", "service", "device", "delegated_task"] }
+      }
+    },
+    "purpose": { "type": "string", "minLength": 1, "maxLength": 300 },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope_type", "scope_reference"],
+      "properties": {
+        "scope_type": { "type": "string", "enum": ["account", "project", "task", "device", "session"] },
+        "scope_reference": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "assembled_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "instruction_bundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bundle_id", "revision", "digest_sha256"],
+      "properties": {
+        "bundle_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "revision": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "digest_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "data_governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sensitivity", "locality", "retention_class", "egress_decision_id", "permitted_provider_ids"],
+      "properties": {
+        "sensitivity": { "type": "string", "enum": ["S0", "S1", "S2", "S3"] },
+        "locality": { "type": "string", "enum": ["local_only", "approved_region", "any_approved_region"] },
+        "retention_class": { "type": "string", "enum": ["transient", "task_scoped", "approved_persistent"] },
+        "egress_decision_id": { "type": ["string", "null"], "maxLength": 160 },
+        "permitted_provider_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "raw_capture_included": { "type": "boolean" }
+      }
+    },
+    "token_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maximum_input_tokens", "maximum_output_tokens", "maximum_tool_cycles", "deadline_at"],
+      "properties": {
+        "maximum_input_tokens": { "type": "integer", "minimum": 1 },
+        "maximum_output_tokens": { "type": "integer", "minimum": 0 },
+        "maximum_tool_cycles": { "type": "integer", "minimum": 0 },
+        "deadline_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "source_references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reference_id", "owner_domain", "scope_type", "scope_reference", "revision", "digest_sha256", "sensitivity", "access_decision_id"],
+        "properties": {
+          "reference_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "owner_domain": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "scope_type": { "type": "string", "enum": ["account", "project", "task", "device", "session", "external_provider"] },
+          "scope_reference": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "revision": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "digest_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "sensitivity": { "type": "string", "enum": ["S0", "S1", "S2", "S3"] },
+          "access_decision_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "provenance_reference": { "type": ["string", "null"], "maxLength": 256 }
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["item_id", "kind", "source_reference_ids", "content_reference", "digest_sha256", "trust_class", "sensitivity", "purpose"],
+        "properties": {
+          "item_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "kind": { "type": "string", "enum": ["fact", "conversation_excerpt", "task_state", "document_extract", "observation", "user_preference", "derived_summary", "tool_result"] },
+          "source_reference_ids": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+          "content_reference": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "digest_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "trust_class": { "type": "string", "enum": ["trusted_instruction", "user_content", "untrusted_external_data", "verified_system_fact", "inferred"] },
+          "sensitivity": { "type": "string", "enum": ["S0", "S1", "S2", "S3"] },
+          "purpose": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "valid_until": { "type": ["string", "null"], "format": "date-time" },
+          "derivation_parent_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string" } }
+        }
+      }
+    },
+    "digest_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

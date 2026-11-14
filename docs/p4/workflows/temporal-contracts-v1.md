@@ -20,6 +20,8 @@ Memory Authority and Permission Authority remain separate. Workflows keep refere
 | CampaignWorkflow | `lia/campaign/{campaign_id}/{revision}` | Campaign lifecycle, bounded schedules/triggers and independent run creation |
 | ReconciliationWorkflow | `lia/reconcile/{operation_id}` | Resolve an uncertain side effect when a RunWorkflow cannot safely continue inline |
 | NotificationDeliveryWorkflow | `lia/notification/{notification_id}` | Independent bounded channel delivery; never changes workflow truth |
+| RetentionSweepWorkflow | `lia/retention/sweep/{schedule_revision}/{window_id}` | Select due retention policy work in bounded batches and create stable work items |
+| RetentionPropagationWorkflow | `lia/retention/propagate/{work_item_id}` | Coordinate owner-domain tombstone, projection/cache/index propagation and verification |
 
 A recurring campaign creates distinct RunWorkflow executions with immutable campaign/template revision references. A workflow ID is stable for one logical execution and must not be derived from a transient worker identity.
 
@@ -95,6 +97,11 @@ Queries expose current state, reason, blockers, and history references without m
 | PublishDomainEvent | committed outbox event ID | Publish event to JetStream | Same event_id on every retry; publish ack is not side-effect completion |
 | DeliverNotification | notification intent ID and channel preference ref | Attempt user-facing delivery | Independent bounded delivery state |
 | RecordArtifactReference | artifact digest, owner/scope/classification | Promote a validated output into the authorized artifact domain | Content digest and owner idempotency key |
+| SelectDueRetentionWork | policy revision, current window and batch limit | Select only due, authorized retention work without reading record content | Stable schedule occurrence and bounded batch cursor |
+| CreateRetentionWorkItem | owner domain, opaque record reference, policy/revision and idempotency key | Schedule a retention/deletion request without copying record content | Stable work_item_id and owner-domain dedupe |
+| RequestOwnerDeletion | work_item_id, owner domain and current authority reference | Ask canonical owner to apply/confirm its tombstone and deletion policy | Owner idempotency key; no cross-domain direct delete |
+| VerifyTombstonePropagation | work_item_id and owner tombstone revision | Verify projections, search indexes, caches, replicas and artifact references observe the current tombstone | Owner proof and per-target verification references |
+| PurgeExpiredProjection | owner domain, projection reference and tombstone revision | Remove expired non-authoritative projections after owner confirmation | Revision-guarded, idempotent; cannot remove canonical source data |
 
 Activities are the only place for nondeterministic I/O, network requests, database access, model invocation, OS/provider calls, and external side effects. Activity handlers must be independently idempotent or expose a reconciliation query.
 
@@ -130,6 +137,28 @@ Temporal histories contain identifiers, typed bounded metadata, decisions, diges
 
 History retention and archival must follow the workflow data classification and deletion requirements. A deletion request must restrict future reads immediately and propagate through projections/retention jobs under P2.5/P3.5; it must not be implemented by silently rewriting an active workflow history.
 
+## 9.1 Temporal Search Attributes and retention/deletion workflows
+
+The initial custom Search Attribute catalog is:
+- LiaAccountId (Keyword)
+- LiaObjectiveId (Keyword)
+- LiaCampaignId (Keyword)
+- LiaDeviceId (Keyword)
+- LiaRunState (Keyword)
+- LiaRetentionClass (Keyword)
+- LiaWorkflowRevision (Int)
+- LiaCreatedAt (Datetime)
+
+These attributes are bounded routing/operational metadata only. Do not index user names, email, prompt/context text, window titles, file paths, raw observations, secrets or provider payloads. Visibility queries are always account-scoped by the authenticated API; Search Attributes do not create authorization. Attribute registration and worker usage are versioned with the workflow deployment. Do not write Temporal internal tables directly.
+
+RetentionSweepWorkflow selects due retention work in bounded batches and creates stable work items. RetentionPropagationWorkflow asks each canonical owner domain to apply its own tombstone/deletion/expiry, then verifies owner acknowledgement plus projection, cache, search-index, artifact and replica propagation. The PostgreSQL retention_work_item table is an orchestration journal, not the canonical tombstone store.
+
+The owner domain decides and executes deletion under its own policy. Memory Authority deletes memory and derived context, Permission Authority handles grants, Artifact Authority handles stored artifacts, Temporal manages workflow execution history/visibility, and device agents apply local cache tombstones. A coordinator work-item state of verified means required owner/replica evidence has been collected; it does not prove removal from immutable backups outside the approved lifecycle.
+
+Deletion of Temporal workflow histories is allowed only under the Temporal namespace/owner retention policy and supported Temporal APIs after the workflow reaches an eligible terminal state. Active workflow histories are not silently rewritten. Search Attributes and visibility projections are removed or expire under the Temporal retention process; application projections and NATS events are handled by their own owners. Restoring a backup must reapply current tombstones and revocation state before serving reads or accepting writes.
+
+Every delete/expiry job is idempotent, account-scoped, revision-guarded, auditable and retry-bounded. A stale replica/outbox/context cannot recreate data older than the canonical tombstone. Unknown owner response remains awaiting_owner/reconciliation_required; it is not marked deleted.
+
 ## 10. TEMP-01 / TEMP-02 acceptance
 
 - Replay representative RunWorkflow and CampaignWorkflow histories across the supported worker versions with no nondeterminism.
@@ -139,3 +168,6 @@ History retention and archival must follow the workflow data classification and 
 - Confirm a stale worker lease cannot write a transition or repeat a side effect.
 - Simulate an Activity timeout after an external effect may have happened; verify reconciliation by stable operation identity and evidence.
 - Confirm Temporal history contains no disallowed raw content or credential material.
+- Verify Search Attribute registration/types and account-scoped visibility without indexing sensitive content.
+- Crash/retry retention workflows around owner tombstone commit, projection/cache purge and verification; assert no stale replica can resurrect deleted data.
+- Verify terminal workflow history retention/deletion only through the supported Temporal boundary and that active histories are not rewritten.

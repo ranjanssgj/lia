@@ -1,0 +1,49 @@
+{
+  "tool_id": "desktop.window.move_same_display",
+  "schema_version": 1,
+  "title": "Move a desktop window",
+  "description": "Move one selected window to a requested position on its current display while preserving its current width and height. The desktop adapter independently verifies the resulting geometry.",
+  "usage_constraints": [
+    "Only the exact user-selected window resource may be targeted.",
+    "The window must remain on its current display.",
+    "The current resource generation and geometry must be fresh.",
+    "A model proposal is not authorization; current permission and policy checks are mandatory."
+  ],
+  "capability": {
+    "capability_id": "desktop.window.move_same_display",
+    "capability_schema_version": 1,
+    "adapter_class": "desktop.os",
+    "operation_type": "control",
+    "resource_types": ["desktop.window"]
+  },
+  "input_schema_uri": "urn:lia:schema:desktop.window.move_same_display.input:v1",
+  "output_schema_uri": "urn:lia:schema:desktop.window.move_same_display.output:v1",
+  "permission": {
+    "required_scopes": ["desktop.window.move"],
+    "minimum_risk_tier": "R1",
+    "confirmation_policy": "when_policy_requires",
+    "purpose_constraints": ["user_requested_desktop_layout"]
+  },
+  "execution": {
+    "side_effect_class": "local_mutation",
+    "idempotency_class": "idempotent_target_state",
+    "maximum_attempts": 2,
+    "timeout_ms": 3000,
+    "reconciliation_method": "read_current_window_geometry_and_display",
+    "verification_method": "read_back_window_geometry_and_display",
+    "cancellation_points": ["before_dispatch"]
+  },
+  "data_governance": {
+    "maximum_sensitivity": "S1",
+    "locality": "local_only",
+    "retention_class": "transient",
+    "provider_egress_allowed": false,
+    "egress_policy_id": null
+  },
+  "lifecycle": {
+    "state": "active",
+    "introduced_in": "lia.tools.v1",
+    "deprecated": false,
+    "replacement_tool_id": null
+  }
+}

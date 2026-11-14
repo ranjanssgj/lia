@@ -1,0 +1,89 @@
+{
+  "contract_version": "lia.adapter.v1",
+  "manifest_revision": 1,
+  "adapter": {
+    "adapter_id": "desktop.windows.uia",
+    "installation_id": "105dc5be-50ca-42d6-a0bb-07c0bbf17104",
+    "connector_id": null,
+    "owner_principal_id": "device:105dc5be-50ca-42d6-a0bb-07c0bbf17104",
+    "version": "0.1.0",
+    "publisher_id": "lia.local-agent",
+    "contract_family": "lia.desktop.uia.v1"
+  },
+  "execution_context": {
+    "device_id": "105dc5be-50ca-42d6-a0bb-07c0bbf17104",
+    "account_id": "9a2a54fc-307f-457f-a813-4bbbd7d7f91c",
+    "platform_id": "windows",
+    "platform_version": "Windows 11 (test fixture; exact build required in evidence)",
+    "compositor_or_provider_profile": "Windows UI Automation (test fixture)",
+    "session_state": "active",
+    "execution_locality": "device_local",
+    "trust_state": "enrolled"
+  },
+  "compatibility": {
+    "supported_contract_versions": ["lia.adapter.v1"],
+    "minimum_host_version": null,
+    "maximum_host_version": null,
+    "required_features": ["windows.uia.core", "windows.uia.provider_events"]
+  },
+  "lifecycle_state": "ready",
+  "observed_at": "2026-11-14T00:00:00Z",
+  "expires_at": "2026-11-14T00:01:00Z",
+  "resources": [
+    {
+      "resource_type": "windows.uia.element",
+      "resource_id": "fixture-runtime-id-1",
+      "generation": "fixture-element-generation-1",
+      "owner_id": "105dc5be-50ca-42d6-a0bb-07c0bbf17104",
+      "display_label": "Example Button",
+      "observed_revision": "fixture-uia-tree-revision-1",
+      "observed_at": "2026-11-14T00:00:00Z",
+      "fresh_until": "2026-11-14T00:00:10Z",
+      "sensitivity": "S1"
+    }
+  ],
+  "capabilities": [
+    {
+      "capability_id": "desktop.uia.discover_controls",
+      "schema_version": 1,
+      "operation_type": "observe",
+      "resource_types": ["windows.uia.element"],
+      "availability": "permission_required",
+      "availability_reason_code": "OS_ACCESSIBILITY_CONSENT_REQUIRED",
+      "requires_interactive_session": true,
+      "required_scopes": ["desktop.uia.discover_controls"],
+      "minimum_risk_tier": "R0",
+      "confirmation_required": false,
+      "input_schema_uri": "urn:lia:schema:desktop.uia.discover_controls.input:v1",
+      "output_schema_uri": "urn:lia:schema:desktop.uia.discover_controls.output:v1",
+      "preconditions": {
+        "connectivity": "local_session",
+        "resource_freshness_required": true,
+        "required_session_states": ["active"],
+        "required_user_presence": false,
+        "constraints": ["Supported UI Automation provider available", "User/OS accessibility permission required"]
+      },
+      "data_governance": {
+        "maximum_sensitivity": "S1",
+        "locality": "local_only",
+        "retention_class": "transient",
+        "raw_capture": false,
+        "egress_description": "Semantic control metadata only; no screenshot or full application content"
+      },
+      "operation_semantics": {
+        "idempotency_class": "idempotent_target_state",
+        "retry_requires_reconciliation": false,
+        "maximum_attempts": 2,
+        "cancellation_points": ["before_tree_read"]
+      },
+      "verification": {
+        "method": "requery_provider_element_identity",
+        "independent_state_read": true,
+        "evidence_required": true,
+        "evidence_types": ["uia_element_identity", "provider_revision"]
+      },
+      "events": ["desktop.uia.provider_changed"],
+      "rate_limit": 10
+    }
+  ]
+}

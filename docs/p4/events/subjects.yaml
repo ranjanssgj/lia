@@ -5,6 +5,8 @@ stream:
     - "lia.v1.account.*.>"
   storage: file
   retention: limits
+  retention_class: transport_transient
+  canonical_history: owner_domain_store
   discard_policy: old
   delivery_assumption: at_least_once
   message_id_header: Nats-Msg-Id
@@ -71,6 +73,18 @@ events:
     producer: notification_router
     consumer_groups: [client_projection, notification_audit]
     ordering_key: [account_id, aggregate_id, aggregate_sequence]
+  - subject: "lia.v1.account.*.retention.work.updated"
+    owner: retention_orchestrator
+    producer: retention_workflow
+    consumer_groups: [owner_domain_retention, retention_projection, audit_projection]
+    ordering_key: [account_id, aggregate_id, aggregate_sequence]
+    retention_class: transport_transient
+  - subject: "lia.v1.account.*.data.tombstone.applied"
+    owner: affected_domain_owner
+    producer: owner_domain_service
+    consumer_groups: [retention_propagation, device_cache, search_projection, audit_projection]
+    ordering_key: [account_id, aggregate_id, aggregate_sequence]
+    retention_class: transport_transient
 
 consumer_defaults:
   delivery: pull
@@ -81,10 +95,13 @@ consumer_defaults:
   bounded_redelivery: required
   dead_letter_behavior: durable_quarantine_with_redacted_reason
   side_effect_idempotency: application_level_required
-  retention: defined_by_data_domain_policy_not_transport_default
+  retention: transport_transient_only
+  canonical_retention_owner: domain_owner_default
 
 notes:
   - "This is a contract inventory, not a deployable NATS server configuration."
   - "Per-account subscriptions and service authorization must be enforced by NATS credentials/permissions and rechecked by each consumer."
   - "No subject or stream configuration grants the consumer permission to execute an operation."
   - "JetStream's at-least-once behavior requires durable application inbox deduplication."
+  - "All messages in LIA_EVENTS_V1 share the same bounded transport retention; canonical audit/history retention is owned outside JetStream."
+  - "A tombstone event is emitted only by the domain that owns the affected record; work-item events are orchestration facts, not deletion authority."

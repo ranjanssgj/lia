@@ -1,14 +1,14 @@
 # P4 — Integration Contracts
 
 **Contract package:** P4.1  
-**Revision:** 0.1.0  
+**Revision:** 0.2.0  
 **Status:** Draft — review and conformance evidence required  
-**Baseline:** LIA Project Blueprint v1.14.0 (P4 in progress)  
+**Baseline:** LIA Project Blueprint v1.14.1 (P4 in progress)  
 **Date:** 14 November 2026
 
 ## Purpose
 
-P4 turns the approved P2 requirements and P3 architecture into concrete, versioned interfaces. This package defines the first reviewable contract baseline for device/control-plane RPC, authenticated user APIs, the Godot presentation bridge, PostgreSQL and SQLite persistence, Temporal workflows and Activities, NATS events, model-provider adapters, and conformance testing.
+P4 turns the approved P2 requirements and P3 architecture into concrete, versioned interfaces. This package defines reviewable contracts for device/control-plane RPC, authenticated user APIs, the Godot presentation bridge, PostgreSQL and SQLite persistence, Temporal workflows and retention jobs, NATS events, governed context, tool mediation, model-provider adapters, adapter manifests, runtime packaging and conformance testing.
 
 This is a contract design package. It does not claim that the services, adapters, migrations, generated clients, security profile, or integrations have been implemented or tested.
 
@@ -44,6 +44,15 @@ This is a contract design package. It does not claim that the services, adapters
 | Manifest schema | [capability-manifest-v1.schema.json](adapters/capability-manifest-v1.schema.json) | 1 | Strict JSON Schema for adapter capability manifests |
 | Hyprland fixture | [hyprland-wayland-manifest.example.json](adapters/fixtures/hyprland-wayland-manifest.example.json) | Example | Synthetic first-Linux-profile manifest fixture |
 | Compatibility matrix | [compatibility-matrix.md](compatibility-matrix.md) | 0.1 | Approved stack baselines, exact-pin status and proof-gate mapping |
+| PostgreSQL retention jobs | [002-retention-deletion.sql](sql/postgres/002-retention-deletion.sql) | 002 | Orchestration metadata only; canonical tombstones remain owner-domain data |
+| SQLite tombstones | [002-retention-tombstones.sql](sql/sqlite/002-retention-tombstones.sql) | 002 | Local replay-prevention markers; not the canonical deletion authority |
+| Context package | [context-package-v1.md](context/context-package-v1.md), [schema](context/context-package-v1.schema.json), [example](context/fixtures/context-package-v1.example.json) | 1 | Immutable scoped invocation context with trust, digest, expiry, access and egress rules |
+| Tool registry | [tool-registry-v1.schema.json](tools/tool-registry-v1.schema.json), [example](tools/tool-registry-v1.example.json) | 1 | Capability-derived tool affordance metadata, not permission |
+| Tool validation | [tool-validation-pipeline-v1.md](tools/tool-validation-pipeline-v1.md) | 1 | Registry projection, proposal validation, permission recheck and broker dispatch |
+| Synthetic model evaluation | [synthetic-evaluation-harness-v1.md](providers/synthetic-evaluation-harness-v1.md) | 1 | Provider-independent synthetic conformance and adversarial test harness |
+| Windows UIA fixture | [windows-uia-manifest.example.json](adapters/fixtures/windows-uia-manifest.example.json) | Example | Synthetic Windows UI Automation capability profile; no support claim |
+| Runtime/packaging | [runtime-profile-v1.md](operations/runtime-profile-v1.md) | 1 | Local-first/distributed profiles, config, keystore, secrets, health and telemetry |
+| Supply chain/release | [supply-chain-release-v1.md](operations/supply-chain-release-v1.md) | 1 | SPDX SBOM, licenses, asset rights, vulnerability and update/rollback evidence |
 
 ## Authentication and signing baseline proposed for P4 review
 
@@ -51,7 +60,7 @@ This package proposes the following protocol-level contract. These choices are n
 
 - Interactive user authentication uses OpenID Connect with Authorization Code + PKCE. User-facing API calls use an access token whose issuer, audience, validity, client and applicable scopes are validated. The identity-provider vendor and issuer URL remain deployment configuration.
 - Device/control-plane gRPC uses TLS 1.3 with a device-specific X.509 client certificate. The certificate identity is mapped to the enrolled installation and credential generation; an authenticated connection is not a standing operation grant.
-- Command and eligible offline-lease envelopes use a versioned Ed25519 signature profile over RFC 8785 canonical JSON, with domain separation and a key identifier. The signing input is ASCII `LIA-COMMAND-V1\n` followed by the UTF-8 RFC 8785 canonical JSON form of the ProtoJSON CommandEnvelope; signature fields are excluded. The exact key-provisioning/rotation implementation and protected-storage vendor remain open. TLS keys and command-signing keys are distinct.
+- Online commands and offline authorization leases use two allowlisted Ed25519/RFC 8785 profiles with distinct message types and domain-separation prefixes (`LIA-COMMAND-V1` and `LIA-OFFLINE-LEASE-V1`). The signing input appends a newline byte then the canonical UTF-8 ProtoJSON payload; signature fields are excluded. The exact key-provisioning/rotation implementation and protected-storage vendor remain open. TLS keys and command-signing keys are distinct.
 - Local IPC authenticates the peer using OS process credentials and restrictive endpoint ACLs. It is local-only; no unauthenticated localhost TCP listener is permitted.
 - OIDC issuer, certificate authority, key-management/KMS/HSM vendor, hardware-backed-key availability, hosted secret store, and deployment region are not selected here.
 
@@ -120,3 +129,14 @@ The first implementation target remains the narrow Linux-first P5 vertical slice
 - [ ] Model-provider egress and tool-proposal rules reviewed.
 - [ ] Conformance fixtures and test owners assigned.
 - [ ] All implementation and verification claims backed by repository evidence.
+
+
+## Data lifecycle, context and tool mediation
+
+The context package is immutable for one invocation and binds principal, purpose, scope, context revision/digest, instruction bundle, expiry, source references, per-reference access decisions, sensitivity, locality, retention and token/tool-cycle budgets. A context reference is not a grant; it is rechecked at retrieval and egress boundaries. Source content remains governed by its owner and is referenced rather than copied into generic workflow/event records.
+
+The tool registry is a versioned projection of P3.6 adapter capabilities. The broker filters it per invocation, validates a completed structured proposal against strict schema and semantic limits, resolves exact resource references, rechecks current permission/approval and then dispatches a signed operation envelope. Model text and partial streams cannot execute tools. Tool results remain untrusted until the resource owner supplies evidence.
+
+RetentionSweepWorkflow and RetentionPropagationWorkflow orchestrate bounded retention work, but each domain keeps its own canonical tombstones and deletion. PostgreSQL work items are orchestration metadata; SQLite tombstones are local anti-resurrection markers. JetStream has finite transport retention and is not the permanent audit archive. Temporal history retention uses Temporal-supported namespace/API controls and never rewrites an active execution history.
+
+The runtime profile separates the P5 local-first deployment from the full distributed profile. Keystore, identity, certificate, secret injection and artifact storage vendors remain open. Release eligibility requires an artifact-derived SPDX SBOM, license/notice and asset-rights review, vulnerability disposition, build provenance, signatures, and a tested update/rollback path.
