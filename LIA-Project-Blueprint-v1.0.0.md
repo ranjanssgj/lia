@@ -4,11 +4,11 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.12.0\
+> **Version:** 1.13.0\
 > **Last updated:** 14 November 2026\
-> **Current phase:** P3 --- System Architecture\
-> **Current workstream:** P3.7 --- Agent Intelligence and Model Runtime\
-> **Document status:** Active; Phase 2 requirements baseline approved; Phase 3 architecture in progress
+> **Current phase:** P3 --- System Architecture (Complete)\
+> **Current workstream:** P3.8 --- Architecture Validation and Technology Selection (Complete)\
+> **Document status:** Phase 2 requirements and Phase 3 architecture baselines approved; P4 integration contracts are next
 
 ------------------------------------------------------------------------
 
@@ -302,8 +302,8 @@ through controlled change; they do not invalidate earlier requirements.
   P0      Concept and vision                 Complete
   P1      Product definition                 Complete
   P2      Requirements engineering           Complete — baseline approved
-  P3      System architecture                Active — P3.1–P3.7 complete; P3.8 next
-  P4      Integration contracts              Pending
+  P3      System architecture                Complete — P3.1–P3.8 architecture and reference technology baseline approved
+  P4      Integration contracts              Next — concrete interfaces and conformance contracts
   P5      First vertical slice               Pending
   P6      Companion integration              Pending
   P7      Proactive behavior                 Pending
@@ -2356,6 +2356,127 @@ Model/provider versions, routing rules, system instruction bundles, tool schemas
 The default architecture is one orchestrating agent role with deterministic services and narrowly scoped specialist calls where justified. Specialists receive bounded task-specific context and capabilities, have no implicit peer authority and cannot grant permissions or directly mutate shared workflow/memory state. Parallel or recursive delegation requires explicit limits, isolation, provenance and evaluation.
 
 
+### ADR-126 — Approve a two-profile reference technology baseline
+
+**Status:** Approved
+
+LIA uses a minimal local-first profile for the P5 first vertical slice and a full distributed profile for multi-device, recurring workflow and hosted coordination capabilities. Both profiles share the same logical contracts. The P5 profile does not activate infrastructure that its scope does not require; the distributed profile adds selected durable workflow, database, event and coordinator components. Component ownership and authority boundaries remain those defined in P3.1–P3.7.
+
+### ADR-127 — Rust and Tokio are the desktop/device agent baseline
+
+**Status:** Approved
+
+The local device agent and resource-owning OS adapters use stable Rust. Tokio is the asynchronous I/O runtime for concurrent device, network and event work. Platform API access remains behind typed adapter interfaces. CPU-heavy work is isolated from the async runtime. Rust is not used to replace Godot presentation or to give model code direct OS access.
+
+### ADR-128 — Godot 4.7.2 stable is the embodied presentation baseline
+
+**Status:** Approved with migration proof gate
+
+Godot 4.7.2 stable is selected for the 2D/3D character, animation, presence and companion presentation layer, using GDScript for primary presentation logic. Godot does not own OS permission, workflow, memory or tool authority. The 4.8 beta line is excluded from the production baseline. The existing project must be migrated in a controlled branch and VRM/asset/animation compatibility plus transparent-window behavior must pass P4/P5 proof gates before the upgrade becomes the release baseline.
+
+### ADR-129 — Node.js 24 LTS and TypeScript are the coordinator/model-broker baseline
+
+**Status:** Approved
+
+Coordinator APIs, model gateway, context orchestration, tool broker and Temporal workers use TypeScript on Node.js 24 LTS. Node 24 is selected because the Temporal TypeScript SDK officially lists Node 20, 22 and 24 as supported runtimes. Node 26 is Active LTS but is not yet listed in that SDK support matrix. Upgrade to Node 26 requires official SDK support and repeatable conformance. Fastify 5 is selected for HTTP APIs; provider-specific model SDKs remain behind adapters.
+
+### ADR-130 — Temporal TypeScript SDK is the durable workflow engine
+
+**Status:** Approved with workflow/side-effect proof gate
+
+Temporal is selected for durable objective/campaign/run/step orchestration, timers, signals, cancellation, worker recovery and workflow history. Temporal Workflow code remains deterministic; external calls, model/API requests and other non-deterministic interactions occur in Activities. Activity retry policy is not proof that a side effect is safe to repeat. LIA's stable operation IDs, executor idempotency and P3.4 reconciliation remain mandatory. Temporal owns canonical Run/Step execution state; application projections are non-authoritative views.
+
+### ADR-131 — PostgreSQL 16 is the initial canonical coordinator database
+
+**Status:** Approved
+
+PostgreSQL 16 is the initial reference database for user/account records, device registry, permission/grant references, campaigns/templates, operation/evidence metadata, event journal/outbox/inbox, audit references and canonical memory records where deployment policy places Memory Authority. Temporal persistence uses a separate database and ownership boundary on the same PostgreSQL major-version profile initially. Temporal and application schemas, roles, migrations and connection pools remain isolated. PostgreSQL 16 is a conservative reference version in Temporal's documented tested database matrix; future upgrades require compatibility confirmation and restore/migration evidence.
+
+### ADR-132 — PostgreSQL full-text search, relational graph tables and pgvector form the initial memory retrieval stack
+
+**Status:** Approved with retrieval benchmark gate
+
+Memory retrieval uses PostgreSQL full-text search, relational temporal/typed graph-edge tables and pgvector embeddings. Initial implementation starts with exact vector search where corpus size and query budget permit, then evaluates HNSW approximate indexing using recall and scope-filtered latency measurements. A dedicated graph or vector database is not introduced until workload and retrieval evaluation demonstrate a material need.
+
+### ADR-133 — SQLite WAL is the device-local journal and cache store
+
+**Status:** Approved
+
+Each local device agent uses SQLite for bounded local journals, pending outbox records, resource observations and authorized task-scoped caches. WAL mode is the default concurrency profile where appropriate. WAL files remain on a local filesystem on one host and are not placed on a network filesystem or used as a cross-device shared database. Backup uses SQLite's online backup API or another consistent-snapshot mechanism.
+
+### ADR-134 — NATS JetStream is the durable internal event-distribution layer
+
+**Status:** Approved
+
+The full distributed profile uses NATS JetStream for durable event streams, independent consumers, acknowledgements and replay across device/worker availability gaps. PostgreSQL outbox/event records remain the canonical domain journal; JetStream is the distribution layer. Delivery is at least once. Message-ID duplicate detection is an optimization with a bounded window; application inboxes retain durable deduplication and idempotent transition logic. No exactly-once side effect is claimed.
+
+### ADR-135 — gRPC and Protocol Buffers are the device/control-plane transport baseline
+
+**Status:** Approved with interoperability proof gate
+
+Authenticated device/coordinator control and typed internal service communication use gRPC over HTTP/2 with Protocol Buffers. Rust services use Tonic; TypeScript services use generated compatible clients. The P3.3 authenticated command envelope, target binding, replay/expiry, grants and audit semantics remain application-level requirements. User-facing mobile/web APIs and third-party webhook interfaces use HTTPS/JSON. Event subscriptions use provider-appropriate WebSocket/SSE or gRPC streaming. Remote media transport remains outside P5.
+
+### ADR-136 — Android and iOS companion clients use native platform UI stacks
+
+**Status:** Approved
+
+The Android client uses Kotlin and Jetpack Compose. The iOS client uses Swift and SwiftUI. Shared behavior is defined by versioned API contracts and shared product semantics rather than forcing OS-specific background, notification, enrollment or permission behavior into a cross-platform abstraction. Android is the first mobile implementation target; iOS follows with its own capability manifest and lifecycle tests.
+
+### ADR-137 — Hyprland Wayland is the first Linux desktop adapter reference profile
+
+**Status:** Approved with first-slice conformance gate
+
+The first Linux desktop adapter profile targets a declared Hyprland Wayland session and uses its supported IPC/event interfaces for initial window metadata and same-display move capability. This is a concrete adapter profile, not generic Wayland support. The adapter uses bounded requests, closes synchronous command connections promptly, consumes events without high-frequency polling and independently verifies resulting geometry. Other Wayland compositors and X11 are separate profiles.
+
+### ADR-138 — Home Assistant WebSocket API is the first optional home integration profile
+
+**Status:** Approved for an optional integration prototype
+
+Home Assistant is the first home-gateway integration profile because its authenticated WebSocket API supports command/result exchange and event subscriptions. It is optional, not a core LIA dependency or blanket smart-home standard. Each entity/action retains P2.6 risk and permission rules. Hardware/device coverage and physical-state verification require an actual supported test installation before any support claim.
+
+### ADR-139 — OpenTelemetry is the instrumentation standard
+
+**Status:** Approved
+
+Coordinator, device agent, workflow, provider adapters and integration services use OpenTelemetry trace, metric and log concepts with correlation across operation, workflow, turn and device IDs. Telemetry is content-minimized under P2.5/P3.5. No observability backend/vendor is selected; exporters and collector configuration are deployment-specific.
+
+### ADR-140 — OCI containers and Docker Compose are the initial deployment packaging baseline
+
+**Status:** Approved for reference/self-host deployment
+
+Coordinator API, Temporal service/workers, PostgreSQL and NATS are packaged as OCI-compatible services. Docker Compose is the initial single-host self-hosted/reference deployment and development integration environment. The same service images may be deployed to a managed hosted environment. Kubernetes and multi-node orchestration are deferred until measured scale or availability needs justify them.
+
+### ADR-141 — OIDC and OS-native protected stores remain the identity/secret integration baseline
+
+**Status:** Approved at protocol/interface level
+
+User account authentication uses OpenID Connect rather than a bespoke password/session scheme. Device identity remains P3.3 per-installation proof-of-possession and is distinct from account authentication. Device private keys and connector secrets use OS-native protected storage through an abstraction; hosted secrets use a deployment-provided KMS/HSM interface. Identity-provider and KMS/HSM vendors are not selected.
+
+### ADR-142 — Use a thin LIA-owned agent/tool orchestrator, not a framework-owned authority model
+
+**Status:** Approved
+
+The application uses P3.7 typed orchestration, context broker, model gateway, tool broker and workflow interfaces implemented as LIA-owned components. A third-party agent framework may be evaluated for isolated specialist tasks, but no framework may own permissions, workflow state, memory authority or adapter execution. The initial baseline does not depend on LangChain, LangGraph, AutoGen, CrewAI or MCP for core operation.
+
+### ADR-143 — Model and speech providers remain interchangeable and are not yet selected
+
+**Status:** Approved deferral with P5 evaluation gate
+
+No single LLM provider/model, local inference server, embedding model, ASR provider or TTS provider is selected. Candidates must pass the P3.7 task-specific evaluation suite and P2.5/P3.5 data-processing rules, including retention, training use, region, locality, latency, quality, refusal/tool-use behavior and cost. A reference provider may be used only in isolated synthetic-data experiments until the policy and benchmark gate passes. Provider choice is a tracked pre-production decision.
+
+### ADR-144 — Artifact storage uses local content-addressed files and an S3-compatible hosted interface
+
+**Status:** Approved at interface/profile level
+
+Task artifacts are immutable or versioned and referenced by content digest and provenance. Local/offline artifacts use a scoped content-addressed filesystem store. Hosted artifact storage uses an S3-compatible API with separate bucket/prefix and access boundaries. Specific object-storage vendor, retention tier, encryption provider and backup service remain deployment decisions.
+
+### ADR-145 — Local presentation-to-agent IPC is a P4 proof item, not an assumed network API
+
+**Status:** Approved as a bounded deferral
+
+Godot and the Rust device agent communicate through a local-only authenticated IPC boundary. P4 compares Unix domain sockets on Linux, named pipes on Windows and a supervised child-process stream for the Godot presentation runtime. The selected implementation must authenticate the peer within the local user boundary, constrain message size/rate, version its schema and expose only presentation/status/typed request interfaces. A generic localhost port or unauthenticated command socket is not accepted by default.
+
+
 # 9. Change log
 
   ------------------------------------------------------------------------
@@ -2448,10 +2569,12 @@ The default architecture is one orchestrating agent role with deterministic serv
 
 **1.12.0 — 14 Nov 2026:** Completed P3.7 agent intelligence and model runtime architecture. Defined interaction/task orchestration, governed context assembly, instruction trust boundaries, model capability catalog and routing, normalized model invocation/results, typed tool proposals and brokered dispatch, deterministic plan validation, bounded orchestration/specialist delegation, governed memory formation, cancellable speech stages, provider fallback, evaluation, observability and lifecycle governance. Added five intelligence/runtime diagrams, conformance scenarios, informative security/API references and ADR-112–ADR-125. No model provider, agent framework, tool protocol, prompt platform, inference runtime or speech provider was selected.
 
+**1.13.0 — 14 Nov 2026:** Completed P3.8 architecture validation and technology selection. Compared implementation candidates against P2 requirements and P3.1–P3.7 contracts; approved a reference baseline covering Rust/Tokio device agents, Node.js 24 LTS/TypeScript/Fastify coordinator services, Temporal TypeScript workflows, PostgreSQL 16, pgvector, SQLite WAL, NATS JetStream, gRPC/Protobuf, Godot 4.7.2, native Kotlin/Compose and SwiftUI mobile clients, Home Assistant as the first optional home connector, OpenTelemetry and OCI/Docker Compose deployment. Defined a minimal P5 local-first profile and a separate full distributed profile, explicit rejections/deferrals, validation scenarios, implementation proof gates and ADR-126–ADR-145. Model/speech vendors, hosting vendor and object-storage vendor remain deferred pending evaluation. No implementation, prototype, benchmark, restore drill or production security test is claimed.
+
 
 # 10. Current working state
 
-**Current phase:** P3 — System Architecture  
+**Current phase:** P3 — System Architecture (Complete)  
 **Phase 2 status:** Complete — original requirements baseline approved, with the multi-device/campaign scope extension recorded as a controlled amendment  
 **P2.1–P2.7 status:** Complete as requirements baselines; runtime implementation and verification remain future engineering work  
 **P3.1 status:** Complete — architecture drivers, system context and logical decomposition approved  
@@ -2459,11 +2582,11 @@ The default architecture is one orchestrating agent role with deterministic serv
 **P3.3 status:** Complete — identity principals, pairing, credential lifecycle, authenticated sessions, command envelopes, relay trust, revocation and offline leases approved  
 **P3.4 status:** Complete — durable events, workflow state machines, schedule/occurrence semantics, worker leases, retry/reconciliation, approvals, cancellation and notification delivery approved  
 **P3.5 status:** Complete — canonical data ownership, scoped synchronization, conflict resolution, deletion propagation and backup/restore semantics approved  
-**Overall status:** P3 is active. No programming language, framework, database, model provider, cloud vendor, transport protocol, cryptographic library or production infrastructure product has been selected.  
 **P3.6 status:** Complete — shared adapter contract, platform-specific capability surfaces, execution semantics, integration safety and conformance requirements approved  
-**P3.7 status:** Complete — agent orchestration, context governance, model gateway, structured tool requests, bounded planning, model fallback and evaluation contracts approved
-**Next action:** Validate architecture quality attributes, threat scenarios, interoperability and technology candidates in P3.8.
-
+**P3.7 status:** Complete — agent orchestration, context governance, model gateway, structured tool requests, bounded planning, model fallback and evaluation contracts approved  
+**P3.8 status:** Complete — reference technology baseline selected; candidate comparisons, explicit deferrals, risk register and implementation proof gates recorded  
+**Overall status:** Phase 3 architecture and reference technology baseline are approved. Implementation, prototype conformance, performance measurement, recovery drills and production security validation remain future engineering work.  
+**Next action:** Define P4 concrete integration contracts, interface schemas, protocol/version rules, conformance suites and project integration boundaries against the approved reference stack.
 
 ## Phase 2 exit criteria
 
@@ -4707,6 +4830,7 @@ P3 shall not silently relax P2 targets or introduce a tool/provider whose behavi
 **P3.5 status:** Complete — data ownership, synchronization scope, conflict handling, deletion propagation and backup/restore semantics approved  
 **P3.6 status:** Complete — shared adapter contract, platform-specific capability surfaces, execution semantics, integration safety and conformance requirements approved  
 **P3.7 status:** Complete — agent orchestration, context governance, model gateway, structured tool requests, bounded planning, model fallback and evaluation contracts approved
+**P3.8 status:** Complete — architecture review, candidate comparison, reference technology baseline, explicit deferrals and implementation proof gates approved  
 **Purpose:** Transform the approved product and quality requirements into a coherent, secure, distributed architecture with explicit component responsibilities, data ownership, communication contracts and platform execution boundaries.
 
 P3 shall preserve the Phase 2 requirements baseline and the approved multi-device scope extension. Architecture choices must be justified against requirements and quality attributes; technologies are selected only after responsibilities, trust boundaries and contracts are sufficiently clear.
@@ -5195,22 +5319,22 @@ flowchart TB
 | P3.5 — Data ownership and synchronization | Memory authority, task/event records, device caches, conflict resolution, retention and deletion propagation | Complete |
 | P3.6 — Platform and integration adapter contracts | Linux/Windows desktop nodes, mobile capabilities, home automation and external service connectors | Complete |
 | P3.7 — Agent intelligence and model runtime | Conversation orchestration, planning, model gateway, tool/action request schema and context boundaries | Complete |
-| P3.8 — Architecture validation and technology selection | ADR review, quality scenarios, threat analysis, component trade-offs and justified stack selection | Pending |
+| P3.8 — Architecture validation and technology selection | ADR review, quality scenarios, threat analysis, component trade-offs and justified stack selection | Complete |
 
-## 19.14 Decisions intentionally deferred
+## 19.14 Decisions intentionally deferred after P3.8
 
-P3 establishes logical architecture but does not select:
+P3.8 approves a reference implementation baseline and records the reasons for each remaining deferral. The following items are intentionally not frozen as concrete production products:
 
-- Specific cloud provider, hosting vendor, region, infrastructure product, deployment packaging/orchestration and self-hosting distribution product. The hosted-default and self-hosted-target deployment profiles are decided; vendor and implementation choices remain deferred.
-- Concrete database/storage engine, event broker, workflow engine and scheduler products. Their logical responsibilities and semantic contracts are defined in P3.4/P3.5; candidate products are compared and selected in P3.8.
-- Device relay, transport protocol, remote desktop streaming or cryptographic library.
-- Concrete synchronization engine, conflict-resolution implementation, backup tooling, artifact/object store, schema migration tool and physical placement of canonical memory data. P3.5 defines ownership and lifecycle semantics; implementation is evaluated in P3.8.
-- Desktop/mobile programming language, UI framework or rendering engine.
-- Home automation standard, gateway product or vendor-specific connector.
-- Model provider, model routing framework, speech provider or local inference runtime.
-- Exact API schemas, wire formats, service process boundaries, deployment manifests or infrastructure topology.
+- Managed hosting vendor, region, edge/relay provider, managed PostgreSQL/NATS/Temporal hosting plan, billing model and service-level commitment. The coordinator is containerized and can be self-hosted; the hosted provider is selected only after data-residency, cost, availability and operational requirements are known.
+- Exact hosted model provider and model identifier, local inference server/model, embedding model, speech recognition provider and text-to-speech provider. These require task-specific quality, privacy/retention, region, hardware, latency and cost evaluation using the P3.7 evaluation suite before real user data is processed.
+- Specific object-storage vendor and backup service. The selected interfaces are content-addressed local storage and an S3-compatible object-storage boundary; deployment vendor and encryption/key-management integration remain operational decisions.
+- OIDC identity-provider vendor, hosted KMS/HSM vendor and certificate/credential issuance service. OIDC and per-device proof-of-possession remain the protocol/identity baseline; identity-provider and key-management products require deployment-specific review.
+- Exact local Godot-to-agent IPC bridge implementation and Windows UI Automation binding. The selected local-agent language and presentation engine are fixed, but the IPC bridge, Hyprland window-move semantics and Windows COM/UIA provider coverage must pass P4/P5 technical spikes before the corresponding capabilities are declared supported.
+- Remote desktop video/audio streaming protocol and relay topology. These remain outside the first vertical slice and require their own latency, privacy and network traversal evaluation before P6 remote-session implementation.
+- Specific desktop installer/updater, code-signing service, Windows packaging format, Linux distribution packages and mobile release/distribution pipeline. P4 defines package boundaries and update trust contracts; platform-specific distribution choices follow target-user and release-channel requirements.
+- Production-scale partitioning/sharding, dedicated graph database, dedicated vector database, external search cluster, Kubernetes, multi-region active/active deployment and service mesh. The selected first reference profile does not require these. They may be reconsidered only when measured scale, availability or isolation needs justify the operational cost.
 
-The remaining implementation choices belong to P3.4–P3.8. Each technology choice must be justified against the requirements, measured quality targets, operational cost, privacy and portability.
+A deferral is not an unowned TODO. Each item above has an owner phase or evidence gate in Sections 19.90–19.92. No deferred option may be introduced into the production baseline by convenience or transitive dependency.
 
 **P3.1 closure:** Architecture drivers, distributed system context, logical responsibility boundaries, multi-device execution model, secure remote-access principles, durable campaign/task model and reference YouTube workflow are approved. P3 remains active; deployment, detailed contracts, data architecture and technology evaluation remain open.
 
@@ -8123,3 +8247,425 @@ Model/provider versions, routing rules, instruction bundles, tool schemas, conte
 The default is one orchestrating agent role with deterministic services and narrowly scoped specialists where justified. Specialists receive bounded context/capabilities, have no peer authority and cannot grant permissions or mutate shared workflow/memory state. Parallel/recursive delegation requires explicit limits, isolation, provenance and evaluation.
 
 **P3.7 closure:** Conversation/task orchestration, governed context assembly, instruction trust boundaries, model capability catalog/routing, normalized invocation/results, capability-filtered tool proposals, deterministic tool dispatch, plan validation, bounded specialist delegation, governed memory formation, cancellable speech pipeline, provider fallback, evaluation, observability and model/prompt/tool lifecycle controls are defined. Model providers, agent frameworks, tool protocols, inference runtimes and speech vendors remain unselected. P3.8 is next: architecture validation, threat/quality review, candidate comparison and technology selection.
+
+
+## 19.86 P3.8 — Architecture validation and technology selection
+
+### Purpose and decision standard
+
+P3.8 closes the architecture decision phase by evaluating the logical system against the P2 requirements baseline and selecting a defensible reference technology stack for P4/P5. It does not mean the software exists, that prototypes have passed, or that P2.2 performance targets have been measured.
+
+The selection standard is fit to approved functional and quality requirements; preservation of P2.5/P2.6 governance and P3.3–P3.7 authority boundaries; Linux and Windows compatibility with explicit capability differences; local-first execution plus a managed-hosted default and self-hosted target; maintainability for a small product team and low operational overhead; portability, mature documentation, license clarity and a credible migration/exit path; and testability through observable interfaces and evidence-producing conformance tests.
+
+P3.8 uses three decision labels:
+- **Selected:** adopted as the reference technology or protocol baseline.
+- **Selected with proof gate:** adopted as the target, but the implementation cannot be called supported until a named P4/P5 conformance spike succeeds.
+- **Deferred:** no product is selected because missing evidence depends on real workload, provider terms, deployment region, hardware, user consent or empirical test data.
+
+The comparison is documentary/architectural. No benchmark, integration spike, restore drill, security penetration test, compatibility test or production deployment was executed as part of this workstream. Those remain explicit implementation proof obligations.
+
+## 19.87 Architecture validation review
+
+### Cross-workstream consistency findings
+
+| Validation area | P3 contract reviewed | P3.8 finding | Remaining evidence |
+|---|---|---|---|
+| Authority and side effects | P2.6, P3.3, P3.4, P3.6, P3.7 | Consistent when the model proposes, workflow authority adopts/coordinates, permission service authorizes and resource owner executes/verifies | Tool broker/executor tests, revocation races and unknown-outcome reconciliation |
+| Long-running work | P3.2, P3.4, P3.7 | A durable workflow service is needed independently of the user's PC. Temporal fits the Run/Step authority role | Worker-loss, timer, signal, replay, cancellation and activity-side-effect tests |
+| Data ownership and lifecycle | P2.5, P3.5 | PostgreSQL domain stores, Temporal persistence, JetStream transport, local SQLite journals and artifact storage can remain separate authorities | Schema, tenant isolation, migration, restore, deletion and offline-reconnect tests |
+| Desktop differences | P3.6 | Capability-based adapters are retained. The first reference profile is Hyprland Wayland, not generic Wayland | Geometry preservation, window identity reuse, compositor restart and event-loss tests |
+| Agent/provider safety | P3.6, P3.7 | Model tools remain proposals; provider sessions are disposable; deterministic policy/workflow/adapter layers cause effects | Prompt-injection fixtures, provider fallback, schema fuzzing and model quality evaluation |
+| Embodiment | P2.2, P2.4, P3.6 | Godot is an appropriate presentation engine when isolated from OS/control authority | Transparent-window, input pass-through, focus, scaling, VRM and frame-budget tests |
+| Multi-device reachability | P3.2, P3.3, P3.4 | Outbound authenticated sessions and durable coordinator fit offline/remote requirements | Pairing, reconnect, relay failure, revocation and mobile suspension tests |
+| Operations and maintainability | P3.2–P3.7 | Containerized modular services are defensible; microservice-per-feature and Kubernetes are not justified at first scale | Developer setup, upgrade/rollback, backup/restore, single-host recovery and cost evidence |
+
+### Quality and security review
+
+No contradiction was identified between the approved P2 authority model and P3.1–P3.7 design. The architecture retains these invariants:
+
+1. User intent and model output are not permission.
+2. No model/provider, workflow plan, notification, tool catalog, webhook or device manifest creates a grant.
+3. The coordinator cannot bypass the device or provider that owns a resource.
+4. Run/Step transitions are durable and guarded; unknown side-effect outcomes are reconciled before retry or reassignment.
+5. Each data record has a canonical owner; event streams, caches, indexes and UI views do not silently become a different authority.
+6. Raw screen/audio/camera content and secrets are not generally synchronized or inserted into model context.
+7. High-risk home and external actions retain P2.6 confirmation/delegation policy.
+8. The first vertical slice does not inherit full distributed autonomous campaign scope.
+
+### Architecture risks remaining open
+
+| Risk | Impact | Mitigation/decision |
+|---|---|---|
+| Godot transparent/always-on-top behavior varies by compositor/display stack | Embodiment may not work consistently on every desktop | Renderer-only boundary; first profile must pass compositor proof gate |
+| Hyprland IPC request socket is synchronous and event socket is separate | Poor socket lifecycle or polling may stall/degrade the compositor | Short-lived request connection, persistent event connection, bounded reads and no high-frequency polling |
+| Temporal Activities may be retried after worker failure | External/desktop effects could be duplicated | Stable operation IDs, effect journal, retry policy by effect class and reconciliation |
+| JetStream redelivery/deduplication window is bounded | Duplicate events could repeat state changes | Durable inbox dedupe at owning domain; JetStream is transport, not workflow ledger |
+| Approximate vector search plus scope filters can reduce recall | Relevant scoped memories may be missed or isolation degraded | Exact search first; benchmark filtered recall and tenant isolation before HNSW |
+| Provider/model behavior and terms may drift | Quality, retention, region or tool behavior can change | Provider adapters, version traceability, evaluation and eligibility policy |
+| Mobile background behavior is OS controlled | Phone cannot be an always-on worker | Coordinator remains durable authority; mobile reports deferred/unavailable |
+| Windows UIA and Linux compositor APIs have different coverage | Feature parity cannot be assumed | Separate manifests and conformance suites; advertise tested capabilities only |
+| Added infrastructure increases self-host maintenance | Operational burden on a small deployment | Keep P5 local profile minimal; Compose single-host reference; add distributed services only when in scope |
+
+## 19.88 Candidate comparison and reference stack selection
+
+### Language and runtime selection
+
+| Area | Candidates considered | Selected baseline | Rationale and constraints |
+|---|---|---|---|
+| Local desktop/device agent | Rust, C++, Python, Node.js | Rust stable with Tokio | Strong cross-platform systems/native API fit and memory-safe ownership model. Tokio handles asynchronous I/O and concurrent sessions. CPU-heavy work uses bounded worker pools, not the async executor. Python remains acceptable for isolated ML/data workers, not the core OS executor. |
+| Coordinator/model/tool services | TypeScript/Node.js, Rust, Python, Go | TypeScript on Node.js 24 LTS | Temporal TypeScript SDK officially supports Node 20/22/24. Node 26 is Active LTS but not currently listed by the SDK; Node 24 is the compatible production baseline. Fastify 5 is the HTTP API framework. |
+| Embodied desktop presentation | Godot, Qt, Electron/Tauri, Unity/Unreal | Godot 4.7.2 stable | Fits the existing real-time 2D/3D/VRM presentation direction. Godot is renderer/presentation only. The 4.8 beta line is excluded from the release baseline. Migration from the current project requires a controlled compatibility proof. |
+| Android companion | Flutter/React Native, native Kotlin | Kotlin and Jetpack Compose | Direct Android lifecycle, notification, permission and platform API access. Compose is Android's recommended modern native UI toolkit. |
+| iOS companion | Flutter/React Native, native Swift | Swift and SwiftUI | Native lifecycle and notification behavior remain visible rather than hidden behind a lowest-common-denominator abstraction. |
+
+### Durable workflow and event infrastructure
+
+| Area | Candidates considered | Selected baseline | Rationale and constraints |
+|---|---|---|---|
+| Durable workflow authority | Temporal, custom PostgreSQL state machine, Redis/BullMQ | Temporal TypeScript SDK and Temporal Service | Workflow history, timers, signals, cancellation, recovery and versioning fit multi-day tasks. A queue does not replace durable workflow authority; a bespoke engine would duplicate P3.4 semantics. |
+| Event distribution | NATS JetStream, RabbitMQ, Kafka, PostgreSQL-only | NATS JetStream plus PostgreSQL outbox/inbox | JetStream supplies persisted streams, acknowledgements and replay. PostgreSQL remains canonical for domain event/outbox records and durable consumer inboxes. Delivery is at least once; no exactly-once side effect is claimed. |
+| Scheduling | Temporal timers/schedules plus P3.4 deterministic policy | Temporal timers/schedules under LIA workflow authority | Occurrence identity, timezone, misfire and catch-up policy remain LIA domain rules. Temporal supplies durable wake-up/timer execution, not business policy. |
+
+Temporal Workflow code must remain deterministic. Network/model/API calls, database access and other non-deterministic work occur in Activities. Activity retry is not a substitute for LIA idempotency and reconciliation.
+
+### Data and artifact selection
+
+| Area | Candidates considered | Selected baseline | Rationale and constraints |
+|---|---|---|---|
+| Canonical coordinator/domain database | PostgreSQL, MySQL, document DB | PostgreSQL 16 | Transactions, relational constraints, JSONB and full-text search fit domain ownership, permissions, event journals and audit. Temporal persistence is isolated in a separate DB/role/schema. PG16 is within Temporal's documented tested matrix. |
+| Memory retrieval | pgvector, dedicated vector DB, custom index | PostgreSQL full-text search + pgvector + relational typed/temporal graph edges | Minimizes services at the initial corpus scale. Exact vector search is the correctness baseline. HNSW is enabled only after scope-filtered recall/latency and isolation tests. Dedicated graph/vector stores need measured justification. |
+| Device-local persistence | SQLite, local server DB, custom files | SQLite WAL | Bounded local journal, pending outbox, resource observations and task-scoped cache without a DB server on each device. WAL is single-host local storage, not network-filesystem storage. Use online backup/consistent snapshots. |
+| Artifacts | Local content-addressed files, S3-compatible API, vendor object storage | Local content-addressed files + S3-compatible hosted interface | Supports offline/local and hosted artifacts without assigning one provider ownership of LIA data. Retain digest, owner, scope, provenance and deletion state. Vendor remains deployment-specific. |
+
+### Control and integration protocols
+
+| Area | Candidates considered | Selected baseline | Rationale and constraints |
+|---|---|---|---|
+| Device/coordinator control | gRPC/Protobuf, REST/JSON, WebSocket-only RPC | gRPC over HTTP/2 with Protocol Buffers | Typed, versionable contracts and generated Rust/TypeScript clients. Rust uses Tonic. P3.3 command envelope, target binding, replay/expiry, grant and audit semantics remain application-level. |
+| User-facing/mobile APIs | REST/JSON, gRPC-web | HTTPS REST/JSON | Broad client interoperability; WebSocket/SSE or gRPC streams for subscriptions where appropriate. Notifications remain output, never authorization. |
+| Home integration | Home Assistant API, Matter controller, vendor APIs | Home Assistant authenticated WebSocket as first optional adapter | Authenticated command/result exchange and event subscriptions. This is an optional integration profile, not a universal device standard or core runtime dependency. Per-entity/action permissions remain mandatory. |
+| External connectors | Direct provider APIs/webhooks, MCP-first, generic browser automation | Typed provider-specific adapters and authenticated webhooks | Provider identity/scopes, quota, idempotency, versioning and verification remain explicit. MCP may be an optional interoperability adapter, not LIA authority. |
+| Observability | Vendor-specific instrumentation, OpenTelemetry | OpenTelemetry | Vendor-neutral traces, metrics and logs correlate turns, model calls, workflows, operations and devices. Backend/exporter remains deployment-specific. |
+| Deployment packaging | Kubernetes-first, bespoke packaging, OCI | OCI images + Docker Compose for reference/self-host | Single-host Compose is proportionate initially. Kubernetes/multi-node orchestration is deferred until measured scale or availability needs. |
+
+### Identity and secrets
+
+User sign-in uses OIDC. Device identity remains P3.3 per-installation proof-of-possession and revocable credential generations. Device private keys/connector credentials use OS-native protected storage behind a LIA abstraction. Hosted secrets use a deployment-provided KMS/HSM interface. Identity provider and KMS/HSM vendors are not selected. No credential/token enters model context; an executor/connector obtains a minimum-scope credential handle just in time.
+
+## 19.89 Two implementation profiles
+
+### P5 first vertical slice — minimal local-first profile
+
+The first slice must not require a distributed workflow cluster before local interaction is proven.
+
+| Component | P5 responsibility | Included |
+|---|---|---|
+| Godot 4.7.2 presentation | Persistent character, text/PTT UI, state-driven animation, pause/stop | Yes, after migration/transparency proof |
+| Rust device agent | Session health, supported Hyprland metadata, exact window move and independent geometry verification | Yes |
+| Hyprland adapter | First supported Wayland reference profile | Yes, after capability proof |
+| SQLite WAL | Local settings references, operation journal, permitted low-sensitivity memory record and bounded cache | Yes |
+| TypeScript/Node 24 local service | Conversation/tool orchestration, context assembly, model gateway interface | Yes, provider gated by ADR-143 |
+| Local IPC bridge | Authenticated Godot-to-agent request/status interface | Yes, implementation chosen in P4 after IPC spike |
+| Temporal, PostgreSQL coordinator, NATS JetStream | Distributed multi-device/campaign orchestration | No; outside AC-001–AC-011 |
+| Home, broad app/file/screen capture/campaign adapters | Later product increments | No |
+
+The local profile preserves the same capability, permission, operation and evidence contracts as the distributed profile. It is a packaging simplification, not a shortcut around authorization.
+
+### Full multi-device reference profile
+
+Adds:
+- TypeScript/Node 24 coordinator API and model/tool services;
+- Temporal Service and TypeScript Workers for durable Run/Step execution;
+- PostgreSQL 16 for domain records and a separate Temporal persistence database;
+- NATS JetStream behind PostgreSQL outbox/inbox;
+- Rust Linux/Windows agents with per-platform adapters and SQLite local journals;
+- Godot desktop renderer, Android native app, iOS native app;
+- optional Home Assistant and isolated provider connectors;
+- OCI images and Docker Compose for the reference/self-host deployment. Managed hosting uses the same contracts/images on a separately selected provider.
+
+## 19.90 Decision evidence, rejected alternatives and trade-offs
+
+| Alternative | Decision | Reason |
+|---|---|---|
+| C++ local agent | Not selected | Rust ownership/memory-safety model preferred for new cross-platform OS boundary; C/C++ libraries may be used behind reviewed FFI where required. |
+| Python as core OS executor | Not selected | Useful for ML/data research but not selected as the privileged always-on executor. Isolated Python workers remain possible. |
+| Electron as embodied renderer | Not selected | Web dashboards may use web technology; real-time 3D/VRM character uses Godot presentation layer. |
+| Flutter/React Native as initial mobile base | Not selected | Native lifecycle, permission, notification and OS-specific capabilities outweigh shared UI code for this product. |
+| Bespoke workflow engine or Redis queue as durable authority | Rejected | Would recreate timers, replay, worker recovery, cancellation, leases and P3.4 state semantics. |
+| Kafka as initial event platform | Not selected | Operational footprint disproportionate to early scale and single-host reference deployment. Revisit only with measured need. |
+| Dedicated graph/vector database | Not selected initially | PostgreSQL relational graph, FTS and pgvector are lower operational burden until measurements show a gap. |
+| Kubernetes/service mesh | Deferred | No demonstrated need for initial scale; revisit on actual deployment/availability evidence. |
+| MCP as permission/execution authority | Rejected | Tool transport does not replace LIA grant, risk, operation identity, local execution and evidence model. |
+| One permanent model vendor | Deferred | No representative evaluation corpus, data-processing policy decision or provider cost/quality study has been run. |
+
+### License, dependency and supply-chain gate
+
+P4 shall produce an SBOM for direct/transitive dependencies, exact versions and licenses, attribution/notice obligations, native binaries and model/asset licenses, release artifact verification, vulnerability ownership and update/rollback policy. Godot's MIT license does not clear imported VRM assets, fonts, plugins, audio, model weights or third-party content. Every asset/provider retains its own license and data-rights review.
+
+### Cost and operations
+
+P5 local profile must fit P2.2 local runtime budgets and does not run Temporal, PostgreSQL, NATS or hosted inference as desktop background dependencies. The distributed profile carries separate coordinator/database/event/workflow costs. Model inference, speech, storage, relay bandwidth and notification providers are usage-based cost centers. No production budget is approved until P5/P6 measure costs per conversation, workflow run, artifact and active device-month.
+
+## 19.91 P3.8 validation scenarios and proof gates
+
+These are required future engineering validations. P3.8 has not executed them; no pass/fail result is asserted.
+
+| Gate | Procedure | Required acceptance evidence | Planned phase |
+|---|---|---|---|
+| GODOT-01 | Upgrade controlled copy of current project to 4.7.2 stable | VRM import/retarget, animation, transparent window, focus/input, scaling, idle/interactive frame/resource report | P4/P5 |
+| HYPR-01 | Discover Hyprland session and subscribe to compositor events | Capability manifest, window identity/generation, geometry freshness, reconnect/event-loss report | P4/P5 |
+| HYPR-02 | Execute same-display move preserving size | Pre/post geometry, display/workspace, operation ID and independent verification | P5 |
+| IPC-01 | Compare Unix domain socket, Windows named pipe and supervised stdio bridge | Peer/ACL boundary, schema version, size/rate limit, cancellation and crash recovery | P4 |
+| RPC-01 | Generate TypeScript and Rust clients from Protobuf | Compatibility, streaming, error taxonomy, TLS/device identity and version-skew report | P4 |
+| TEMP-01 | Worker crash/restart, timer, signal, cancellation and replay | Durable workflow recovery, deterministic replay and no duplicate external effect | P4 |
+| TEMP-02 | Timeout after an external Activity may have applied an effect | Reconciliation and durable idempotency evidence; no blind repeat | P4 |
+| DB-01 | Benchmark PG16 queries/migrations at P2.2 record volumes | Query plans, transaction/isolation tests, migration rollback and restore report | P4 |
+| MEM-01 | Compare exact vector search and pgvector HNSW with hybrid FTS | Recall@k, filtered recall by scope, latency distribution, index build/update costs | P4/P5 |
+| SQLITE-01 | Crash/restart and offline/reconnect local outbox/cache | Confirmed local writes, pending/accepted state, no stale-write resurrection, backup evidence | P5 |
+| NATS-01 | Duplicate, delay, reorder, redeliver and replay JetStream events | Durable inbox dedupe, aggregate ordering and no repeated side effect | P4 |
+| SECURITY-01 | OIDC, device PoP, key revocation, secret access and grant-revocation races | Threat trace, secret/log inspection and fail-closed evidence | P4/P5 |
+| MODEL-01 | Evaluate candidate hosted/local models against P3.7 task classes | Grounding, tool schema, prompt injection, refusal, uncertainty, latency, cost and data-policy report | Before provider selection |
+| SPEECH-01 | Compare ASR/TTS with permitted synthetic and opt-in samples | Transcript accuracy, endpointing, interruption P95, language/accent coverage and retention review | Before voice release |
+| MOBILE-01 | Android/iOS foreground/background, notification, approval and reconnect | OS/device matrix and deferred/unavailable behavior | P6 |
+| HOME-01 | Home Assistant auth, event reconnect, state observation and test-device action | Per-entity manifest, least privilege, dedupe and physical-state evidence | P6 |
+| OPS-01 | Deploy and restore single-host Compose profile | Reproducible deployment, encrypted backup, restore drill, secret isolation and rollback evidence | P4/P6 |
+
+A gate passes only when its procedure, environment, build/version, fixture, raw results, expected/non-expected behavior and review outcome are retained in the repository. A vendor claim, source document or architecture diagram is not test evidence.
+
+## 19.92 Architecture-to-implementation handoff
+
+### P4 deliverables
+
+P4 converts the approved reference baseline into concrete versioned integration contracts:
+1. Protobuf service definitions for device identity/session, capability discovery, command/operation envelopes, evidence, events and health.
+2. OpenAPI contracts for authenticated user/mobile APIs, workflow inspection, grants and configuration.
+3. Local IPC schema and peer-authentication design for Godot presentation and Rust agent.
+4. Database ownership map, PostgreSQL migrations, SQLite local schemas, temporal indexes and retention/deletion jobs.
+5. Temporal Workflow/Activity boundaries and deterministic workflow versioning.
+6. NATS streams/subjects, event envelope, inbox/outbox, retention and consumer contract.
+7. Model-provider adapter interface, context-package schema, tool registry, validation pipeline and synthetic evaluation harness. No real provider until ADR-143 gate passes.
+8. Hyprland and Windows adapter conformance tests and support matrix.
+9. Packaging, configuration, keystore, secret injection, health and OpenTelemetry conventions.
+10. SBOM, license notices, update/rollback and vulnerability-management process.
+
+P4 may refine library versions/service packaging if new evidence requires it. Any deviation from P3.8 requires a new ADR with rationale, impact, alternatives and migration/exit plan.
+
+### P5 boundary
+
+P5 begins implementation of the narrow Linux-first vertical slice. It does not implement the full distributed profile or every connector. The first acceptance target remains AC-001–AC-011, with relevant P2.2, P2.5, P2.6, P3.6 and P3.7 gates. The same-display operation and persistent memory write must be independently verified; a rendered character or model response is not sufficient.
+
+## 19.93 P3.8 architecture diagrams
+
+### Reference technology and runtime topology
+
+~~~mermaid
+flowchart TB
+    subgraph LOCAL["P5 local-first profile"]
+        GODOT["Godot 4.7.2 presentation"]
+        RUST["Rust and Tokio device agent"]
+        HYPR["Hyprland Wayland adapter"]
+        SQLITE["SQLite WAL local journal/cache"]
+        NODE["Node 24 TypeScript conversation and tool broker"]
+        GODOT <--> RUST
+        RUST --> HYPR
+        RUST --> SQLITE
+        GODOT <--> NODE
+        NODE --> RUST
+    end
+    subgraph DISTRIBUTED["Full distributed profile"]
+        API["Fastify coordinator API"]
+        TEMP["Temporal workflow service"]
+        WORKER["Temporal TypeScript workers"]
+        PG["PostgreSQL 16 domain store"]
+        NATS["NATS JetStream"]
+        HOME["Optional Home Assistant connector"]
+        API <--> TEMP
+        API <--> PG
+        TEMP <--> PG
+        API <--> NATS
+        WORKER <--> TEMP
+        WORKER <--> NATS
+        HOME <--> NATS
+    end
+    LOCAL <-->|"Authenticated device sessions"| DISTRIBUTED
+~~~
+
+### Canonical state, workflow and event distribution
+
+~~~mermaid
+flowchart LR
+    DOMAIN["PostgreSQL domain authorities"]
+    OUTBOX["Transactional outbox"]
+    JET["NATS JetStream transport"]
+    CONSUMER["Durable consumer inbox"]
+    TEMPORAL["Temporal Run/Step authority"]
+    ADAPTER["Resource-owning adapter"]
+    EVIDENCE["Operation and verification evidence"]
+    DOMAIN --> OUTBOX --> JET --> CONSUMER
+    CONSUMER --> TEMPORAL
+    TEMPORAL --> ADAPTER
+    ADAPTER --> EVIDENCE
+    EVIDENCE --> DOMAIN
+    JET -. "at-least-once delivery" .-> CONSUMER
+~~~
+
+### Model and tool authority under the selected stack
+
+~~~mermaid
+flowchart TD
+    USER["User request"]
+    CONTEXT["Governed context broker"]
+    MODEL["Provider-neutral model gateway"]
+    PROPOSAL["Typed model proposal"]
+    BROKER["TypeScript tool broker"]
+    POLICY["Authoritative permission/risk service"]
+    WORKFLOW["Temporal workflow authority"]
+    RUST["Rust local executor"]
+    RESULT["Verified result/evidence"]
+    USER --> CONTEXT --> MODEL --> PROPOSAL --> BROKER
+    BROKER --> POLICY
+    POLICY --> WORKFLOW
+    WORKFLOW --> RUST --> RESULT
+    RESULT --> WORKFLOW
+~~~
+
+## 19.94 P3.8 architecture decision records
+
+#### ADR-126 — Two-profile reference technology baseline
+
+**Status:** Approved
+
+The P5 local-first profile and full distributed profile share logical contracts but activate only the components required by their scope.
+
+#### ADR-127 — Rust and Tokio for the desktop/device agent
+
+**Status:** Approved
+
+Stable Rust is the local device agent and resource-owning OS adapter baseline. Tokio handles asynchronous I/O; CPU-heavy work is isolated. Adapter interfaces retain the P3.6 typed capability model.
+
+#### ADR-128 — Godot 4.7.2 stable for embodiment
+
+**Status:** Approved with migration proof gate
+
+Godot 4.7.2 stable is the presentation baseline. GDScript handles primary presentation logic. Godot does not own OS permission, workflow, memory or tool authority. The upgrade is conditional on the VRM/asset/animation and transparent-window proof gate.
+
+#### ADR-129 — Node.js 24 LTS, TypeScript and Fastify 5 for coordinator services
+
+**Status:** Approved
+
+The Temporal TypeScript SDK officially supports Node 20/22/24. Node 24 is selected until Node 26 is included in that SDK support matrix and passes conformance. Fastify 5 is the HTTP API framework.
+
+#### ADR-130 — Temporal TypeScript SDK for durable workflow
+
+**Status:** Approved with workflow/side-effect proof gate
+
+Temporal owns durable Run/Step execution. Workflow code is deterministic; non-deterministic external operations occur in Activities. LIA operation IDs, idempotency and reconciliation remain mandatory.
+
+#### ADR-131 — PostgreSQL 16 for canonical coordinator data
+
+**Status:** Approved
+
+PostgreSQL 16 is the initial domain database. Temporal persistence remains isolated in a separate database/schema/role boundary on the same major-version profile initially. Both domains preserve their own migrations and connection pools.
+
+#### ADR-132 — PostgreSQL FTS, relational graph tables and pgvector
+
+**Status:** Approved with retrieval benchmark gate
+
+The initial memory retrieval stack combines full-text, temporal/typed relational graph edges and pgvector. Exact vector search comes first; HNSW requires scope-filtered recall/latency and isolation evidence.
+
+#### ADR-133 — SQLite WAL for device-local persistence
+
+**Status:** Approved
+
+SQLite WAL is for local journals/outboxes/cache on one host only. It is not a network filesystem or cross-device shared database. Backup uses a consistent snapshot/online backup.
+
+#### ADR-134 — NATS JetStream for distributed event delivery
+
+**Status:** Approved
+
+JetStream provides durable event distribution; PostgreSQL outbox/inbox remains canonical. Delivery is at least once and app-level durable deduplication remains required.
+
+#### ADR-135 — gRPC/Protobuf for control-plane communication
+
+**Status:** Approved with interoperability proof gate
+
+Device/control-plane and typed internal RPC use gRPC over HTTP/2 and Protocol Buffers. Rust uses Tonic; TypeScript uses generated compatible clients. Mobile/web APIs use HTTPS/JSON.
+
+#### ADR-136 — Native Kotlin/Compose and SwiftUI companion clients
+
+**Status:** Approved
+
+Android uses Kotlin/Jetpack Compose; iOS uses Swift/SwiftUI. Android is first implementation target; iOS has its own lifecycle/capability manifest.
+
+#### ADR-137 — Hyprland Wayland as first Linux adapter profile
+
+**Status:** Approved with first-slice conformance gate
+
+The first Linux profile is a specific Hyprland Wayland session, not general Wayland support. The adapter uses bounded requests, closes the synchronous request socket after use, reads events on the separate event socket and verifies post-move geometry.
+
+#### ADR-138 — Home Assistant WebSocket as optional first home connector
+
+**Status:** Approved for optional integration prototype
+
+Home Assistant is optional and not core dependency. Per-entity/action risk and permission gates remain. Actual hardware/device support is not claimed until tested.
+
+#### ADR-139 — OpenTelemetry for instrumentation
+
+**Status:** Approved
+
+Trace/metric/log instrumentation uses OpenTelemetry with content-minimized telemetry. Backend/exporter remains deployment-specific.
+
+#### ADR-140 — OCI images and Docker Compose for initial deployment
+
+**Status:** Approved for reference/self-host deployment
+
+Docker Compose is the initial single-host reference/self-host runtime. Kubernetes is deferred until measured need.
+
+#### ADR-141 — OIDC and OS-native secret stores
+
+**Status:** Approved at protocol/interface level
+
+OIDC is the account authentication baseline. Device proof-of-possession remains separate. OS-native protected stores and hosted KMS/HSM interface are used; vendor choices remain open.
+
+#### ADR-142 — Thin LIA-owned orchestrator/tool broker
+
+**Status:** Approved
+
+The core orchestration, context, model gateway, tool broker and permission integration are LIA-owned components. No third-party agent framework owns authority or execution.
+
+#### ADR-143 — Model and speech providers deferred
+
+**Status:** Approved deferral with P5 evaluation gate
+
+No LLM, local inference server, embedding, ASR or TTS vendor is selected. Candidates must pass task-specific quality, privacy, retention, region, latency, safety/tool-use and cost evaluation.
+
+#### ADR-144 — Local content-addressed and S3-compatible artifact storage
+
+**Status:** Approved at interface/profile level
+
+Local artifacts use content-addressed files. Hosted artifacts use an S3-compatible interface; provider and backup vendor remain open.
+
+#### ADR-145 — Local presentation-to-agent IPC deferred to P4 proof
+
+**Status:** Approved as bounded deferral
+
+Godot and Rust communicate via local-only authenticated IPC. P4 compares Unix domain sockets, Windows named pipes and supervised child-process streams. An unauthenticated localhost command port is not accepted.
+
+**P3.8 closure:** Cross-workstream consistency and quality/security review are recorded. The reference stack, P5 and full distributed profiles, candidate alternatives, explicit deferrals, risk register and implementation proof gates are approved. ADR-126–ADR-145 are added. These are architecture selections and documentary evaluations, not prototype, benchmark, implementation or production verification results. Phase 3 is complete. P4 is next: convert the reference baseline into concrete versioned interfaces and conformance contracts.
+
+### Informative references used for P3.8
+
+- [Temporal TypeScript SDK — supported Node.js versions](https://github.com/temporalio/sdk-typescript) — current SDK support list.
+- [Node.js release schedule](https://github.com/nodejs/Release) — Node 24 Maintenance LTS and Node 26 Active LTS status as of this blueprint revision.
+- [Temporal persistence documentation](https://docs.temporal.io/temporal-service/persistence) — tested database versions and persistence boundaries.
+- [Temporal TypeScript workflow determinism](https://github.com/temporalio/documentation/blob/main/docs/develop/typescript/workflows/basics.mdx) — external state and side effects belong in Activities.
+- [Godot 4.7.2 stable archive](https://godotengine.org/download/archive/4.7.2-stable/) — selected stable engine version.
+- [Hyprland IPC documentation](https://wiki.hypr.land/ipc/) — separate command and event sockets and request-socket lifecycle.
+- [pgvector documentation](https://github.com/pgvector/pgvector) — exact versus approximate vector search and filtered HNSW behavior.
+- [SQLite WAL documentation](https://sqlite.org/wal.html) and [Online Backup API](https://sqlite.org/backup.html) — local-host WAL and consistent backup semantics.
+- [NATS JetStream delivery model](https://docs.nats.io/using-nats/jetstream/model_deep_dive) — acknowledgement, redelivery and bounded message deduplication.
+- [Home Assistant WebSocket API](https://developers.home-assistant.io/docs/api/websocket/) — authentication, command/result and event stream.
+- [Fastify v5 migration guide](https://fastify.dev/docs/latest/Guides/Migration-Guide-V5/) — Node.js runtime baseline.
+- [OpenTelemetry documentation](https://opentelemetry.io/docs/) — vendor-neutral instrumentation.
+- [Android Jetpack Compose](https://developer.android.com/compose) and [Apple SwiftUI](https://developer.apple.com/swiftui/) — native companion UI foundations.
+
