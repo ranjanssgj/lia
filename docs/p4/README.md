@@ -1,9 +1,9 @@
 # P4 — Integration Contracts
 
 **Contract package:** P4.1  
-**Revision:** 0.2.0  
+**Revision:** 0.2.1
 **Status:** Draft — review and conformance evidence required  
-**Baseline:** LIA Project Blueprint v1.14.1 (P4 in progress)  
+**Baseline:** LIA Project Blueprint v1.14.2 (P4 in progress)  
 **Date:** 14 November 2026
 
 ## Purpose
@@ -39,13 +39,18 @@ This is a contract design package. It does not claim that the services, adapters
 | Event subjects | [subjects.yaml](events/subjects.yaml) | lia.v1 | Domain event owner |
 | Temporal boundaries | [temporal-contracts-v1.md](workflows/temporal-contracts-v1.md) | 1 | Temporal workflow authority |
 | Provider interfaces | [provider-interfaces-v1.ts](providers/provider-interfaces-v1.ts) | 1 | LIA model gateway |
-| P4 gate matrix | [p4-conformance-matrix.md](conformance/p4-conformance-matrix.md) | 0.2 | Procedure, expected evidence and status for architecture proof gates |
+| Changelog | [CHANGELOG.md](CHANGELOG.md) | 0.2.1 | Review history and verification provenance for the P4 contract package |
+| P4 gate matrix | [p4-conformance-matrix.md](conformance/p4-conformance-matrix.md) | 0.2.1 | Procedure, expected evidence and status for architecture proof gates |
 | Adapter contract | [adapter-conformance-v1.md](adapters/adapter-conformance-v1.md) | 1 | Manifest semantics, resource lifecycle, execution checks and 24 common adapter conformance cases |
 | Manifest schema | [capability-manifest-v1.schema.json](adapters/capability-manifest-v1.schema.json) | 1 | Strict JSON Schema for adapter capability manifests |
 | Hyprland fixture | [hyprland-wayland-manifest.example.json](adapters/fixtures/hyprland-wayland-manifest.example.json) | Example | Synthetic first-Linux-profile manifest fixture |
-| Compatibility matrix | [compatibility-matrix.md](compatibility-matrix.md) | 0.1 | Approved stack baselines, exact-pin status and proof-gate mapping |
+| Compatibility matrix | [compatibility-matrix.md](compatibility-matrix.md) | 0.1.1 | Approved stack baselines, exact-pin status and proof-gate mapping |
 | PostgreSQL retention jobs | [002-retention-deletion.sql](sql/postgres/002-retention-deletion.sql) | 002 | Orchestration metadata only; canonical tombstones remain owner-domain data |
 | SQLite tombstones | [002-retention-tombstones.sql](sql/sqlite/002-retention-tombstones.sql) | 002 | Local replay-prevention markers; not the canonical deletion authority |
+| PostgreSQL integrity and lease ledger | [003-integrity-and-lease-ledger.sql](sql/postgres/003-integrity-and-lease-ledger.sql) | 003 | Account-consistent references, exact lease-to-operation claim matching and coordinator issuance ledger |
+| PostgreSQL API projections and revision bound | [004-api-projections-and-revision-bound.sql](sql/postgres/004-api-projections-and-revision-bound.sql) | 004 | Rebuildable objective/run/grant/request summaries plus bounded API idempotency records; never canonical workflow or permission state |
+| SQLite consumption ledger | [003-consumption-ledger.sql](sql/sqlite/003-consumption-ledger.sql) | 003 | Device-local single-use lease, nonce and session-sequence replay ledgers, matched to the operation claim |
+| SQLite revision bound | [004-manifest-revision-json-safe.sql](sql/sqlite/004-manifest-revision-json-safe.sql) | 004 | Enforces the JSON/JCS-safe manifest revision range |
 | Context package | [context-package-v1.md](context/context-package-v1.md), [schema](context/context-package-v1.schema.json), [example](context/fixtures/context-package-v1.example.json) | 1 | Immutable scoped invocation context with trust, digest, expiry, access and egress rules |
 | Tool registry | [tool-registry-v1.schema.json](tools/tool-registry-v1.schema.json), [example](tools/tool-registry-v1.example.json) | 1 | Capability-derived tool affordance metadata, not permission |
 | Tool validation | [tool-validation-pipeline-v1.md](tools/tool-validation-pipeline-v1.md) | 1 | Registry projection, proposal validation, permission recheck and broker dispatch |
@@ -65,6 +70,18 @@ This package proposes the following protocol-level contract. These choices are n
 - OIDC issuer, certificate authority, key-management/KMS/HSM vendor, hardware-backed-key availability, hosted secret store, and deployment region are not selected here.
 
 The Ed25519 profile must be reconsidered before production if a FIPS or other cryptographic compliance requirement is introduced. The repository currently does not establish such a requirement. The security conformance suite must include valid, invalid, expired, rotated, revoked, replayed, altered, and out-of-order credentials and commands.
+
+## Offline lease consumption and replay barrier
+
+The coordinator-side `offline_lease_issuance` table records issuance, delivery and reported consumption; it is not the device replay barrier. The resource-owning device verifies issuer/audience, device and credential generation, signature, time window, current locally enforceable policy/revocation state, exact capability/resource generation and observation freshness before effect.
+
+Offline leases and online command envelopes use distinct replay controls because the Protobuf OfflineAuthorizationLease has a lease nonce but no session-sequence field.
+
+For a single-use offline lease, the device verifies the signed claims and then uses one SQLite BEGIN IMMEDIATE transaction to (1) insert the exact account/message-domain/nonce/lease reference, (2) mark the operation as possibly having taken effect with a reconciliation-safe status, and (3) advance that exact stored lease to consumed. The transaction commits before the adapter performs the effect. If the process crashes after commit, the operation is reconciled; the lease is never replayed. A consumed lease is not proof that the effect succeeded.
+
+For a signed CommandEnvelope, the device separately inserts the command nonce, requires its session_sequence to be strictly greater than the stored watermark, advances that watermark with a compare-and-swap predicate, and records the possible-effect operation marker in one transaction before the adapter effect. The session watermark is created at zero when an authenticated session opens. Its immutable retain_until is the session expiry plus the configured maximum accepted clock skew; the row cannot be deleted before that deadline.
+
+The signed lease and operation claims, including their identifiers, are immutable once issued/stored. Consumed nonce records are immutable and cannot be deleted before the signed message expiry plus the configured maximum accepted clock skew. Backup/restore and downgrade procedures must preserve nonce and session-sequence ledgers and revocation state. The clock-skew allowance is a deployment compatibility/security parameter and must be recorded with the device runtime profile.
 
 ## Versioning and compatibility rules
 
@@ -92,12 +109,30 @@ The Ed25519 profile must be reconsidered before production if a FIPS or other cr
 | External provider state | Provider | Timestamped LIA projection with provenance |
 | Secrets/private keys | OS secure store or credential authority | Opaque secret/key handles only |
 
-The PostgreSQL migration deliberately does not create canonical memory, grant, Temporal-internal, or full run/step tables. Those domains have separate owners. The SQLite schema is local to one device and is not a cross-device database.
+The PostgreSQL migrations deliberately do not create canonical memory, grant, or Temporal-internal tables, nor full run/step aggregates. Migration 004 adds rebuildable API read projections for objectives, runs, grant metadata and accepted-request status. Temporal remains the canonical objective/run execution authority; Permission Authority remains the canonical grant owner. Projections cannot authorize or advance workflow state and must be rebuilt from their owners. The SQLite schema is local to one device and is not a cross-device database.
+
+## Cross-contract field mappings
+
+The same concept is spelled differently across the JSON, protobuf and SQL surfaces. These mappings are normative for P4; a generator or test must not infer another one.
+
+| Concept | Manifest JSON Schema | Protobuf | OpenAPI | PostgreSQL / SQLite |
+|---|---|---|---|---|
+| Manifest revision | `manifest_revision` integer 1…9007199254740991 | `uint64 manifest_revision` (binary; ProtoJSON string; `known_manifest_revision`: 0 = none) | `manifestRevision` integer 1…9007199254740991 | signed `BIGINT` / SQLite `INTEGER`, bounded to 2^53−1 |
+| Manifest expiry | `expires_at` | `valid_until` | not exposed | `valid_until` |
+| Risk tier | `"R0"`…`"R4"` strings | `RiskTier` enum: `R0 = 1` … `R4 = 5` (0 is unspecified) | not exposed | `SMALLINT` 0…4 = R0…R4. Convert as `enum − 1`; never store the enum number |
+| Sensitivity | `"S0"`…`"S3"` strings | `uint32` 0…3 | not exposed | `SMALLINT` 0…3 = S0…S3 |
+| Evidence/attempt identity | n/a | `OperationResult.attempt_id` | n/a | `operation_attempt.attempt_id` |
+
+All `int64`/`uint64` values exposed as JSON numbers (for example, device credential/revocation generations, API projection revisions and policy versions) are bounded to the same exact-integer ceiling; values outside the bound must use a decimal-string representation in a future API version.
+
+Event digest note: `payload_digest_sha256` is the SHA-256 of the RFC 8785 canonical form of the event `data`. PostgreSQL `JSONB` does not preserve key order, whitespace or numeric text, so the outbox digest is verified by re-canonicalizing the decoded value, not by hashing stored bytes. Event payload numbers must therefore be integers in the safe range −9007199254740991…9007199254740991 or strings; floating-point values and larger integers are not permitted in signed/digested event data. NATS-01 fixtures must include canonical digest vectors for the PostgreSQL JSONB round trip.
 
 ## Required proof gates
 
 | Gate | P4 contract work |
 |---|---|
+| API-01 | Validate the OpenAPI 3.1 document; OIDC claims, object-level authorization, idempotency replay, If-Match conflicts, pagination, rate-limit and error mapping, accepted-command status polling |
+| ADAPTER-01 | ADP-001–ADP-024 against a reference harness; manifest schema, expiry, resource, permission and evidence tests on the exact Hyprland and Windows builds |
 | RPC-01 / RPC-02 | Compile generated Rust and TypeScript clients; interoperability, TLS/device identity, deadlines, streaming, cancellation, limits and version skew |
 | IPC-01 | Peer authentication, framing, schema validation, backpressure, disconnect/restart and authority-separation tests |
 | DB-01 | PostgreSQL migration, transaction, account-isolation, restore and pinned Temporal/PostgreSQL compatibility tests |
@@ -106,10 +141,18 @@ The PostgreSQL migration deliberately does not create canonical memory, grant, T
 | NATS-01 | Outbox/inbox atomicity, duplicate/reorder/redelivery, aggregate sequence gaps, quarantine and tenant isolation |
 | SECURITY-01 | OIDC, mTLS/device PoP, command-signature, key rotation/revocation, permission race and secret/log inspection |
 | MODEL-01 / SPEECH-01 | Synthetic provider conformance, policy routing, schema validation, locality, retention, cancellation and fallback |
-| HYPR-01 / GODOT-01 | Hyprland capability discovery and Godot migration/renderer evidence; these are not implied by contract drafting |
+| HYPR-01 / HYPR-02 / GODOT-01 | Hyprland capability discovery, same-display move verification and Godot migration/renderer evidence; these are not implied by contract drafting |
+| MEM-01 | Exact vector baseline versus HNSW with hybrid FTS; scope-filtered recall and isolation |
+| CONTEXT-01 / TOOL-01 | Context-package digest/closure/expiry/egress tests; tool registry filtering, malformed-stream, stale-resource and approval-digest tests |
+| RETENTION-01 / ART-01 | Owner tombstone propagation, delete-wins and restore drills; content-addressed artifact integrity, scope, retention and restore |
+| SUPPLY-01 / OTel-01 | Artifact-derived SPDX SBOM, license, provenance and rollback evidence; per-signal trace-context propagation, redaction and cardinality limits |
 | OPS-01 / OPS-02 | Deployment, secret isolation, backup/restore, rollback and separate managed-host recovery evidence |
 
 No gate is marked passed in this draft. See the [conformance matrix](conformance/p4-conformance-matrix.md) for required evidence and current status.
+
+## P6-only compatibility gates
+
+`MOBILE-01` and `HOME-01` remain P6 gates. They appear in the compatibility matrix as future platform profiles and are intentionally excluded from P4 exit criteria and the P4 conformance status table. Their absence from the P4 matrix is not a lost requirement.
 
 ## Deliberately deferred
 

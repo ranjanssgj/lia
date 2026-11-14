@@ -1,6 +1,6 @@
 # P4 Runtime and Toolchain Compatibility Matrix
 
-**Revision:** 0.1.0  
+**Revision:** 0.1.1
 **Status:** Draft — exact lockfile and proof evidence pending  
 **Reference date:** 14 November 2026
 
@@ -28,7 +28,7 @@ This matrix separates the approved architecture baseline from exact dependency p
 | Deployment | OCI images + Docker Compose single-host reference profile | Base images, Compose plugin, image digests and production deployment topology pending | Pin image digests and build provenance. Compose is not an HA/DR guarantee; managed hosting needs separate RTO/RPO proof | OPS-01/02 |
 | Artifact storage | Local content-addressed files; hosted S3-compatible interface | Filesystem policy, object-store vendor and KMS/HSM not selected | Content digest, scope, retention, deletion/tombstone, encryption and restore tested; no vendor selected by this matrix | ART-01, OPS-01 |
 | Model/speech providers | Provider-neutral interfaces only | No model, embedding, ASR or TTS vendor/model selected | Candidate evaluation must satisfy locality, data policy, retention, quality, tool schema, safety, latency and cost. No implicit hosted fallback | MODEL-01, SPEECH-01 |
-| Mobile and home adapters | Android Kotlin/Compose, iOS Swift/SwiftUI; optional Home Assistant connector | Exact SDK, OS/device matrix and connector dependency versions pending | Separate P6 compatibility profiles; no claim of general background execution or physical device support | MOBILE-01, HOME-01 |
+| Mobile and home adapters (P6) | Android Kotlin/Compose, iOS Swift/SwiftUI; optional Home Assistant connector | Exact SDK, OS/device matrix and connector dependency versions pending | Deferred P6 profiles; corresponding gates are listed separately in the conformance matrix and are not P4 exit requirements | P6: MOBILE-01, HOME-01 |
 
 ## Lockfile and release eligibility
 
@@ -47,3 +47,6 @@ P4 must record:
 The P3.8 selected families remain unchanged. Tonic 0.14.9 is the initial RPC-01 spike candidate based on the P3.8 upstream audit, not a production lock. Node 24, Godot 4.7.2, PostgreSQL 16, Fastify 5 and protocol major baselines remain as selected. All missing patch-level pins are explicitly **Pending P4 proof** rather than guessed.
 
 A change to an approved P3.8 technology family requires a new ADR including evidence, alternatives, compatibility impact, migration/exit plan and rollback strategy.
+
+
+`MOBILE-01` and `HOME-01` are intentionally deferred P6 gates. They are listed as deferred rows in the conformance matrix for traceability, but they do not block P4 exit or the Linux-first P5 slice.
