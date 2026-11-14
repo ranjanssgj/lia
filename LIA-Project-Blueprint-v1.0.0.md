@@ -2083,6 +2083,67 @@ Revocation stops new sessions and side effects on connected devices, invalidates
 Device replacement, reinstall, key loss, suspected compromise and account recovery use explicit audited lifecycle flows. Revoked credentials and grants are not silently restored by backup or account sign-in. Remote wipe of an offline or compromised node is best effort, not a guarantee.
 
 
+### ADR-081 — Separate commands, domain events and notification intents
+
+**Status:** Approved
+
+Commands request an operation or transition; events record facts; notification intents communicate committed facts to users. These message classes have distinct validation, authority and lifecycle semantics. Event or notification payloads never grant execution permission.
+
+### ADR-082 — Durable workflow state with append-only transition history and outbox/inbox delivery
+
+**Status:** Approved
+
+The coordinator maintains canonical workflow aggregates, immutable transition/event history and durable outbox delivery records. Consumers use durable inbox/deduplication semantics. The design does not require pure event sourcing; it requires atomic recoverability between state transitions and event publication.
+
+### ADR-083 — At-least-once delivery with aggregate-local ordering and idempotent consumers
+
+**Status:** Approved
+
+Distributed event/command delivery is at-least-once. Stable event/command/operation IDs, deduplication and aggregate sequence/version handle duplication and reordering. Ordering is guaranteed within defined aggregates only; global total ordering and exactly-once side effects are not assumed.
+
+### ADR-084 — Workflow state machine is authoritative; planner output is a proposal
+
+**Status:** Approved
+
+A deterministic coordinator-owned state machine controls campaign/run/step transitions, deadlines, dependencies, plans, retry budgets and completion. Planner output must be validated into a versioned plan snapshot and cannot directly mark work ready, authorized or complete.
+
+### ADR-085 — Plans are bounded DAGs with explicit iteration budgets
+
+**Status:** Approved
+
+Run plans are acyclic by default. Parallelism and conditional branches are explicit. Repeated work must have a declared maximum iteration count, termination condition, deadline and resource budget. Unbounded self-triggering and LLM-driven execution loops are prohibited.
+
+### ADR-086 — Worker leases are fenced coordination claims, not authorization grants
+
+**Status:** Approved
+
+Each step attempt receives a finite worker lease with a monotonically increasing generation/fencing token. Expiry or reassignment cannot prove non-execution. Local grants and command-envelope validation remain mandatory. Worker lease duration/heartbeat parameters are implementation values to be benchmarked before P5.
+
+### ADR-087 — Reconcile possible side effects before retry or reassignment
+
+**Status:** Approved
+
+Pre-effect transient errors may receive bounded retries. Any timeout, worker loss or connection failure after a possible side effect enters reconciliation. Verified success is adopted; verified non-execution may be retried under current authority; unknown outcome remains blocked. Provider idempotency is used only where supported.
+
+### ADR-088 — Explicit schedule occurrence identity and safe misfire policy
+
+**Status:** Approved
+
+Each campaign schedule revision produces deterministic, deduplicated occurrence identities with a defined timezone. The default misfire policy skips and reports expired occurrences rather than launching catch-up bursts. Bounded catch-up/backfill requires explicit campaign configuration.
+
+### ADR-089 — Pause, cancel, approval and revoke are distinct workflow controls
+
+**Status:** Approved
+
+Pause prevents new work and reaches safe checkpoints; cancellation ends future work in the selected run/campaign; revocation removes authority before the next governed side effect. Approval is bound to an exact immutable operation digest and expiry and does not replace a current grant.
+
+### ADR-090 — Notifications are derived delivery records, not workflow authority
+
+**Status:** Approved
+
+Notifications derive from committed domain events and have independent per-channel delivery state, deduplication, bounded retry and expiry. A failed route cannot change workflow outcome; a notification reply cannot approve a consequential operation without authenticated exact-action review.
+
+
 # 9. Change log
 
   ------------------------------------------------------------------------
@@ -2167,6 +2228,8 @@ Device replacement, reinstall, key loss, suspected compromise and account recove
 
 **1.8.0 — 14 Nov 2026:** Completed P3.3 device identity and secure communication architecture. Defined identity principals and trust states, explicit proof-of-possession pairing, per-installation key/credential lifecycle, authenticated session establishment, target-bound command envelopes, relay/remote-session boundaries, revocation/recovery and a five-minute maximum offline lease for exact R0/R1 local operations. Added pairing and session sequence diagrams, security validation scenarios and ADR-074–ADR-080. Transport, cryptographic profile and implementation technologies remain deferred.
 
+**1.9.0 — 14 Nov 2026:** Completed P3.4 workflow and event architecture. Defined command/event/notification separation, canonical event envelopes, durable state/event journal and outbox/inbox delivery, at-least-once semantics with aggregate-local ordering, workflow object hierarchy and guarded campaign/run/step state machines, timezone-aware schedule occurrences and default skip/report misfire policy, bounded DAG execution, fenced worker leases, retry classification and side-effect reconciliation, exact-action approvals, pause/cancel/revocation controls and independent notification delivery. Added event propagation, workflow execution and schedule/misfire diagrams plus validation scenarios and ADR-081–ADR-090. Implementation technologies remain deferred.
+
 
 # 10. Current working state
 
@@ -2176,9 +2239,10 @@ Device replacement, reinstall, key loss, suspected compromise and account recove
 **P3.1 status:** Complete — architecture drivers, system context and logical decomposition approved  
 **P3.2 status:** Complete — hosted-default hybrid deployment topology, self-hosted target, runtime placement, offline boundaries and initial recovery objectives approved  
 **P3.3 status:** Complete — identity principals, pairing, credential lifecycle, authenticated sessions, command envelopes, relay trust, revocation and offline leases approved  
-**P3.4 status:** Pending — durable event and workflow architecture  
+**P3.4 status:** Complete — durable events, workflow state machines, schedule/occurrence semantics, worker leases, retry/reconciliation, approvals, cancellation and notification delivery approved  
 **Overall status:** P3 is active. No programming language, framework, database, model provider, cloud vendor, transport protocol, cryptographic library or production infrastructure product has been selected.  
-**Next action:** Define event identities and ordering, durable workflow state transitions, delivery guarantees, worker leases, retry/reconciliation, schedule semantics and notification events in P3.4.
+**P3.5 status:** Pending — data ownership, persistence and synchronization  
+**Next action:** Define canonical data ownership and storage boundaries, memory/task/event synchronization, conflict resolution, retention, deletion propagation, backup/restore and cross-device consistency in P3.5.
 
 
 ## Phase 2 exit criteria
@@ -4902,7 +4966,7 @@ flowchart TB
 | P3.1 — Architecture drivers and system context | Scope extension, quality drivers, system context, logical planes and responsibility boundaries | Complete |
 | P3.2 — Distributed runtime and deployment topology | Always-on coordinator deployment, local/hosted workers, process boundaries, availability and recovery | Complete |
 | P3.3 — Device identity and secure communication | Enrollment, device keys, sessions, relay, remote desktop transport and revocation | Complete |
-| P3.4 — Workflow and event architecture | Durable task state, event model, scheduler, campaign runs, leases, retry/reconciliation and notification events | Pending |
+| P3.4 — Workflow and event architecture | Durable task state, event model, scheduler, campaign runs, leases, retry/reconciliation and notification events | Complete |
 | P3.5 — Data ownership and synchronization | Memory authority, task/event records, device caches, conflict resolution, retention and deletion propagation | Pending |
 | P3.6 — Platform and integration adapter contracts | Linux/Windows desktop nodes, mobile capabilities, home automation and external service connectors | Pending |
 | P3.7 — Agent intelligence and model runtime | Conversation orchestration, planning, model gateway, tool/action request schema and context boundaries | Pending |
@@ -5473,7 +5537,687 @@ These cases must eventually be exercised with valid, invalid, expired, revoked, 
 
 **P3.3 status:** Complete — device/principal identity, pairing, credential separation and rotation, authenticated session establishment, command-envelope enforcement, relay trust boundaries, revocation and bounded offline authorization are defined.
 
-The governing decisions are recorded as ADR-074–ADR-080 in the main decision register. Exact transport, cryptographic algorithms/library, credential/token formats, wire schemas and implementation technology remain deferred to P3.8. P3.4 will define durable events, workflow delivery, scheduling, leases, retries, idempotency and reconciliation.
+The governing decisions are recorded as ADR-074–ADR-080 in the main decision register. Exact transport, cryptographic algorithms/library, credential/token formats, wire schemas and implementation technology remain deferred to P3.8.
+
+## 19.32 Workflow and event architecture principles
+
+P3.4 defines the durable execution model used by one-off objectives, multi-device workflows and recurring campaigns. It preserves the established hierarchy: an objective expresses the desired outcome; a plan decomposes it into steps; actions are concrete operations performed by an authorized worker.
+
+The coordinator is the authoritative owner of workflow state. Workers perform assigned work and return execution evidence. The planner proposes plans and replans; it does not own scheduler state, authorization, leases, retries or completion.
+
+### Governing principles
+
+1. **Durable state before acknowledgement:** A request, state transition, schedule occurrence or event is not acknowledged as durably accepted until its authoritative record and required delivery intent are committed.
+2. **Events are facts; commands are requests:** An event reports something that happened or was observed. A command requests an action. Neither event content nor a command's arrival creates permission.
+3. **At-least-once delivery:** Messages may be duplicated, delayed, reordered or lost before durable acceptance. Consumers must be idempotent and use stable identities. Exactly-once side effects are not assumed.
+4. **Aggregate-local ordering:** State changes for one campaign, run, step or other defined aggregate have a monotonic version/sequence. LIA does not depend on a global total order across unrelated aggregates.
+5. **Deterministic workflow authority:** A guarded state machine validates every workflow transition. Model output cannot directly write authoritative run/step state or bypass transition rules.
+6. **Side-effect reconciliation:** Before retry or reassignment after a possibly executed side effect, LIA inspects the target/provider state. Unknown outcome remains explicit.
+7. **Authorization is re-evaluated:** A plan, event, worker lease, approval notification or prior successful step does not create a new permission. Every side effect uses the current applicable grant and target-side checks.
+8. **Bounded execution:** Plans are finite DAGs by default. Parallelism, iterations, deadlines, retries, execution time, resource use and campaign frequency are bounded.
+9. **User-visible control:** Campaigns, runs, steps, blockers, approvals, assigned workers, retries and verified outcomes remain inspectable, pausable and cancellable.
+10. **Independent notification delivery:** Notification failure never changes workflow truth, and notification receipt is never an execution approval.
+
+P3.4 does not select a database, event broker, workflow engine, queue product, scheduler library or programming language. It defines semantic contracts that candidate implementations must preserve.
+
+## 19.33 Event, command and notification model
+
+These are three different message classes and must not be collapsed into one generic message bus.
+
+| Message class | Meaning | Examples | Authority |
+|---|---|---|---|
+| Command | A request to perform a specific operation or state transition | Create run, claim step, execute action, pause campaign, cancel run | Accepted only after caller authentication, schema validation, current policy and state-transition checks |
+| Domain event | A recorded fact about a state change or observed occurrence | Run created, step verified, device disconnected, approval expired, external event accepted | Evidence for state progression; does not itself grant authority |
+| Notification intent | A user-facing communication derived from a committed state/event | Approval requested, campaign blocked, publication verified, daily summary | Output only; cannot authorize or complete the associated operation |
+
+External webhooks, provider callbacks, device messages and user-originated events are untrusted until authenticated/validated for the relevant source. Even a validly authenticated external event is data, not governing instruction. An external content payload cannot expand a campaign, modify its grant, approve publication or instruct the planner to ignore its constraints.
+
+### Event taxonomy
+
+| Family | Representative events | Required treatment |
+|---|---|---|
+| User/control | ObjectiveCreated, CampaignPaused, CampaignResumed, RunCancelled, GrantRevoked, ApprovalDecisionRecorded | Authenticate principal; bind to current account, object version and exact scope |
+| Schedule/time | ScheduleOccurrenceDue, RunDeadlineReached, StepTimeoutReached, RetryDue, WorkerLeaseExpired, ApprovalExpired | Generate from durable schedule/timer records; deduplicate by occurrence/timer identity |
+| Workflow | PlanAccepted, StepBecameReady, StepClaimed, StepStarted, StepCheckpointed, StepBlocked, StepVerificationCompleted, RunCompleted | Validate against workflow aggregate version and legal state transition |
+| Device/worker | DeviceOnline, DeviceOffline, CapabilityChanged, WorkerHeartbeatMissed, WorkerUnavailable | Verify device/session identity and freshness; update availability, not grants |
+| External integration | WebhookReceived, UploadAccepted, PublicationObserved, MetricSnapshotReceived, ProviderRateLimited | Authenticate connector, validate provider/account binding and deduplicate provider event identity |
+| Policy/authority | GrantExpired, GrantRevoked, CampaignEnvelopeChanged, ResourceBudgetExhausted, ConfirmationRequired | Re-evaluate pending and future operations; never silently preserve superseded authority |
+| Notification | NotificationQueued, DeliveryAttempted, ProviderAccepted, DeliveryReported, DeliveryFailed, NotificationExpired | Track independently from workflow state |
+
+### Canonical event envelope
+
+Every durable event shall carry the following logical fields. A transport may encode them differently, but it must preserve the semantics.
+
+| Field | Purpose |
+|---|---|
+| Event ID | Globally unique identity for deduplication |
+| Event type and schema version | Defines the event contract and compatible interpretation |
+| Aggregate type, aggregate ID and aggregate sequence/version | Establishes the state object and its monotonic event order |
+| Producer identity | Identifies user, coordinator subsystem, device installation, worker or connector |
+| Source event ID / idempotency key | Deduplicates an upstream event or repeated submission |
+| Occurred-at and recorded-at times | Separates source occurrence time from coordinator receipt/commit time |
+| Correlation ID | Connects a user objective, campaign run and its distributed work |
+| Causation ID | Identifies the command/event that caused this event |
+| Principal and origin | Distinguishes user, delegated task, schedule, device or external source |
+| Trust/authentication context | Records source validation and authenticated session/device/connector reference |
+| Scope/classification | Identifies account/project/task domain and data sensitivity/handling class |
+| Payload or payload reference and digest | Carries the minimum event data or a governed reference to it |
+| Trace/operation references | Links command, operation, attempt, worker lease and evidence where applicable |
+
+Sensitive payloads are not copied into general event logs. Events should contain references and limited metadata where possible. Payload access follows P2.5 ownership, sensitivity, scope, retention and deletion rules; the event record cannot broaden access to a referenced object.
+
+### Event time and order
+
+- Aggregate sequence/version is the authoritative order for state transitions within one aggregate. Wall-clock timestamps alone do not establish ordering.
+- There is no global ordering guarantee across unrelated campaigns, runs, devices or connectors.
+- A consumer receiving a duplicate sequence/event recognizes it and does not apply it twice.
+- A consumer receiving a later aggregate version before a required earlier version defers processing, retrieves/reconciles canonical aggregate state, or requests replay; it must not assume the missing transition occurred.
+- Source occurrence time is retained for temporal analysis, but scheduling and expiry use coordinator-controlled time semantics defined for the relevant operation.
+- Clock skew or an untrusted source timestamp cannot make an expired command, approval or grant valid.
+- Material correction is represented by a new fact/correction event with provenance; committed event history is not silently rewritten.
+
+## 19.34 Durable event acceptance and delivery
+
+### Coordinator-side durability
+
+The coordination runtime shall maintain an authoritative workflow state record, an append-only logical transition/event journal and durable delivery records. It is not required to use a pure event-sourcing architecture or rebuild all state exclusively by replaying the event log.
+
+A state transition that must publish an event uses a transactional outbox or an equivalent atomic commit pattern:
+
+1. Validate the command, actor, aggregate version and legal transition.
+2. Commit the updated aggregate state, incremented version, immutable transition/event record and corresponding outbox record as one logical durable operation.
+3. Acknowledge acceptance only after the configured durability boundary is satisfied.
+4. A dispatcher delivers pending outbox events asynchronously and marks delivery progress.
+5. A consumer records receipt/deduplication in a durable inbox or equivalent mechanism before applying its state change.
+6. If delivery or consumer processing is interrupted, the message is retried; duplicate receipt is safe and detectable.
+
+This prevents a process crash between a state commit and event publication from permanently losing the event. The concrete transaction, replication and durability implementation is deferred to P3.8 and P3.5 data design.
+
+### Delivery guarantees
+
+| Path | Contract |
+|---|---|
+| User command to coordinator | Accepted command is durably recorded or explicitly rejected; an unconfirmed request remains pending/unknown to the client rather than being described as committed |
+| Coordinator event to internal consumer | At-least-once delivery with durable retry and consumer deduplication |
+| Coordinator command to online worker | At-least-once dispatch; worker must deduplicate by command/operation identity and report acknowledgement separately from execution result |
+| Coordinator message to offline device | Durable pending dispatch only while relevant task/command remains valid; expired or superseded work is discarded, not replayed |
+| Device/worker event to coordinator | Authenticated delivery with stable event/operation identity; local outbox may retry until accepted or expired under its retention policy |
+| External webhook/callback | At-least-once or provider-defined delivery; validate provider event identity and deduplicate before affecting workflow state |
+| Notification route | Independent bounded delivery attempts and provider-reported status; no impact on workflow truth |
+
+LIA does not promise exactly-once message delivery or exactly-once side effects. The system instead combines at-least-once delivery, durable deduplication, stable operation IDs, fencing and outcome reconciliation.
+
+### Consumer idempotency and quarantine
+
+- Each consumer declares the event families it accepts and the aggregate/version conditions required.
+- A repeated event ID or source idempotency key produces no second state transition or side effect.
+- Consumer inbox receipt and its resulting state transition are committed atomically where the storage boundary permits, or reconciled through an equivalent recoverable protocol.
+- An event with invalid schema, invalid source authentication, impossible aggregate version, unsupported required semantics or untrusted payload is rejected or quarantined with a reason.
+- Quarantined events do not silently disappear and do not trigger model interpretation as a workaround.
+- Retry of a poison/invalid event is not unbounded; it requires a corrected source event or an explicitly governed operator/user action.
+- Outbox, inbox and event retention periods, archival and deletion behavior are finalized in P3.5. A data retention policy must not be inferred from the transport product.
+
+### Event delivery sequence
+
+~~~mermaid
+sequenceDiagram
+    participant C as Authenticated command handler
+    participant W as Workflow state authority
+    participant O as Durable outbox
+    participant D as Event dispatcher
+    participant R as Event consumer
+    participant I as Consumer inbox
+
+    C->>W: Submit command with aggregate version
+    W->>W: Validate principal, grant and state transition
+    W->>O: Commit aggregate state, event and outbox atomically
+    W-->>C: Acknowledge durable acceptance
+    D->>O: Read pending event
+    D->>R: Deliver event (at least once)
+    R->>I: Deduplicate and record receipt
+    I-->>R: New event or duplicate
+    R->>R: Apply legal transition once
+    R-->>D: Acknowledge consumer processing
+    D->>O: Mark delivery progress
+    Note over D,R: A crash may cause redelivery; stable IDs make it safe
+~~~
+
+## 19.35 Durable workflow object model and authority
+
+The workflow system uses the following hierarchy and identities:
+
+| Object | Purpose | Mutability/history |
+|---|---|---|
+| Objective | Desired outcome from a user request or approved initiative | User-inspectable; status/history retained |
+| Campaign | Persistent recurring objective, schedule and bounded policy envelope | Versioned; pause/revoke and material changes are audited |
+| Workflow template | Reusable definition of step types, dependencies, constraints and success criteria | Versioned; each run pins the revision used |
+| Run | One execution instance created by a user trigger, schedule occurrence or authorized event | Immutable origin and template revision; guarded state and append-only transition history |
+| Plan snapshot | Accepted DAG of steps and dependency edges for one run | Versioned; prior snapshots and reasons for replanning remain traceable |
+| Step | One bounded unit of work with typed inputs/outputs, capability needs and verification rules | Guarded state transitions; dependency and execution history retained |
+| Attempt | One worker's attempt to execute a step | Append-only attempt history; never overwrite an earlier attempt's outcome |
+| Operation | One concrete side effect or external request within an attempt | Stable identity across dispatch/reconciliation; separately verified |
+| Evidence/artifact reference | Output, observation or provider/device evidence supporting a result | Provenance, content class, source, timestamp and access restrictions preserved |
+| Event | Immutable record of a state transition or external/internal fact | Append-only logical history; corrections use additional records |
+| Worker lease | Temporary claim to execute one step attempt | Time-bounded, versioned and fenced; not an authorization grant |
+
+A recurring campaign creates multiple independent runs. Each run pins the campaign and workflow-template revisions from which it was created, while checking current revocation and permission state before every new side effect. A new campaign revision applies to future runs by default. A material change to an active campaign's safety envelope suspends or revalidates affected pending work; it must not silently mutate the policy under a running side effect.
+
+### Ownership
+
+- The coordinator's workflow authority is the sole writer of canonical campaign/run/step state and aggregate sequence.
+- The scheduler may request a state transition but cannot write around the workflow transition guard.
+- The planner proposes a plan snapshot or replan. It cannot mark a step ready, completed or authorized by itself.
+- A worker owns its local attempt journal and evidence it produces; it reports them to the coordinator with stable IDs and authenticated provenance.
+- The permission authority owns grants and decisions. The workflow store references grants/policy versions but cannot create or broaden them.
+- Memory remains a separate P2.5-governed domain. A step references scoped memory/context; workflow history is not a substitute memory archive.
+
+## 19.36 Workflow and step state machines
+
+### Campaign lifecycle
+
+| State | Meaning | Permitted transition examples |
+|---|---|---|
+| Draft | Defined but not activated | Review/configuration → Active or Archived |
+| Active | May generate runs according to schedule/triggers and policy | Pause, revoke, complete or archive |
+| Paused | No new runs are scheduled; running work reaches a safe checkpoint/hold policy | Resume or revoke |
+| Suspended | Automatically held because of invalid grant, policy conflict, repeated failure or required user/security review | Resume after explicit resolution, or revoke |
+| Revoked | Delegation/authority withdrawn; no new side effects | Terminal for that campaign revision; new campaign/re-authorization required |
+| Completed | Objective intentionally completed and no more runs are required | Archive |
+| Archived | Retained for inspection under retention policy; not scheduled | Restore only through explicit user action if policy permits |
+
+### Run lifecycle
+
+| State | Meaning |
+|---|---|
+| Queued | Durable run exists and awaits planning/scheduling |
+| Planning | Planner is preparing or updating a plan snapshot |
+| Ready | Accepted plan has at least one eligible step |
+| Running | One or more steps are actively executing |
+| Waiting | Progress is paused on a dependency, timer, device, external event or resource |
+| Needs approval | A current step requires authenticated user authorization/confirmation |
+| Reconciliation required | A possible side effect has an unknown outcome and must be inspected before retry or reassignment |
+| Completed | Required success criteria are satisfied by verified results |
+| Completed with warnings | Objective's success criteria are satisfied, but optional work was skipped or a non-blocking issue remains |
+| Skipped | A valid schedule/event occurrence produced no eligible work or was intentionally skipped under policy |
+| Failed | No permitted recovery path remains or a terminal failure condition was reached |
+| Cancelled | User/policy cancelled the run and no further steps may start |
+| Expired | The run's execution window or validity period ended without completion |
+
+Run state is derived by the workflow authority from step states and objective success criteria. A language model or worker cannot independently declare a run completed.
+
+### Step lifecycle
+
+| State | Meaning |
+|---|---|
+| Pending | Waiting for one or more dependencies or for its branch condition |
+| Ready | Dependencies and branch condition are satisfied; candidate for scheduling |
+| Leased | A qualified worker holds the current execution lease; execution has not yet been confirmed as started |
+| Running | Worker acknowledged start under the current lease generation |
+| Awaiting approval | Exact operation/parameters require user review or confirmation |
+| Blocked | Cannot proceed until a named dependency, capability, resource, device, input or policy condition changes |
+| Verifying | Execution was reported; required result evidence is being checked |
+| Reconciliation required | A side effect may have occurred, but outcome is not yet established |
+| Succeeded (verified) | Step's required completion evidence and verification criteria passed |
+| Failed | Step reached a terminal failure under its retry/recovery policy |
+| Skipped | Branch/condition or explicit policy made the step unnecessary |
+| Cancelled | Step was stopped before completion under run/campaign cancellation policy |
+| Unknown outcome | Available evidence cannot establish success or failure; no blind retry or reassignment is allowed |
+
+Blocked steps carry a structured reason such as awaiting device, awaiting user input, permission absent/expired/revoked, external dependency, rate limit, resource constraint, schedule window, quality gate or policy conflict. Blocked is not a synonym for Failed.
+
+### State transition rules
+
+- Every transition checks current state, aggregate version, actor authority, policy version and required invariants.
+- Each committed transition advances the relevant aggregate version and appends a transition event.
+- Invalid or duplicate transitions are rejected or treated idempotently if they represent the same accepted transition.
+- Dependency completion makes downstream steps Ready only when all required predecessors have valid verified outcomes and branch conditions pass.
+- A failed optional step may permit Completed-with-warnings only if the accepted objective explicitly marks it optional and all required success conditions remain true.
+- Unknown outcome, unresolved approval or required blocked step prevents run completion.
+- A plan is a DAG by default. Cycles are rejected. Repeated work must be represented as an explicit bounded iteration with a maximum count, deadline and termination condition.
+- Dynamic replanning creates a new plan snapshot. Completed attempt and operation evidence is immutable; new steps or changed parameters receive fresh permission and campaign-envelope validation.
+- A material change of external destination, target account, action class, data scope, spend ceiling, content policy or frequency is outside the original authorization unless the grant explicitly permits it.
+- The state machine exposes both current status and reason/history; a single percentage or colored status cannot conceal blocked or uncertain work.
+
+## 19.37 Scheduling, recurring campaigns and event triggers
+
+The scheduler is deterministic infrastructure, not an LLM loop. It creates run occurrences, evaluates eligibility, assigns priority and deadlines, and emits state-transition requests to the workflow authority.
+
+### Trigger classes
+
+| Trigger | Examples | Eligibility rules |
+|---|---|---|
+| Direct user command | "Do this now", explicit follow-up | Preserve request scope and exact delegation; authenticate the user |
+| User-approved objective | Named multi-step objective or campaign | Validate current campaign status, envelope and schedule |
+| Time schedule | Daily, weekly, fixed-date or interval run | Create one durable occurrence identity per intended schedule occurrence |
+| Authorized external event | Provider callback, source update, device/worker status change | Authenticate source, validate schema, deduplicate and evaluate campaign condition |
+| Internal workflow/timer event | Retry due, deadline, approval expiry, step timeout | Use timer identity and current run/step version; stale timers are ignored |
+| Explicitly enabled LIA initiative | Memory-informed proposal or proactive task | Follow configured cognitive/temporal autonomy; creation and execution authority remain separate |
+
+### Schedule definition
+
+A campaign schedule stores:
+
+- A stable campaign ID and schedule revision.
+- A region-based timezone identifier, not just a fixed UTC offset.
+- Recurrence rule, intended local wall-clock time and effective start/end.
+- Optional active window, deadline, grace period and run-validity window.
+- Misfire policy and daylight-saving ambiguity policy.
+- Concurrency/overlap policy and maximum active runs.
+- Maximum run frequency, iteration and resource limits.
+- Notification behavior for missed, skipped and delayed occurrences.
+
+Changing a schedule creates a new revision. Each occurrence has a deterministic identity derived from campaign, schedule revision and intended occurrence, preventing duplicate run creation after coordinator restart or repeated timer delivery.
+
+### Missed schedule and timezone semantics
+
+- The default misfire policy is **skip and report** an expired occurrence. LIA does not silently launch a burst of missed daily runs after an outage.
+- A campaign may explicitly select a bounded catch-up policy, such as one catch-up run within a defined validity window. Backfill count and resource use remain capped.
+- Multiple missed occurrences are not all run automatically unless the user explicitly configured bounded backfill.
+- The schedule uses its configured timezone rules, not the coordinator host's timezone. Daylight-saving overlaps must not generate duplicate runs for one intended local occurrence. Non-existent local times are skipped and reported unless the campaign explicitly selects another documented policy.
+- Timezone or recurrence changes create a new schedule revision and do not rewrite prior occurrence history.
+- Clock corrections do not retroactively duplicate or erase an already committed occurrence; the scheduler reconciles by occurrence identity.
+
+### Concurrency and priority
+
+- Default campaign concurrency is one active run per campaign. Overlap requires explicit configuration and must be justified by independent, safe run semantics.
+- A campaign cannot exceed its declared active-run, frequency, resource, time or spending limits.
+- Priority, urgency and deadline remain distinct as defined by FR-180 and the original task model.
+- The scheduler may prioritize ready work by explicit priority, deadline slack, dependency critical path, resource eligibility and fairness. It cannot silently downgrade explicit user priority.
+- A lower-priority task may run first when it unblocks a higher-priority dependency or when the higher-priority task is not executable; the reason is recorded.
+- Resource-intensive work respects W4/W5, power and device resource constraints. Background work yields to foreground interaction in accordance with NFR-015.
+- Fairness and starvation prevention are required across campaigns; one continuously triggered campaign cannot consume all worker capacity.
+
+### Event-triggered scheduling
+
+- A trigger condition is evaluated only against event fields/data the source and campaign authorize.
+- Duplicate provider events are deduplicated by source identity and event key; repeated condition evaluations must not create duplicate runs.
+- Campaign triggers support debounce, cooldown, rate limit and maximum run count/period.
+- A trigger event may make a campaign eligible for a run; it cannot amend the campaign, change its grant or authorize the action.
+- Low-confidence or incomplete event data may request reasoning or user review but must not be treated as verified fact.
+- Untrusted external content is passed as data to the permitted analysis path and cannot become an instruction to execute arbitrary steps.
+- If an event arrives while the campaign is paused, revoked, suspended or outside its active window, it is recorded as ignored/deferred according to policy without creating unauthorized work.
+
+### Bounded plan execution
+
+- The accepted plan is a directed acyclic graph with explicit input/output contracts, dependencies, branch predicates and success conditions.
+- Parallel branches declare concurrency and shared-resource constraints; conflicting operations on the same resource are serialized or rejected.
+- Conditional branches are evaluated using declared evidence and deterministic rules where possible. Model interpretation can propose a branch result but must return evidence and confidence for policy validation.
+- Iterative work uses an explicit iteration budget, termination predicate, deadline and total resource ceiling.
+- A planner cannot create an infinite retry, self-triggering schedule or unbounded follow-up objective.
+- A new run is created for a new schedule occurrence. A retry or replan within one run is not misrepresented as a new independent occurrence.
+
+## 19.38 Worker assignment, execution leases and checkpoints
+
+### Worker assignment
+
+The router considers declared capability, current authenticated device/session status, trust, authorization scope, resource availability, data locality, platform/session availability, deadlines and user-interference policy. It returns either a qualified worker assignment or a named blocker; it does not select a worker merely because it is online.
+
+The assigned worker receives only the step's minimum required input and scoped data references. It does not inherit the entire campaign context, memory archive, connector secret set or another worker's credentials.
+
+### Execution lease
+
+A worker lease is a coordination lock/claim for one step attempt. It is not an authorization grant and is distinct from the five-minute offline authorization lease defined by P3.3.
+
+A worker lease contains:
+
+- Run ID, step ID, attempt ID and operation references.
+- Worker/device identity and credential generation.
+- Unique lease ID and monotonically increasing lease generation/fencing token.
+- Issued-at, expiry and renewal/heartbeat state.
+- Accepted step/plan version and relevant capability-manifest version.
+- Current policy/grant references and the dispatch envelope reference.
+- Cancellation/pause generation and checkpoint reference.
+
+### Lease rules
+
+- The coordinator grants one current lease generation for a step attempt. A second worker cannot simultaneously acquire the same current generation.
+- A worker must acknowledge claim/start under the current lease before it is treated as Running.
+- Lease renewal requires authenticated heartbeat and continued worker eligibility. A lease has a finite expiry; it cannot be held indefinitely without observable progress/heartbeat.
+- The scheduler may revoke a lease on cancellation, worker suspension, grant revocation or material plan/policy change. Revocation is propagated to the worker and the next side effect is blocked by local enforcement.
+- Lease generation increases on reassignment. The coordinator rejects state updates from an older generation for normal state advancement. Late results remain recorded as reconciliation evidence, not silently discarded.
+- Lease expiry does not prove that the worker stopped or that a side effect did not occur. The step enters reconciliation before a new side-effect attempt is assigned.
+- A worker lease does not let a worker act without the current action grant. Each side effect still uses the P2.6/P3.3 authorization contract and local executor check.
+- Lease TTL, heartbeat interval, renewal cadence and queue visibility timing are implementation configuration values to benchmark and ratify before P5. P3.4 fixes finite/fenced semantics, not arbitrary seconds.
+- A worker can checkpoint progress and yield its lease at a safe boundary. A successor receives the accepted checkpoint and a new lease generation, never the previous worker's authority.
+
+### Checkpoint contract
+
+A checkpoint records the run/step/attempt and plan version, last confirmed safe boundary, completed sub-operations, output/evidence references, remaining work, known external side effects, current target/resource version, permission/grant references and timestamp.
+
+A checkpoint cannot simply assert "continue from here" if the environment may have changed. Before resuming, the workflow authority checks current plan, target state, grants, campaign envelope, worker eligibility and any potentially completed external operation.
+
+### Worker lifecycle sequence
+
+~~~mermaid
+sequenceDiagram
+    participant S as Scheduler/worker router
+    participant W as Workflow state authority
+    participant P as Permission authority
+    participant N as Selected worker node
+    participant X as Local executor or connector
+
+    S->>W: Request claim for a Ready step
+    W->>P: Validate current grant and policy reference
+    P-->>W: Eligible scope or deny/block
+    W->>W: Create attempt and fenced lease generation
+    W-->>N: Dispatch scoped step and lease reference
+    N->>W: Acknowledge claim/start for lease generation
+    W->>W: Transition step to Leased/Running
+    N->>P: Revalidate exact side effect authorization
+    P-->>N: Allow, deny or require confirmation
+    N->>X: Execute authorized operation
+    X-->>N: Result and verification evidence
+    N->>W: Report result with attempt, lease and operation IDs
+    W->>W: Verify evidence and commit step transition
+    W-->>S: Release capacity and evaluate dependent steps
+~~~
+
+## 19.39 Retry, timeout, reconciliation and failure semantics
+
+Retry policy is defined per step/action class and failure category. There is no universal "retry on error" rule.
+
+| Failure class | Examples | Default handling |
+|---|---|---|
+| Pre-execution transient | Temporary network failure before worker accepted action, worker startup failure, provider rate limit with a valid retry window | Bounded retry with backoff/jitter if deadline, budget and grant remain valid |
+| Deterministic/permanent | Invalid input, unsupported capability, missing resource, malformed request, failed policy/quality gate | No automatic retry without changed input, environment or user decision |
+| Authorization/policy | Grant absent/expired/revoked, campaign envelope exceeded, confirmation invalid/expired | Block and request required user/policy resolution; do not retry until state changes |
+| Capacity/dependency | Worker unavailable, resource limit, external service maintenance | Block/defer or route to another independently eligible worker; do not bypass locality or capability requirements |
+| Post-dispatch unknown | Connection lost after action dispatch, worker lease expires during action, provider response lost after upload | Reconciliation required; never treat timeout as proof that no side effect occurred |
+| Verified operation failure | Target reports a definitive failure and verifier confirms no intended side effect | Retry only when failure is classified retryable and all budgets/current grants still permit another attempt |
+| Quality/safety rejection | Factual, rights, safety, destination or policy gate fails | Hold output; no automatic retry loop that weakens the gate |
+
+### Retry policy requirements
+
+- Each step defines maximum attempts, retryable failure classes, backoff strategy, maximum delay, total retry window and overall deadline.
+- Retries use bounded exponential or equivalent backoff with jitter where appropriate; exact parameters are workload/provider policy and are validated before P5.
+- Per-step budgets are subordinate to campaign-wide run, frequency, resource and spend ceilings.
+- Permission-denied, cancelled, expired, invalid-scope, R4-confirmation-required and quality-gate failures are not automatically retried.
+- A retry after a possibly executed side effect must first reconcile actual state. If the operation already succeeded, the existing result is adopted. If it is confirmed not to have happened, a new attempt may be authorized. If still unknown, the step remains Unknown/Reconciliation required.
+- Provider idempotency keys are used only where the provider documents support. The same logical operation retains a stable idempotency identity across transport retries; a genuinely new user-approved action receives a new operation identity.
+- A transient error cannot be reclassified as permanent or vice versa solely by an LLM. The adapter classifies concrete protocol/result conditions; reasoning may propose a recovery which the workflow authority validates.
+- Circuit breakers and rate limits prevent repeated calls to unhealthy dependencies. A breaker opening creates an observable blocker and a future retry timer, not a busy loop.
+- A terminal failure preserves prior attempt evidence and states why no permitted retry/recovery remains.
+
+### Reconciliation contract
+
+For a step with a possible side effect:
+
+1. Stop automatic redispatch and mark the step Reconciliation required.
+2. Query the target/device/provider using operation ID, external resource identifier or best available authorized evidence.
+3. Compare actual state with intended outcome and recorded attempt.
+4. If desired state is verified, record Succeeded (verified) and proceed.
+5. If non-execution is verified, validate current grant, plan version, deadline and resource state before issuing a new attempt.
+6. If actual state conflicts with intended outcome, preserve evidence and block/replan or request user input.
+7. If the outcome cannot be established, retain Unknown outcome. Do not blindly retry, reassign or mark completed.
+
+Reconciliation itself is an authorized observation and must use the relevant resource access grant. It may be unavailable; that does not justify guessing.
+
+### Timeout distinctions
+
+- **Step timeout:** Maximum interval for one attempt before the worker is considered unresponsive and reconciliation begins.
+- **Run deadline:** Latest useful completion time for one workflow run.
+- **Campaign schedule window:** Time window in which a run may begin or complete according to campaign policy.
+- **Lease expiry:** Loss of worker claim authority; not proof that execution ceased.
+- **Approval expiry:** End of the validity window for a specific approval/confirmation.
+- **External-provider timeout:** Network/provider request did not return a conclusive result; a possible side effect requires reconciliation.
+
+These timers have separate IDs and consequences. A deadline does not silently authorize bypassing a gate or continuing after a campaign grant expires.
+
+## 19.40 Approval, pause, cancellation and notification semantics
+
+### Approval records
+
+When a step requires approval, the workflow creates an approval record bound to:
+
+- Exact run, step, operation and plan version.
+- Canonical target/resource and account/destination.
+- Parameter/payload digest and relevant preview.
+- Risk class, grant/policy reference and reason for approval.
+- Approver principal, creation time and expiry.
+- Result: pending, approved, rejected, expired or invalidated.
+
+Approval is valid only for the exact immutable action digest and its stated expiry. A change to recipient, account, target, content, amount, file set, action class or material parameters invalidates it. Approval does not replace a grant; after approval, the permission authority still checks current authorization and target state before execution. An approval event from an unauthenticated notification route is rejected.
+
+A step awaiting approval holds no execution lease. On approval, the scheduler rechecks current policy, target freshness, campaign envelope and worker eligibility before assigning a new lease. On rejection or expiry, the step follows the configured hold/skip/fail outcome; the planner cannot silently produce a materially different action under the old approval.
+
+### Pause, cancel and revoke
+
+| Control | Effect on future work | Effect on active work |
+|---|---|---|
+| Pause campaign | Stops creating/starting new scheduled or event-triggered runs | Active runs reach a safe checkpoint/step boundary and then pause according to the campaign policy |
+| Resume campaign | Re-enables future occurrences after current grants and envelope are validated | Eligible paused runs may resume after state, target and authorization revalidation |
+| Cancel run | Prevents any new step from starting in that run | Sends cancellation to active workers; they stop at earliest safe boundary and report side effects already performed |
+| Cancel campaign/objective | Stops future occurrences and cancels/holds associated active runs according to explicit user choice | Same safe-boundary behavior; no implicit rollback claim |
+| Revoke campaign delegation | Prevents the next side effect that relies on the revoked grant, including in-flight runs | Local executors recheck before each side effect and stop at safe boundary; outcome of an already-started external action is reconciled |
+| Global stop/pause | Stops new autonomous scheduling and dispatch across user's configured scope | Interrupts/checkpoints active work at safe boundaries; privacy stop and R4 policy take precedence |
+
+Pause is not revocation. Cancellation is not proof of rollback. Revocation is a permission change and takes effect before the next governed side effect when the target is reachable; offline limitations follow P3.3. All controls create audited events with actor, scope, reason and affected run/step IDs.
+
+### Notification event model
+
+Notifications are generated from committed workflow, policy and delivery events. The notification router does not own task status.
+
+| Notification state | Meaning |
+|---|---|
+| Queued | A notification intent is committed and awaits routing |
+| Attempted | A route/provider delivery attempt has begun |
+| Provider accepted | The provider accepted the message for delivery |
+| Delivered | The provider explicitly reports delivery, if it supports such a signal |
+| Failed | Delivery attempt failed and no further retry is currently scheduled |
+| Expired | Delivery window elapsed; notification will not be sent |
+| Superseded/deduplicated | A newer or identical notification makes another delivery unnecessary under user policy |
+
+- Each notification has a stable notification ID and deduplication key derived from recipient, event/category and intended message purpose.
+- Immediate, digest and muted/none routing is applied per user-configured category and channel.
+- Security/privacy events, approval requests and consequential blockers use configured urgent route; ordinary progress is grouped into milestones/digests.
+- Delivery retries are bounded, use provider-aware backoff and respect expiry and quiet-hour preferences. A route failure remains visible and does not reset or complete the workflow.
+- Payloads are minimized; sensitive details may require opening an authenticated companion.
+- Provider acceptance is not proof that the person read the message. LIA must not claim seen/read unless the channel actually supplies that status.
+- A notification reply is an input event, not approval by itself. Consequential actions resolve through an authenticated client and exact approval/confirmation record.
+- The same event routed to multiple channels remains one logical notification with separate per-channel delivery attempts.
+
+### Workflow supervision and progress reporting
+
+Monitoring is driven by committed state changes, external events and durable timers. Bounded polling is an adapter fallback when an event source lacks subscriptions. Poll intervals, quotas, API budgets, and retry/backoff are explicit per source. High-frequency LLM polling is not permitted.
+
+Progress is computed from the accepted plan and step states. LIA may report completed/total required steps and named blockers; it must not invent a precise percentage or ETA when step weights/durations are not calibrated. A replan changes plan version and is shown as such; it does not rewrite history to make earlier progress appear continuous.
+
+## 19.41 P3.4 architecture diagrams
+
+### Durable event and state propagation
+
+~~~mermaid
+flowchart TB
+    U["User command / schedule / external event"]
+    V["Authenticate source and validate trigger"]
+    D["Deduplicate by stable source/event identity"]
+    T["Validate campaign/run state and policy"]
+    S["Commit aggregate transition and event journal"]
+    O["Transactional outbox"]
+    Q["At-least-once dispatcher"]
+    C["Idempotent consumer inbox"]
+    W["Workflow transition / scheduler / notification intent"]
+    R["Worker or notification router"]
+    X["Execution evidence / provider delivery status"]
+    H["Reconcile and append outcome event"]
+
+    U --> V --> D --> T --> S --> O --> Q --> C --> W --> R --> X --> H
+    H --> S
+~~~
+
+### Workflow and step execution lifecycle
+
+~~~mermaid
+flowchart TD
+    A["Objective or active campaign"]
+    B["Trigger occurrence accepted"]
+    C["Create durable run"]
+    D["Planner proposes plan snapshot"]
+    E["Validate DAG, scope, budgets and grants"]
+    F{"Plan accepted?"}
+    G["Hold / needs user input"]
+    H["Mark eligible steps Ready"]
+    I["Select qualified worker"]
+    J{"Worker and grant eligible?"}
+    K["Block with explicit reason or defer"]
+    L["Create attempt and fenced worker lease"]
+    M["Worker acknowledges claim/start"]
+    N["Execute each operation with fresh authorization"]
+    O["Return evidence and checkpoint"]
+    P{"Outcome conclusive?"}
+    Q["Reconcile actual target/provider state"]
+    R{"Desired result verified?"}
+    S["Succeeded (verified)"]
+    T["Unknown / blocked; no blind retry"]
+    U["Classify verified failure and retry budget"]
+    V{"Retry permitted?"}
+    W["Retry timer and new attempt"]
+    X["Terminal failure or user resolution"]
+    Y["Evaluate dependencies and success criteria"]
+    Z["Complete run and emit notification"]
+
+    A --> B --> C --> D --> E --> F
+    F -->|No| G
+    F -->|Yes| H --> I --> J
+    J -->|No| K
+    J -->|Yes| L --> M --> N --> O --> P
+    P -->|No| Q --> R
+    R -->|Yes| S
+    R -->|No| T
+    P -->|Yes| U
+    S --> Y
+    U --> V
+    V -->|Yes| W --> H
+    V -->|No| X
+    Y -->|More steps| H
+    Y -->|All required criteria satisfied| Z
+    Y -->|Required blocker remains| K
+~~~
+
+### Campaign schedule and misfire handling
+
+~~~mermaid
+flowchart TD
+    A["Campaign schedule / authorized event trigger"]
+    B["Validate active campaign revision and grant"]
+    C["Derive deterministic occurrence ID"]
+    D{"Occurrence already committed?"}
+    E["Deduplicate; no second run"]
+    F{"Within schedule window and valid?"}
+    G["Apply configured misfire policy"]
+    H["Default: skip expired occurrence and report"]
+    I["Optional bounded catch-up policy"]
+    J["Create durable run once"]
+    K{"Concurrency and budget available?"}
+    L["Queue or wait without exceeding limits"]
+    M["Plan, schedule and execute steps"]
+    N["Record run outcome and notification"]
+
+    A --> B --> C --> D
+    D -->|Yes| E
+    D -->|No| F
+    F -->|No| G
+    G -->|Skip| H --> N
+    G -->|Bounded catch-up explicitly enabled| I --> J
+    F -->|Yes| J
+    J --> K
+    K -->|No| L
+    K -->|Yes| M --> N
+~~~
+
+## 19.42 P3.4 validation scenarios and requirement traceability
+
+These are architecture validation scenarios for future implementation and test planning. They do not claim that code, benchmarks or acceptance tests have been executed.
+
+| Scenario | Required result | Requirement/acceptance trace |
+|---|---|---|
+| Coordinator crashes after state commit but before event dispatch | Outbox redelivers after recovery; no committed transition is lost | FR-237, NFR-023–026, AC-042 |
+| Event is delivered twice | Consumer deduplicates; no duplicate run, step transition or side effect | FR-233, FR-236–237, AC-042–043 |
+| Events arrive out of order | Aggregate sequence/version prevents stale transition; consumer reconciles or waits for missing predecessor | FR-234–237, AC-042 |
+| External webhook repeats | Source event identity prevents duplicate campaign runs | FR-233–236, AC-043 |
+| Coordinator is offline at schedule time | Misfire policy is applied once; default skip/report; no burst of stale daily runs | FR-233–234, FR-247, AC-043 |
+| Timezone/daylight-saving transition occurs | One deterministic occurrence per intended local schedule; ambiguous/non-existent times follow explicit policy | FR-233–234, AC-043 |
+| Two campaign runs overlap | Default single-run concurrency is enforced; explicit concurrency limits prevent unsafe collision | FR-236, AC-043 |
+| Planner returns cyclic or unbounded plan | Plan is rejected or constrained to explicit bounded iteration | FR-235–236, AC-042 |
+| Worker dies before accepting step | Lease expires; step can be requeued after current-state validation | FR-237–238, AC-042 |
+| Worker lease expires during possible side effect | Step enters reconciliation; old lease generation cannot advance canonical state; no blind reassignment | FR-237, FR-248, AC-042 |
+| Worker returns late after reassignment | Stale result is retained as evidence; fenced generation prevents stale state overwrite | FR-237–238, AC-042 |
+| Permission revoked during a run | Next side effect is denied; active work stops at safe boundary and records any prior side effect | FR-239, SEC-066–074, AC-042–043 |
+| Approval arrives after its expiry or payload changed | Approval is rejected/invalidated; exact action must be reviewed again | FR-235, FR-245–246, SEC-070–071, AC-043 |
+| Provider timeout after upload | Reconcile provider state before any upload retry; unknown outcome remains explicit | FR-237, FR-246–247, AC-043 |
+| Quality gate fails | Output is held; no automatic weakening/retry; blocker reported | FR-246–247, AC-043 |
+| User cancels while action is in progress | No new steps start; active action reaches safe boundary; completed side effects are disclosed, not falsely rolled back | FR-239, AC-042–043 |
+| Notification provider fails | Workflow outcome remains unchanged; delivery failure/retry/expiry is separately visible | FR-240, FR-247, AC-044 |
+| User replies through notification | Reply is routed as input; consequential approval requires authenticated exact-action approval | FR-240, SEC-069–071, AC-044 |
+| Run contains optional failed step | Run may complete with warnings only if accepted objective success criteria still pass | FR-235–238, AC-042–043 |
+| Memory/context reference is unavailable or out of scope | Step blocks or replans within authority; workflow system does not copy unrestricted memory | FR-243, AC-046 |
+
+The implementation shall measure durable event acceptance latency, queue age, event lag, duplicate rate, consumer retry rate, schedule drift, worker lease expiry, reconciliation duration, task recovery after restart, notification delivery state and workflow completion by dependency class. Numerical event throughput, queue lag, schedule precision and lease/heartbeat durations are ratified after technology/load design and before P5; no unsupported capacity claim is made here.
+
+## 19.43 P3.4 architecture decision records
+
+### ADR-081 — Separate commands, domain events and notification intents
+
+**Status:** Approved
+
+Commands request an operation or transition; events record facts; notification intents communicate committed facts to users. These message classes have distinct validation, authority and lifecycle semantics. Event or notification payloads never grant execution permission.
+
+### ADR-082 — Durable workflow state with append-only transition history and outbox/inbox delivery
+
+**Status:** Approved
+
+The coordinator maintains canonical workflow aggregates, immutable transition/event history and durable outbox delivery records. Consumers use durable inbox/deduplication semantics. The design does not require pure event sourcing; it requires atomic recoverability between state transitions and event publication.
+
+### ADR-083 — At-least-once delivery with aggregate-local ordering and idempotent consumers
+
+**Status:** Approved
+
+Distributed event/command delivery is at-least-once. Stable event/command/operation IDs, deduplication and aggregate sequence/version handle duplication and reordering. Ordering is guaranteed within defined aggregates only; global total ordering and exactly-once side effects are not assumed.
+
+### ADR-084 — Workflow state machine is authoritative; planner output is a proposal
+
+**Status:** Approved
+
+A deterministic coordinator-owned state machine controls campaign/run/step transitions, deadlines, dependencies, plans, retry budgets and completion. Planner output must be validated into a versioned plan snapshot and cannot directly mark work ready, authorized or complete.
+
+### ADR-085 — Plans are bounded DAGs with explicit iteration budgets
+
+**Status:** Approved
+
+Run plans are acyclic by default. Parallelism and conditional branches are explicit. Repeated work must have a declared maximum iteration count, termination condition, deadline and resource budget. Unbounded self-triggering and LLM-driven execution loops are prohibited.
+
+### ADR-086 — Worker leases are fenced coordination claims, not authorization grants
+
+**Status:** Approved
+
+Each step attempt receives a finite worker lease with a monotonically increasing generation/fencing token. Expiry or reassignment cannot prove non-execution. Local grants and command-envelope validation remain mandatory. Worker lease duration/heartbeat parameters are implementation values to be benchmarked before P5.
+
+### ADR-087 — Reconcile possible side effects before retry or reassignment
+
+**Status:** Approved
+
+Pre-effect transient errors may receive bounded retries. Any timeout, worker loss or connection failure after a possible side effect enters reconciliation. Verified success is adopted; verified non-execution may be retried under current authority; unknown outcome remains blocked. Provider idempotency is used only where supported.
+
+### ADR-088 — Explicit schedule occurrence identity and safe misfire policy
+
+**Status:** Approved
+
+Each campaign schedule revision produces deterministic, deduplicated occurrence identities with a defined timezone. The default misfire policy skips and reports expired occurrences rather than launching catch-up bursts. Bounded catch-up/backfill requires explicit campaign configuration.
+
+### ADR-089 — Pause, cancel, approval and revoke are distinct workflow controls
+
+**Status:** Approved
+
+Pause prevents new work and reaches safe checkpoints; cancellation ends future work in the selected run/campaign; revocation removes authority before the next governed side effect. Approval is bound to an exact immutable operation digest and expiry and does not replace a current grant.
+
+### ADR-090 — Notifications are derived delivery records, not workflow authority
+
+**Status:** Approved
+
+Notifications derive from committed domain events and have independent per-channel delivery state, deduplication, bounded retry and expiry. A failed route cannot change workflow outcome; a notification reply cannot approve a consequential operation without authenticated exact-action review.
+
+**P3.4 closure:** Durable event semantics, workflow object identities and state machines, schedule/occurrence rules, worker assignment and fencing leases, bounded retries, side-effect reconciliation, approval/control semantics and notification delivery are defined. No database, broker, queue, workflow engine, scheduler, transport or implementation language has been selected. P3.5 will define canonical data ownership, persistence/synchronization boundaries, conflict resolution, retention and deletion propagation.
+ P3.4 will define durable events, workflow delivery, scheduling, leases, retries, idempotency and reconciliation.
 
 
 The governing decisions are recorded as ADR-069–ADR-073 in the main decision register. No cloud vendor, database, event broker, workflow engine, transport protocol, programming language or model provider has been selected. P3.3 will define device identity, credential lifecycle, authenticated session establishment, relay boundaries, revocation and offline-lease enforcement.
