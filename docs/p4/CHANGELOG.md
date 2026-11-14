@@ -10,8 +10,7 @@ Reconciles cross-contract fields and closes draft persistence gaps identified du
 - Aligns `AcceptedCommand.statusUrl` with `GET /v1/requests/{requestId}` and an explicit rebuildable request-status projection. Defines HTTP 429 with a delay-seconds `Retry-After` header.
 - Renames operation-evidence response identifiers to `*_attempt_ids`; adds event `source_event_id` and `sensitivity` fields.
 - Adds PostgreSQL account-consistent references and an issuance ledger whose claims must match the operation's target, resource generation/revision/observation time/owner, arguments digest, purpose, grant, policy/revocation version and risk tier. Adds device-side SQLite consume-before-effect and nonce/session replay ledgers; operation claims cannot be changed after lease issuance, and consumption requires both a recorded nonce and a durable possible-effect marker.
-- Adds PostgreSQL and SQLite migration 004 for interoperable JSON-safe integer bounds and summary projections.
-- Adds rebuildable objective, run, grant-metadata and request-status projections plus bounded API idempotency records without moving canonical ownership from Temporal or Permission Authority.
+- Adds PostgreSQL migration 004 for rebuildable objective, run, grant-metadata and request-status projections plus bounded API idempotency records, with JSON-safe integer constraints. SQLite migration 004 enforces the interoperable manifest-revision bound. Canonical ownership remains with Temporal and Permission Authority.
 - Documents cross-contract mappings and distinguishes P4 gates from MOBILE-01/HOME-01, which remain P6 work.
 
 - Separates offline-lease nonce consumption from CommandEnvelope session-sequence replay protection; the lease has no session-sequence field. Command sequence is strictly increasing, and its watermark is retained through session expiry plus configured clock skew.
