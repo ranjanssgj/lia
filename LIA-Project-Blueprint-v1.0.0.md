@@ -4,11 +4,11 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.13.3\
+> **Version:** 1.14.0\
 > **Last updated:** 14 November 2026\
-> **Current phase:** P3 --- System Architecture (Complete)\
-> **Current workstream:** P3.8 --- Architecture Validation and Technology Selection (Complete)\
-> **Document status:** Phase 2 requirements and Phase 3 architecture baselines approved; P4 integration contracts are next
+> **Current phase:** P4 --- Integration Contracts (In Progress)\
+> **Current workstream:** P4.1 --- Contract inventory and interface drafts (Draft)\
+> **Document status:** P0–P3 baselines approved; P4.1 contract package drafted for review; implementation and conformance evidence pending
 
 ------------------------------------------------------------------------
 
@@ -303,7 +303,7 @@ through controlled change; they do not invalidate earlier requirements.
   P1      Product definition                 Complete
   P2      Requirements engineering           Complete — baseline approved
   P3      System architecture                Complete — P3.1–P3.8 architecture and reference technology baseline approved
-  P4      Integration contracts              Next — concrete interfaces and conformance contracts
+  P4      Integration contracts              In Progress — P4.1 contract package drafted; verification pending
   P5      First vertical slice               Pending
   P6      Companion integration              Pending
   P7      Proactive behavior                 Pending
@@ -8743,3 +8743,103 @@ A dependency is eligible for a production lockfile only when its license and dep
 - **Home Assistant and platform adapters:** Retain optional/proof-gated status until a real gateway/device and each claimed Hyprland/Windows capability pass conformance.
 
 **P3.8 post-selection audit closure:** The reference stack has been checked against current upstream lifecycle and compatibility documentation. No technology selection changed. Signal-maturity, version-pin, database-pair, local-WAL and deployment-availability constraints are explicit. These checks remain documentary; the stated P4/P5/P6 implementation proof gates are not marked passed.
+
+
+# 20. Phase 4 — Integration Contracts
+
+## 20.1 Phase status and source of truth
+
+**Phase status:** In Progress.  
+**Current workstream:** P4.1 — Contract inventory and interface drafts.  
+**Contract package revision:** 0.1.0.  
+**Package status:** Draft; owner review and implementation proof required.
+
+The P4 package is maintained under [docs/p4/README.md](docs/p4/README.md). This section is the canonical phase summary; the linked artifacts hold the detailed schemas and operational rules. P4 turns the approved P2/P3 boundaries into implementable interfaces without changing their authority model.
+
+P4.1 is a design and contract milestone, not an implementation milestone. No service integration, generated client, SQL migration, Godot/Rust IPC, Temporal workflow, NATS consumer, provider adapter, or security test is claimed as implemented or Verified.
+
+## 20.2 P4 workstream breakdown
+
+| Workstream | Scope | Current status |
+|---|---|---|
+| P4.1 — Contract inventory and versioning | Contract ownership, version rules, traceability and package structure | Draft package created |
+| P4.2 — Device/control-plane RPC | Protobuf service and message definitions, device session, capabilities, signed commands and evidence | Draft; RPC-01/02 pending |
+| P4.3 — Authenticated HTTP API | OIDC-authenticated user/coordinator operations, idempotency and object-level authorization | Draft OpenAPI 3.1 |
+| P4.4 — Presentation IPC | Godot/Rust local transport, peer identity, message schemas and authority boundary | Draft; IPC-01 pending |
+| P4.5 — Persistence contracts | PostgreSQL coordinator/control metadata and device-local SQLite journal/cache migrations | Draft; DB-01 and SQLITE-02 pending |
+| P4.6 — Workflow and event contracts | Temporal Workflow/Activity semantics, NATS subjects, envelope, outbox/inbox and consumer rules | Draft; TEMP-01/02 and NATS-01 pending |
+| P4.7 — Model and speech provider interfaces | Provider-neutral requests/results, capability profiles, cancellation, policy/egress constraints | Draft interfaces; MODEL-01/SPEECH-01 pending |
+| P4.8 — Conformance and compatibility | Cross-language generation, security, migrations, replay, delivery and platform test evidence | Matrix drafted; all gates Not Run |
+
+## 20.3 Contract artifacts
+
+| Area | Artifact | Contract boundary |
+|---|---|---|
+| Protobuf RPC | [control_plane.proto](docs/p4/proto/lia/v1/control_plane.proto) | Device sessions, control stream, capability manifests, command envelopes, operation acknowledgement and evidence |
+| User API | [lia-v1.yaml](docs/p4/openapi/lia-v1.yaml) | Device management, objectives, run inspection/cancellation, grant metadata/revocation and exact operation approvals |
+| Security | [security-profile-v1.md](docs/p4/security/security-profile-v1.md) | OIDC user authentication, device mTLS identity, command signature profile, local peer identity and offline lease rules |
+| Godot/Rust IPC | [presentation-agent-v1.md](docs/p4/ipc/presentation-agent-v1.md) | Local-only presentation state and user-interaction messages; Godot has no OS/tool authority |
+| PostgreSQL | [001-control-plane.sql](docs/p4/sql/postgres/001-control-plane.sql) | Device registry/capability snapshots, operation attempts/evidence, event outbox/inbox; no duplicate memory/grant/Temporal-internal schemas |
+| SQLite | [001-device-agent.sql](docs/p4/sql/sqlite/001-device-agent.sql) | One installation's local operation journal, attempts, outbox and capability cache |
+| NATS | [event-contract-v1.md](docs/p4/events/event-contract-v1.md), [subjects.yaml](docs/p4/events/subjects.yaml) | Account-scoped routing, versioned facts, at-least-once delivery, inbox deduplication, aggregate sequence and quarantine |
+| Temporal | [temporal-contracts-v1.md](docs/p4/workflows/temporal-contracts-v1.md) | Run/campaign/reconciliation workflows, signals, queries, Activity boundaries, replay and idempotency |
+| Providers | [provider-interfaces-v1.ts](docs/p4/providers/provider-interfaces-v1.ts) | Normalized model, speech and embedding interfaces; no provider selection or execution authority |
+| Conformance | [p4-conformance-matrix.md](docs/p4/conformance/p4-conformance-matrix.md) | Proof procedures and evidence requirements for P3.8 gates |
+
+## 20.4 P4 integration invariants
+
+1. User authentication, device identity, service identity and connector identity remain separate.
+2. OIDC/API scopes and device mTLS prove identity/authentication; neither creates an operation grant.
+3. Command envelopes are bound to exact target, credential generation, operation, capability, resource generation, arguments digest, grant/policy version, risk, confirmation, expiry and replay identity.
+4. A command ID is unique to a dispatch attempt; the operation ID remains stable across retries and reconciliation.
+5. The resource-owning Rust/device/provider adapter performs final permission, capability and resource checks immediately before an effect.
+6. Acknowledgement or transport delivery is not operation success. Verified success requires resource-appropriate evidence.
+7. Unknown outcomes are reconciled before retry/reassignment. Cancellation does not imply rollback.
+8. Temporal owns durable workflow execution. PostgreSQL read projections cannot independently advance Run/Step state.
+9. Event outbox/inbox records are durable application state; JetStream delivery is at least once and consumers are idempotent.
+10. Godot is presentation-only. It cannot invoke generic OS tools, mutate canonical memory, grant permissions, or assert execution success.
+11. Model output is a typed proposal. The model gateway and deterministic tool broker validate it; partial stream tokens never trigger a tool.
+12. Data locality, sensitivity, retention, deletion, tenant boundaries and secret exclusion follow P2.5/P3.5. No global sync or unrestricted model egress is introduced by transport.
+13. Linux and Windows capability differences remain explicit. The first implementation slice remains Linux-first; macOS, mobile and home integrations remain separate adapters.
+
+## 20.5 Security profile and unresolved vendor decisions
+
+The draft proposes OIDC Authorization Code with PKCE for interactive sign-in, TLS 1.3 with X.509 mTLS for device/control-plane gRPC, and a versioned Ed25519 signature profile over RFC 8785 canonical JSON for command/offline-lease envelopes. The local Godot bridge uses OS peer identity and ACLs rather than an unauthenticated localhost service.
+
+These are P4 protocol proposals, not production security verification. SECURITY-01 must prove token validation, device/key binding, signature test vectors, target binding, rotation/revocation, replay rejection, offline lease limits, local peer isolation and secret/log minimization. The identity-provider, certificate-authority, KMS/HSM, protected-storage and hosting vendors remain deliberately unselected.
+
+The five-minute offline lease ceiling remains restricted to the P3.3 allowlisted R0/R1 local operation class. No R2–R4, cross-device, connector, publication or home safety/security operation is eligible.
+
+## 20.6 Persistence and workflow ownership
+
+The PostgreSQL migration defines only control metadata and durable delivery/operation records in this draft. It does not duplicate canonical grants, approvals, user memory, provider state, or Temporal's internal persistence. The SQLite migration is a one-host device journal/cache and must not be placed on a network filesystem.
+
+Temporal workflow history is the durable Run/Campaign execution authority. PostgreSQL query projections are rebuildable and non-authoritative; a projection/outbox Activity follows a committed Temporal transition using stable transition/event IDs. The Temporal persistence database/schema/role remains isolated from the LIA application schema.
+
+NATS JetStream is the event transport. Every event is created from an owning-domain durable transition, uses event and aggregate identities, and is committed through an outbox/inbox pattern. Consumer acknowledgement occurs only after durable processing or quarantine. Transport-level duplicate detection does not replace application idempotency.
+
+## 20.7 Model-provider boundary
+
+No model, embedding, ASR or TTS vendor is selected. The provider interface returns normalized responses and typed tool proposals. It does not receive a callback capable of executing tools, grant permissions, write memory, change workflow state, or access secret material. Routing is evaluated against task capability, data sensitivity, locality, retention/training terms, region, latency, budget and user policy. A candidate that violates data policy is ineligible regardless of quality or latency.
+
+Speech capture, recognition, synthesis and interruption remain separate cancellable modalities. Raw audio remains transient by default. Low-confidence or ambiguous speech cannot authorize a consequential operation.
+
+## 20.8 P4 exit criteria
+
+P4 is complete only after:
+
+- interface schemas and versioning rules are reviewed and stable;
+- Rust and TypeScript generated clients interoperate under RPC-01/02 with pinned toolchains and documented version-skew behavior;
+- SECURITY-01 passes with reproducible credential, signature, rotation, revocation, replay and tenant-isolation evidence;
+- IPC-01 passes on the selected Linux/Windows transport profiles;
+- PostgreSQL and SQLite migrations pass apply/upgrade/rollback, isolation, crash/recovery and restore procedures;
+- TEMP-01/02 prove deterministic replay, worker recovery, bounded cancellation, activity idempotency and post-effect reconciliation;
+- NATS-01 proves outbox/inbox delivery, duplicate/reorder/gap handling, durable quarantine and no duplicate side effect;
+- synthetic provider tests prove schema enforcement, cancellation, locality/retention policy, refusal/error normalization and safe fallback;
+- exact runtime, compiler, code-generation, database, broker, Temporal and TLS-library versions are recorded in the compatibility matrix;
+- SBOM, dependency/license review, supply-chain/update plan, migration plan and rollback evidence are recorded;
+- every passed claim is linked to retained raw test evidence and review.
+
+P4 exit does not prove the Godot migration, Hyprland window movement, complete Windows adapter coverage, provider quality at production scale, hosted availability, mobile lifecycle, or physical home-device behavior. Those retain their P5/P6 proof gates.
+
+**Current P4 state:** Contract drafts are committed for review; all implementation and conformance gates remain Not Run. P5 must not begin treating these drafts as verified interfaces until the applicable P4 exit criteria pass.
