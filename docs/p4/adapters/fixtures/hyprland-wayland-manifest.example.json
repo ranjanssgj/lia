@@ -1,0 +1,131 @@
+{
+  "contract_version": "lia.adapter.v1",
+  "manifest_revision": 1,
+  "adapter": {
+    "adapter_id": "desktop.hyprland",
+    "installation_id": "79eab1e0-6e30-4ab5-9f4d-94ca97d3d0e1",
+    "connector_id": null,
+    "owner_principal_id": "device:79eab1e0-6e30-4ab5-9f4d-94ca97d3d0e1",
+    "version": "0.1.0",
+    "publisher_id": "lia.local-agent",
+    "contract_family": "lia.desktop.v1"
+  },
+  "execution_context": {
+    "device_id": "79eab1e0-6e30-4ab5-9f4d-94ca97d3d0e1",
+    "account_id": "a6d3fc06-9e4d-4c56-b875-f49996cc22d8",
+    "platform_id": "linux",
+    "platform_version": "Arch Linux (test fixture)",
+    "compositor_or_provider_profile": "Hyprland Wayland (test fixture; exact version required in evidence)",
+    "session_state": "active",
+    "execution_locality": "device_local",
+    "trust_state": "enrolled"
+  },
+  "compatibility": {
+    "supported_contract_versions": ["lia.adapter.v1"],
+    "minimum_host_version": null,
+    "maximum_host_version": null,
+    "required_features": ["hyprland.ipc.request", "hyprland.ipc.event"]
+  },
+  "lifecycle_state": "ready",
+  "observed_at": "2026-11-14T00:00:00Z",
+  "expires_at": "2026-11-14T00:01:00Z",
+  "resources": [
+    {
+      "resource_type": "desktop.window",
+      "resource_id": "0x0000000000000001",
+      "generation": "fixture-window-generation-1",
+      "owner_id": "79eab1e0-6e30-4ab5-9f4d-94ca97d3d0e1",
+      "display_label": "Example Editor",
+      "observed_revision": "fixture-revision-1",
+      "observed_at": "2026-11-14T00:00:00Z",
+      "fresh_until": "2026-11-14T00:00:10Z",
+      "sensitivity": "S1"
+    }
+  ],
+  "capabilities": [
+    {
+      "capability_id": "desktop.window.observe_geometry",
+      "schema_version": 1,
+      "operation_type": "observe",
+      "resource_types": ["desktop.window"],
+      "availability": "supported",
+      "availability_reason_code": null,
+      "requires_interactive_session": true,
+      "required_scopes": ["desktop.window.observe_geometry"],
+      "minimum_risk_tier": "R0",
+      "confirmation_required": false,
+      "input_schema_uri": "urn:lia:schema:desktop.window.observe_geometry:v1",
+      "output_schema_uri": "urn:lia:schema:desktop.window.geometry:v1",
+      "preconditions": {
+        "connectivity": "local_session",
+        "resource_freshness_required": true,
+        "required_session_states": ["active"],
+        "required_user_presence": false,
+        "constraints": ["Hyprland IPC sockets available"]
+      },
+      "data_governance": {
+        "maximum_sensitivity": "S1",
+        "locality": "local_only",
+        "retention_class": "transient",
+        "raw_capture": false,
+        "egress_description": "Window geometry only; no screenshot or window content"
+      },
+      "operation_semantics": {
+        "idempotency_class": "idempotent_target_state",
+        "retry_requires_reconciliation": false,
+        "maximum_attempts": 2,
+        "cancellation_points": ["before_read"]
+      },
+      "verification": {
+        "method": "read_geometry_from_hyprland",
+        "independent_state_read": true,
+        "evidence_required": true,
+        "evidence_types": ["window_geometry_observation"]
+      },
+      "events": ["desktop.window.geometry.changed"],
+      "rate_limit": 20
+    },
+    {
+      "capability_id": "desktop.window.move_same_display",
+      "schema_version": 1,
+      "operation_type": "control",
+      "resource_types": ["desktop.window"],
+      "availability": "supported",
+      "availability_reason_code": null,
+      "requires_interactive_session": true,
+      "required_scopes": ["desktop.window.move"],
+      "minimum_risk_tier": "R1",
+      "confirmation_required": false,
+      "input_schema_uri": "urn:lia:schema:desktop.window.move_same_display.input:v1",
+      "output_schema_uri": "urn:lia:schema:desktop.window.move_same_display.output:v1",
+      "preconditions": {
+        "connectivity": "local_session",
+        "resource_freshness_required": true,
+        "required_session_states": ["active"],
+        "required_user_presence": false,
+        "constraints": ["Same output only", "Preserve width and height", "Exact resource generation required"]
+      },
+      "data_governance": {
+        "maximum_sensitivity": "S1",
+        "locality": "local_only",
+        "retention_class": "transient",
+        "raw_capture": false,
+        "egress_description": "Window coordinates and geometry remain local"
+      },
+      "operation_semantics": {
+        "idempotency_class": "idempotent_target_state",
+        "retry_requires_reconciliation": true,
+        "maximum_attempts": 2,
+        "cancellation_points": ["before_dispatch"]
+      },
+      "verification": {
+        "method": "post_move_geometry_readback",
+        "independent_state_read": true,
+        "evidence_required": true,
+        "evidence_types": ["pre_move_geometry", "post_move_geometry", "display_identity"]
+      },
+      "events": ["desktop.window.geometry.changed"],
+      "rate_limit": 5
+    }
+  ]
+}

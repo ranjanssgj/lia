@@ -1,0 +1,502 @@
+openapi: 3.1.0
+info:
+  title: LIA Coordinator API
+  version: 1.0.0
+  summary: Authenticated user and client API for LIA.
+  description: |
+    The API exposes user-authorized control and read projections. It does not
+    expose direct OS execution. Device operations are dispatched through the
+    authenticated device-control service and the resource-owning local executor.
+    Every endpoint performs account, object, scope, grant and current-policy checks.
+servers:
+  - url: /
+    description: Deployment-relative API base path.
+security:
+  - oidcAccessToken: []
+tags:
+  - name: Requests
+  - name: Devices
+  - name: Objectives
+  - name: Runs
+  - name: Grants
+  - name: Approvals
+paths:
+  /v1/requests/{requestId}:
+    get:
+      operationId: getRequestStatus
+      tags: [Requests]
+      summary: Read the status of a durably accepted command (target of AcceptedCommand.statusUrl).
+      description: |
+        Visible only to the authenticated submitting principal within its authorized account/scope.
+        Return 404 for a request outside that principal's authorized visibility to avoid
+        cross-account/request enumeration. Reports durable acceptance and workflow-owned
+        progress; it never reports an effect as complete without verified evidence.
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Request status projection.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RequestStatus' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /v1/devices:
+    get:
+      operationId: listDevices
+      tags: [Devices]
+      summary: List enrolled devices visible to the authenticated principal.
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Authorized device projection.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/DeviceSummary' }
+                  nextCursor: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /v1/devices/{deviceId}:
+    get:
+      operationId: getDevice
+      tags: [Devices]
+      summary: Read one enrolled device projection.
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Device projection.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DeviceSummary' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /v1/devices/{deviceId}/revocation:
+    post:
+      operationId: revokeDevice
+      tags: [Devices]
+      summary: Revoke one enrolled device installation.
+      description: |
+        This is a security-sensitive, auditable authority change. The handler
+        verifies the caller's device-management authority, advances the device
+        revocation epoch, invalidates sessions and device-scoped grants, and
+        signals affected workflows for safe reconciliation. It does not promise
+        remote wipe of an offline device.
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              additionalProperties: false
+              properties:
+                reason: { type: string, minLength: 1, maxLength: 500 }
+                expectedCredentialGeneration: { type: integer, minimum: 1, maximum: 9007199254740991 }
+      responses:
+        '202':
+          description: Revocation durably accepted; enforcement/reconciliation continues.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AcceptedCommand' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /v1/objectives:
+    post:
+      operationId: createObjective
+      tags: [Objectives]
+      summary: Submit an objective for validation and durable acceptance.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateObjectiveRequest' }
+      responses:
+        '202':
+          description: Objective durably accepted for planning; acceptance is not completion.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AcceptedCommand' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+    get:
+      operationId: listObjectives
+      tags: [Objectives]
+      summary: List objective projections in the caller's authorized scopes.
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Authorized objective projections.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ObjectiveSummary' }
+                  nextCursor: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /v1/runs/{runId}:
+    get:
+      operationId: getRun
+      tags: [Runs]
+      summary: Read the current authorized run projection and history cursor.
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Run projection; Temporal remains the execution authority.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RunSummary' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /v1/runs/{runId}/cancellation:
+    post:
+      operationId: cancelRun
+      tags: [Runs]
+      summary: Request safe cancellation of a run.
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              additionalProperties: false
+              properties:
+                reason: { type: string, minLength: 1, maxLength: 500 }
+      responses:
+        '202':
+          description: Cancellation request durably accepted; in-flight effects may require reconciliation.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AcceptedCommand' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /v1/grants:
+    get:
+      operationId: listGrants
+      tags: [Grants]
+      summary: List grant metadata in the caller's authorized scopes.
+      description: Secret grant material is never returned. The permission authority remains the canonical owner.
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Grant metadata projection.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/GrantSummary' }
+                  nextCursor: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /v1/grants/{grantId}/revocation:
+    post:
+      operationId: revokeGrant
+      tags: [Grants]
+      summary: Revoke a permission grant.
+      parameters:
+        - name: grantId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              additionalProperties: false
+              properties:
+                reason: { type: string, minLength: 1, maxLength: 500 }
+      responses:
+        '202':
+          description: Revocation durably accepted by the permission authority.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AcceptedCommand' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /v1/operations/{operationId}/approvals:
+    post:
+      operationId: decideOperationApproval
+      tags: [Approvals]
+      summary: Approve or deny the exact operation presented to the user.
+      description: |
+        The decision is bound to the immutable operation digest, target, exact
+        arguments, risk, expiry and policy version. A changed parameter set
+        requires a new approval. Approval is not execution and is rechecked
+        against current policy before dispatch.
+      parameters:
+        - name: operationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, operationDigest]
+              additionalProperties: false
+              properties:
+                decision: { type: string, enum: [approve, deny] }
+                operationDigest: { type: string, pattern: '^[a-f0-9]{64}$' }
+                comment: { type: string, maxLength: 1000 }
+      responses:
+        '202':
+          description: Approval decision recorded; dispatch remains a separate workflow transition.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AcceptedCommand' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+components:
+  securitySchemes:
+    oidcAccessToken:
+      type: http
+      scheme: bearer
+      description: |
+        OIDC-issued access token. The deployment config supplies issuer and
+        audience. Token signature/introspection, expiry, audience, client and
+        scopes are validated by the API authentication layer. Object-level LIA
+        grants and current policy checks are still mandatory.
+  parameters:
+    DeviceId:
+      name: deviceId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Stable client key for this logical request; reuse only for retries of identical request bytes and scope.
+      schema: { type: string, minLength: 16, maxLength: 128 }
+    IfMatch:
+      name: If-Match
+      in: header
+      required: false
+      description: Expected aggregate revision for a state-changing request.
+      schema: { type: string, maxLength: 128 }
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema: { type: string, maxLength: 2048 }
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+  responses:
+    BadRequest:
+      description: Malformed request.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthenticated:
+      description: Authentication missing or invalid.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: Authenticated principal lacks the required current authority.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Object absent or not visible within the caller's scope.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: Idempotency, version, workflow-state or current-policy conflict.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    RateLimited:
+      description: Request rate exceeded; honor Retry-After before retrying.
+      headers:
+        Retry-After:
+          description: Seconds until the caller may retry.
+          schema: { type: string, pattern: '^[0-9]+
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, code, correlationId]
+      properties:
+        type: { type: string, format: uri-reference }
+        title: { type: string }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        detail: { type: string }
+        code:
+          type: string
+          enum: [UNAUTHENTICATED, FORBIDDEN, INVALID_ARGUMENT, NOT_FOUND, CONFLICT, STALE_VERSION, POLICY_CHANGED, PERMISSION_REVOKED, APPROVAL_REQUIRED, CAPABILITY_UNAVAILABLE, RECONCILIATION_REQUIRED, RATE_LIMITED, INTERNAL]
+        correlationId: { type: string }
+        retryable: { type: boolean, default: false }
+    AcceptedCommand:
+      type: object
+      required: [requestId, accepted, acceptedAt, statusUrl]
+      properties:
+        requestId: { type: string, format: uuid }
+        accepted: { type: boolean, const: true }
+        acceptedAt: { type: string, format: date-time }
+        statusUrl: { type: string, format: uri-reference }
+        correlationId: { type: string }
+    RequestStatus:
+      type: object
+      required: [requestId, state, acceptedAt, updatedAt, revision]
+      properties:
+        requestId: { type: string, format: uuid }
+        state: { type: string, enum: [accepted, in_progress, awaiting_approval, reconciliation_required, completed_verified, completed_with_warnings, failed, rejected, cancelled, expired] }
+        acceptedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        revision: { type: integer, minimum: 1, maximum: 9007199254740991 }
+        reasonCode: { type: [string, 'null'] }
+        runId: { type: [string, 'null'], format: uuid }
+        operationId: { type: [string, 'null'], format: uuid }
+        correlationId: { type: string }
+    DeviceSummary:
+      type: object
+      required: [deviceId, state, credentialGeneration, revocationEpoch, lastSeenAt]
+      properties:
+        deviceId: { type: string, format: uuid }
+        displayName: { type: string }
+        platformId: { type: string }
+        platformVersion: { type: string }
+        state: { type: string, enum: [unenrolled, pairing_pending, enrolled_not_ready, ready, degraded, suspended, revoked, updating, incompatible, removed] }
+        credentialGeneration: { type: integer, minimum: 1, maximum: 9007199254740991 }
+        revocationEpoch: { type: integer, minimum: 0, maximum: 9007199254740991 }
+        manifestRevision: { type: integer, minimum: 1, maximum: 9007199254740991 }
+        lastSeenAt: { type: [string, 'null'], format: date-time }
+    CreateObjectiveRequest:
+      type: object
+      required: [text, purpose]
+      additionalProperties: false
+      properties:
+        text: { type: string, minLength: 1, maxLength: 10000 }
+        purpose: { type: string, minLength: 1, maxLength: 200 }
+        contextReferences:
+          type: array
+          maxItems: 50
+          items:
+            type: object
+            required: [referenceId, scope]
+            additionalProperties: false
+            properties:
+              referenceId: { type: string, maxLength: 256 }
+              scope: { type: string, enum: [account, project, task, device, session] }
+        requestedDeadline: { type: [string, 'null'], format: date-time }
+    ObjectiveSummary:
+      type: object
+      required: [objectiveId, state, createdAt, revision]
+      properties:
+        objectiveId: { type: string, format: uuid }
+        state: { type: string }
+        createdAt: { type: string, format: date-time }
+        revision: { type: integer, minimum: 1, maximum: 9007199254740991 }
+        activeRunId: { type: [string, 'null'], format: uuid }
+    RunSummary:
+      type: object
+      required: [runId, objectiveId, state, revision, createdAt]
+      properties:
+        runId: { type: string, format: uuid }
+        objectiveId: { type: string, format: uuid }
+        state: { type: string, enum: [queued, planning, ready, running, waiting, needs_approval, reconciliation_required, completed, completed_with_warnings, skipped, failed, cancelled, expired] }
+        revision: { type: integer, minimum: 1, maximum: 9007199254740991 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        reasonCode: { type: [string, 'null'] }
+        historyCursor: { type: [string, 'null'] }
+    GrantSummary:
+      type: object
+      required: [grantId, state, policyVersion, scopeSummary]
+      properties:
+        grantId: { type: string, format: uuid }
+        state: { type: string, enum: [active, expired, revoked, suspended, pending] }
+        policyVersion: { type: integer, minimum: 1, maximum: 9007199254740991 }
+        scopeSummary: { type: string }
+        expiresAt: { type: [string, 'null'], format: date-time }
+        targetDeviceId: { type: [string, 'null'], format: uuid }
+ }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unprocessable:
+      description: Request is structurally valid but violates a domain invariant.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }

@@ -1,0 +1,415 @@
+syntax = "proto3";
+
+package lia.v1;
+
+option java_multiple_files = true;
+option java_package = "dev.lia.control.v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+// Control-plane contract for enrolled device agents.
+// Authentication is provided by the transport/session profile; messages do not grant authority.
+service DeviceControlService {
+  // Opens a purpose-bound session for the device identified by its mTLS certificate.
+  rpc OpenSession(OpenSessionRequest) returns (OpenSessionResponse);
+
+  // Long-lived, bidirectional control stream. Reconnect is a new authenticated session.
+  rpc Connect(stream DeviceToCoordinator) returns (stream CoordinatorToDevice);
+
+  // Returns the latest authorized capability snapshot for this device.
+  rpc GetCapabilityManifest(GetCapabilityManifestRequest) returns (CapabilityManifest);
+
+  // Durable evidence submission/reconciliation endpoint for reconnect and stream recovery.
+  rpc SubmitOperationEvidence(SubmitOperationEvidenceRequest)
+      returns (SubmitOperationEvidenceResponse);
+}
+
+enum SessionPurpose {
+  SESSION_PURPOSE_UNSPECIFIED = 0;
+  SESSION_PURPOSE_HEALTH = 1;
+  SESSION_PURPOSE_EVENT_REPORTING = 2;
+  SESSION_PURPOSE_TASK_DISPATCH = 3;
+  SESSION_PURPOSE_MEMORY_SYNC = 4;
+  SESSION_PURPOSE_REMOTE_METADATA = 5;
+  SESSION_PURPOSE_REMOTE_VIEW = 6;
+  SESSION_PURPOSE_REMOTE_CONTROL = 7;
+  SESSION_PURPOSE_RECOVERY = 8;
+}
+
+enum RiskTier {
+  RISK_TIER_UNSPECIFIED = 0;
+  RISK_TIER_R0 = 1;
+  RISK_TIER_R1 = 2;
+  RISK_TIER_R2 = 3;
+  RISK_TIER_R3 = 4;
+  RISK_TIER_R4 = 5;
+}
+
+enum OperationDisposition {
+  OPERATION_DISPOSITION_UNSPECIFIED = 0;
+  OPERATION_DISPOSITION_ACCEPTED = 1;
+  OPERATION_DISPOSITION_REJECTED = 2;
+  OPERATION_DISPOSITION_ALREADY_SEEN = 3;
+  OPERATION_DISPOSITION_NEEDS_RECONCILIATION = 4;
+}
+
+enum OperationOutcome {
+  OPERATION_OUTCOME_UNSPECIFIED = 0;
+  OPERATION_OUTCOME_SUCCEEDED = 1;
+  OPERATION_OUTCOME_FAILED = 2;
+  OPERATION_OUTCOME_CANCELLED = 3;
+  OPERATION_OUTCOME_UNKNOWN = 4;
+}
+
+enum CapabilityAvailability {
+  CAPABILITY_AVAILABILITY_UNSPECIFIED = 0;
+  CAPABILITY_AVAILABILITY_AVAILABLE = 1;
+  CAPABILITY_AVAILABILITY_UNAVAILABLE = 2;
+  CAPABILITY_AVAILABILITY_RESTRICTED = 3;
+  CAPABILITY_AVAILABILITY_DEGRADED = 4;
+}
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  ERROR_CODE_UNAUTHENTICATED = 1;
+  ERROR_CODE_FORBIDDEN = 2;
+  ERROR_CODE_INVALID_ARGUMENT = 3;
+  ERROR_CODE_UNSUPPORTED_VERSION = 4;
+  ERROR_CODE_UNSUPPORTED_CAPABILITY = 5;
+  ERROR_CODE_RESOURCE_STALE = 6;
+  ERROR_CODE_PERMISSION_REVOKED = 7;
+  ERROR_CODE_APPROVAL_REQUIRED = 8;
+  ERROR_CODE_DEADLINE_EXCEEDED = 9;
+  ERROR_CODE_RATE_LIMITED = 10;
+  ERROR_CODE_OUTCOME_UNKNOWN = 11;
+  ERROR_CODE_CONFLICT = 12;
+  ERROR_CODE_INTERNAL = 13;
+}
+
+message OpenSessionRequest {
+  // Must match the device ID in the authenticated client certificate/registry binding.
+  string device_id = 1;
+  uint64 credential_generation = 2;
+  string client_protocol_version = 3;
+  SessionPurpose purpose = 4;
+  bytes capability_manifest_digest_sha256 = 5;
+  bytes client_nonce = 6;
+  string client_build = 7;
+}
+
+message OpenSessionResponse {
+  string session_id = 1;
+  google.protobuf.Timestamp issued_at = 2;
+  google.protobuf.Timestamp expires_at = 3;
+  uint64 revocation_epoch = 4;
+  uint64 policy_version = 5;
+  string negotiated_protocol_version = 6;
+  repeated string allowed_stream_message_types = 7;
+}
+
+message GetCapabilityManifestRequest {
+  string device_id = 1;
+  // Monotonic adapter manifest revision the caller already holds; 0 means none.
+  // Contract range: 1..9007199254740991 (0 is the request sentinel).
+  uint64 known_manifest_revision = 2;
+}
+
+message CapabilityManifest {
+  string device_id = 1;
+  // Monotonic per adapter identity; matches manifest_revision in the manifest JSON Schema.
+  // Contract range: 1..9007199254740991 for exact JSON/JCS interoperability.
+  uint64 manifest_revision = 2;
+  string contract_version = 3;
+  string platform_id = 4;
+  string platform_version = 5;
+  string session_profile = 6;
+  google.protobuf.Timestamp observed_at = 7;
+  google.protobuf.Timestamp valid_until = 8;
+  bytes manifest_digest_sha256 = 9;
+  repeated Capability capabilities = 10;
+}
+
+message Capability {
+  string capability_id = 1;
+  uint32 schema_version = 2;
+  string action_class = 3;
+  repeated string resource_types = 4;
+  CapabilityAvailability availability = 5;
+  bool requires_interactive_session = 6;
+  bool supports_cancellation = 7;
+  bool supports_independent_verification = 8;
+  string unavailable_reason_code = 9;
+  string constraints_schema_uri = 10;
+}
+
+message ResourceReference {
+  string resource_type = 1;
+  string resource_id = 2;
+  string generation = 3;
+  string observed_revision = 4;
+  google.protobuf.Timestamp observed_at = 5;
+  string owning_device_id = 6;
+}
+
+message CommandEnvelope {
+  string command_id = 1;
+  string operation_id = 2;
+  string account_id = 3;
+  string initiating_principal_id = 4;
+  string initiating_principal_type = 5;
+  string source_device_id = 6;
+  string source_session_id = 7;
+  string target_device_id = 8;
+  uint64 target_credential_generation = 9;
+  string capability_id = 10;
+  uint32 capability_schema_version = 11;
+  string action_class = 12;
+  ResourceReference resource = 13;
+  string purpose = 14;
+  string objective_id = 15;
+  string campaign_id = 16;
+  string run_id = 17;
+  string step_id = 18;
+  string attempt_id = 19;
+  string arguments_schema_uri = 20;
+  bytes arguments_canonical_json = 21;
+  bytes arguments_sha256 = 22;
+  string grant_id = 23;
+  uint64 policy_version = 24;
+  RiskTier risk_tier = 25;
+  string confirmation_id = 26;
+  google.protobuf.Timestamp issued_at = 27;
+  google.protobuf.Timestamp not_before = 28;
+  google.protobuf.Timestamp expires_at = 29;
+  string nonce = 30;
+  uint64 session_sequence = 31;
+  string expected_resource_revision = 32;
+  string correlation_id = 33;
+  string causation_id = 34;
+  string issuer_id = 35;
+  string audience = 36;
+  uint64 signing_key_generation = 37;
+  uint64 revocation_epoch = 38;
+}
+
+message CommandSignature {
+  // profile_id selects an allowlisted signing domain and fixes algorithm/canonicalization.
+  string profile_id = 1;
+  string signing_key_id = 2;
+  bytes signature = 3;
+}
+
+message SignedCommandEnvelope {
+  CommandEnvelope envelope = 1;
+  CommandSignature signature = 2;
+}
+
+message OfflineAuthorizationLease {
+  string lease_id = 1;
+  string issuer_id = 2;
+  string audience = 3;
+  string account_id = 4;
+  string target_device_id = 5;
+  uint64 target_credential_generation = 6;
+  string capability_id = 7;
+  uint32 capability_schema_version = 8;
+  string operation_id = 9;
+  ResourceReference resource = 10;
+  string arguments_schema_uri = 11;
+  bytes arguments_sha256 = 12;
+  string purpose = 13;
+  string originating_task_id = 14;
+  string grant_id = 15;
+  uint64 policy_version = 16;
+  uint64 revocation_epoch = 17;
+  // Executor accepts only R0/R1; higher risk tiers fail closed.
+  RiskTier risk_tier = 18;
+  google.protobuf.Timestamp issued_at = 19;
+  google.protobuf.Timestamp not_before = 20;
+  google.protobuf.Timestamp expires_at = 21;
+  string nonce = 22;
+  uint64 signing_key_generation = 23;
+  // One lease authorizes one matching operation once; the consumed lease ID is journaled locally.
+}
+
+message SignedOfflineAuthorizationLease {
+  OfflineAuthorizationLease lease = 1;
+  // Signature profile must be lia-offline-lease-ed25519-jcs-v1, not the command profile.
+  CommandSignature signature = 2;
+}
+
+message OfflineLeaseReceipt {
+  string lease_id = 1;
+  string device_id = 2;
+  bool durably_stored = 3;
+  string reason_code = 4;
+  google.protobuf.Timestamp recorded_at = 5;
+}
+
+message DeviceHeartbeat {
+  string device_id = 1;
+  string session_id = 2;
+  google.protobuf.Timestamp observed_at = 3;
+  uint64 monotonic_uptime_ms = 4;
+  string lifecycle_state = 5;
+  string adapter_health = 6;
+  repeated string degraded_capability_ids = 7;
+}
+
+message OperationAcknowledgement {
+  string command_id = 1;
+  string operation_id = 2;
+  string attempt_id = 3;
+  OperationDisposition disposition = 4;
+  string reason_code = 5;
+  google.protobuf.Timestamp acknowledged_at = 6;
+  uint64 worker_lease_generation = 7;
+}
+
+message OperationProgress {
+  string command_id = 1;
+  string operation_id = 2;
+  string attempt_id = 3;
+  string phase = 4;
+  google.protobuf.Timestamp observed_at = 5;
+  uint64 worker_lease_generation = 6;
+}
+
+message EvidenceReference {
+  string evidence_id = 1;
+  string evidence_type = 2;
+  string method = 3;
+  string source_adapter_id = 4;
+  string source_version = 5;
+  string resource_revision_before = 6;
+  string resource_revision_after = 7;
+  google.protobuf.Timestamp observed_at = 8;
+  string artifact_reference = 9;
+  bytes evidence_digest_sha256 = 10;
+  bool independently_verified = 11;
+}
+
+message OperationResult {
+  string command_id = 1;
+  string operation_id = 2;
+  string attempt_id = 3;
+  OperationOutcome outcome = 4;
+  string result_code = 5;
+  string result_summary = 6;
+  repeated EvidenceReference evidence = 7;
+  google.protobuf.Timestamp completed_at = 8;
+  bool side_effect_may_have_occurred = 9;
+  uint64 worker_lease_generation = 10;
+}
+
+message DeviceEvent {
+  string event_id = 1;
+  string event_type = 2;
+  string schema_version = 3;
+  string aggregate_type = 4;
+  string aggregate_id = 5;
+  uint64 aggregate_sequence = 6;
+  google.protobuf.Timestamp occurred_at = 7;
+  bytes canonical_payload_json = 8;
+  bytes payload_digest_sha256 = 9;
+  string correlation_id = 10;
+  string causation_id = 11;
+  // Device-source identity used for coordinator-side deduplication (event_outbox.source_event_id).
+  string source_event_id = 12;
+  // Sensitivity class S0-S3 as 0-3, assigned by the producing device; the coordinator may only raise it.
+  uint32 sensitivity = 13;
+}
+
+message SessionClose {
+  string reason_code = 1;
+  google.protobuf.Timestamp requested_at = 2;
+}
+
+message DeviceToCoordinator {
+  string message_id = 1;
+  string session_id = 2;
+  string protocol_version = 3;
+  oneof payload {
+    DeviceHeartbeat heartbeat = 10;
+    OperationAcknowledgement operation_acknowledgement = 11;
+    OperationProgress operation_progress = 12;
+    OperationResult operation_result = 13;
+    DeviceEvent event = 14;
+    CapabilityManifest capability_manifest = 15;
+    SessionClose session_close = 16;
+    OfflineLeaseReceipt offline_lease_receipt = 17;
+  }
+}
+
+message SessionDirective {
+  string directive_id = 1;
+  string action = 2;
+  string reason_code = 3;
+  google.protobuf.Timestamp effective_at = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  uint64 required_policy_version = 6;
+  uint64 required_revocation_epoch = 7;
+}
+
+message OperationDispatch {
+  SignedCommandEnvelope command = 1;
+  google.protobuf.Duration delivery_deadline = 2;
+}
+
+message OperationCancellation {
+  string command_id = 1;
+  string operation_id = 2;
+  string attempt_id = 3;
+  string reason_code = 4;
+  google.protobuf.Timestamp requested_at = 5;
+}
+
+message ManifestRefreshRequest {
+  string reason_code = 1;
+  // 0 means the caller has no known manifest; otherwise use the JSON-safe revision range.
+  uint64 known_manifest_revision = 2;
+}
+
+message CoordinatorPing {
+  string ping_id = 1;
+  google.protobuf.Timestamp sent_at = 2;
+}
+
+message CoordinatorToDevice {
+  string message_id = 1;
+  string session_id = 2;
+  string protocol_version = 3;
+  oneof payload {
+    OperationDispatch dispatch = 10;
+    OperationCancellation cancellation = 11;
+    SessionDirective session_directive = 12;
+    ManifestRefreshRequest manifest_refresh = 13;
+    CoordinatorPing ping = 14;
+    SignedOfflineAuthorizationLease offline_lease = 15;
+  }
+}
+
+message SubmitOperationEvidenceRequest {
+  string device_id = 1;
+  string session_id = 2;
+  repeated OperationResult results = 3;
+  string reconciliation_cursor = 4;
+}
+
+message SubmitOperationEvidenceResponse {
+  // Keyed by OperationResult.attempt_id (globally unique); the request carries results, not events.
+  repeated string accepted_attempt_ids = 1;
+  repeated string already_accepted_attempt_ids = 2;
+  repeated string quarantined_attempt_ids = 3;
+  string next_reconciliation_cursor = 4;
+}
+
+message RpcError {
+  ErrorCode code = 1;
+  string reason_code = 2;
+  string safe_message = 3;
+  bool retryable = 4;
+  google.protobuf.Timestamp retry_after = 5;
+  string correlation_id = 6;
+}

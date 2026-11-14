@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lia.invalid/contracts/adapter/capability-manifest-v1.schema.json",
+  "title": "LIA Adapter Capability Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "manifest_revision",
+    "adapter",
+    "execution_context",
+    "compatibility",
+    "lifecycle_state",
+    "observed_at",
+    "expires_at",
+    "resources",
+    "capabilities"
+  ],
+  "properties": {
+    "contract_version": { "const": "lia.adapter.v1" },
+    "manifest_revision": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter_id", "installation_id", "owner_principal_id", "version", "publisher_id", "contract_family"],
+      "properties": {
+        "adapter_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "installation_id": { "type": "string", "format": "uuid" },
+        "connector_id": { "type": ["string", "null"], "maxLength": 160 },
+        "owner_principal_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([+-][0-9A-Za-z.-]+)?$" },
+        "publisher_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "contract_family": { "type": "string", "minLength": 1, "maxLength": 80 }
+      }
+    },
+    "execution_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device_id", "account_id", "platform_id", "platform_version", "session_state", "execution_locality", "trust_state"],
+      "properties": {
+        "device_id": { "type": "string", "format": "uuid" },
+        "account_id": { "type": "string", "format": "uuid" },
+        "platform_id": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "platform_version": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "compositor_or_provider_profile": { "type": ["string", "null"], "maxLength": 160 },
+        "session_state": { "type": "string", "enum": ["active", "locked", "backgrounded", "suspended", "disconnected", "unknown"] },
+        "execution_locality": { "type": "string", "enum": ["device_local", "gateway_local", "connector_isolated", "remote_service"] },
+        "trust_state": { "type": "string", "enum": ["enrolled", "suspended", "revoked", "unverified"] }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supported_contract_versions", "required_features"],
+      "properties": {
+        "supported_contract_versions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+        "minimum_host_version": { "type": ["string", "null"] },
+        "maximum_host_version": { "type": ["string", "null"] },
+        "required_features": { "type": "array", "uniqueItems": true, "items": { "type": "string" } }
+      }
+    },
+    "lifecycle_state": { "type": "string", "enum": ["unenrolled", "pairing_pending", "enrolled_not_ready", "ready", "degraded", "suspended", "revoked", "updating", "incompatible", "removed"] },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["resource_type", "resource_id", "generation", "owner_id", "observed_revision", "observed_at", "sensitivity"],
+        "properties": {
+          "resource_type": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "resource_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "generation": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "owner_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "display_label": { "type": ["string", "null"], "maxLength": 200 },
+          "observed_revision": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "observed_at": { "type": "string", "format": "date-time" },
+          "fresh_until": { "type": ["string", "null"], "format": "date-time" },
+          "sensitivity": { "type": "string", "enum": ["S0", "S1", "S2", "S3"] }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "capability_id",
+          "schema_version",
+          "operation_type",
+          "resource_types",
+          "availability",
+          "minimum_risk_tier",
+          "required_scopes",
+          "preconditions",
+          "data_governance",
+          "operation_semantics",
+          "verification"
+        ],
+        "properties": {
+          "capability_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "schema_version": { "type": "integer", "minimum": 1 },
+          "operation_type": { "type": "string", "enum": ["observe", "subscribe", "control", "configure", "verify"] },
+          "resource_types": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+          "availability": { "type": "string", "enum": ["supported", "permission_required", "unsupported", "unavailable", "degraded", "restricted", "unknown"] },
+          "availability_reason_code": { "type": ["string", "null"], "maxLength": 120 },
+          "requires_interactive_session": { "type": "boolean", "default": true },
+          "required_scopes": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+          "minimum_risk_tier": { "type": "string", "enum": ["R0", "R1", "R2", "R3", "R4"] },
+          "confirmation_required": { "type": "boolean" },
+          "input_schema_uri": { "type": "string", "format": "uri-reference" },
+          "output_schema_uri": { "type": "string", "format": "uri-reference" },
+          "preconditions": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["connectivity", "resource_freshness_required"],
+            "properties": {
+              "connectivity": { "type": "string", "enum": ["online", "local_session", "offline_eligible", "any"] },
+              "resource_freshness_required": { "type": "boolean" },
+              "required_session_states": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+              "required_user_presence": { "type": "boolean" },
+              "constraints": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "data_governance": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["maximum_sensitivity", "locality", "retention_class", "raw_capture"],
+            "properties": {
+              "maximum_sensitivity": { "type": "string", "enum": ["S0", "S1", "S2", "S3"] },
+              "locality": { "type": "string", "enum": ["local_only", "approved_region", "any_approved_region"] },
+              "retention_class": { "type": "string", "enum": ["transient", "task_scoped", "approved_persistent"] },
+              "raw_capture": { "type": "boolean" },
+              "egress_description": { "type": "string", "maxLength": 500 }
+            }
+          },
+          "operation_semantics": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["idempotency_class", "retry_requires_reconciliation", "cancellation_points"],
+            "properties": {
+              "idempotency_class": { "type": "string", "enum": ["idempotent_target_state", "provider_idempotency_key", "deduplicate_by_operation_id", "non_idempotent"] },
+              "retry_requires_reconciliation": { "type": "boolean" },
+              "maximum_attempts": { "type": "integer", "minimum": 1, "maximum": 20 },
+              "cancellation_points": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "verification": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["method", "independent_state_read", "evidence_required"],
+            "properties": {
+              "method": { "type": "string", "minLength": 1, "maxLength": 160 },
+              "independent_state_read": { "type": "boolean" },
+              "evidence_required": { "type": "boolean" },
+              "evidence_types": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "events": { "type": "array", "items": { "type": "string" } },
+          "rate_limit": { "type": ["integer", "null"], "minimum": 1 }
+        }
+      }
+    }
+  }
+}

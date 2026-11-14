@@ -1,0 +1,62 @@
+{
+  "context_id": "c2ed60b0-73f0-4abd-b1d4-bde617a41a67",
+  "revision": 1,
+  "principal": {
+    "principal_id": "user:fixture-user",
+    "principal_type": "user"
+  },
+  "purpose": "Prepare a synthetic desktop-assistance task",
+  "scope": {
+    "scope_type": "task",
+    "scope_reference": "fixture-task-001"
+  },
+  "assembled_at": "2026-11-14T00:00:00Z",
+  "expires_at": "2026-11-14T00:02:00Z",
+  "instruction_bundle": {
+    "bundle_id": "lia.default.assistant",
+    "revision": "1",
+    "digest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "data_governance": {
+    "sensitivity": "S1",
+    "locality": "local_only",
+    "retention_class": "transient",
+    "egress_decision_id": null,
+    "permitted_provider_ids": [],
+    "raw_capture_included": false
+  },
+  "token_budget": {
+    "maximum_input_tokens": 4096,
+    "maximum_output_tokens": 512,
+    "maximum_tool_cycles": 2,
+    "deadline_at": "2026-11-14T00:02:00Z"
+  },
+  "source_references": [
+    {
+      "reference_id": "fixture:desktop.window.observation",
+      "owner_domain": "desktop_agent",
+      "scope_type": "device",
+      "scope_reference": "fixture-device",
+      "revision": "fixture-window-revision-1",
+      "digest_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "sensitivity": "S1",
+      "access_decision_id": "fixture-access-decision",
+      "provenance_reference": "fixture:observation-source"
+    }
+  ],
+  "items": [
+    {
+      "item_id": "item-001",
+      "kind": "observation",
+      "source_reference_ids": ["fixture:desktop.window.observation"],
+      "content_reference": "artifact:fixture-context-item",
+      "digest_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "trust_class": "verified_system_fact",
+      "sensitivity": "S1",
+      "purpose": "Identify the selected test window",
+      "valid_until": "2026-11-14T00:00:10Z",
+      "derivation_parent_ids": []
+    }
+  ],
+  "digest_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+}
