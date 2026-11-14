@@ -183,6 +183,10 @@ message CommandEnvelope {
   string expected_resource_revision = 32;
   string correlation_id = 33;
   string causation_id = 34;
+  string issuer_id = 35;
+  string audience = 36;
+  uint64 signing_key_generation = 37;
+  uint64 revocation_epoch = 38;
 }
 
 message CommandSignature {
