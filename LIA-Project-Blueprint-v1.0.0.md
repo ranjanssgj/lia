@@ -4,12 +4,11 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.2.2\
-> **Last updated:** 13 November 2026\
-> **Current phase:** P2 --- Requirements Engineering\
-> **Current workstream:** P2.5 --- Memory Requirements (governance and integrity)\
-> **Document status:** Active; P1 baseline approved, P2.1 draft for
-> review
+> **Version:** 1.10.0\
+> **Last updated:** 14 November 2026\
+> **Current phase:** P3 --- System Architecture\
+> **Current workstream:** P3.5 --- Data Ownership and Synchronization\
+> **Document status:** Active; Phase 2 requirements baseline approved; Phase 3 architecture in progress
 
 ------------------------------------------------------------------------
 
@@ -2144,6 +2143,67 @@ Pause prevents new work and reaches safe checkpoints; cancellation ends future w
 Notifications derive from committed domain events and have independent per-channel delivery state, deduplication, bounded retry and expiry. A failed route cannot change workflow outcome; a notification reply cannot approve a consequential operation without authenticated exact-action review.
 
 
+### ADR-091 — Domain-owned canonical data with one authority per record
+
+**Status:** Approved
+
+LIA assigns each record to one canonical owning domain. Workflow, permission, memory, device-local, provider-owned, artifact and notification data retain separate authorities. Replicas, caches, indexes and backups are non-authoritative projections and cannot silently replace their source.
+
+### ADR-092 — Governed memory remains separate from workflow/control storage
+
+**Status:** Approved
+
+The P2.5 Memory Authority owns canonical memory and governed relationships. The workflow coordinator stores only task state, evidence references and minimum authorized context required for execution. Physical placement of canonical memory storage remains deployment-configurable and is selected through P3.8.
+
+### ADR-093 — Scoped, minimum-necessary synchronization
+
+**Status:** Approved
+
+Synchronization is an independently authorized operation. Records are projected only to account, project, task/run, device or explicitly permitted scopes. Sensitivity, owner, purpose, retention and destination capability are checked before transfer. Enrollment does not grant memory or file synchronization.
+
+### ADR-094 — Domain-specific consistency and semantic conflict resolution
+
+**Status:** Approved
+
+Control/permission and workflow state use authoritative current checks and coordinator-serialized transitions. Permitted memory/client replicas converge through versioned synchronization and explicit conflicts. Timestamp-only last-write-wins is not accepted for canonical memory, deletion, grants, approvals or workflow state.
+
+### ADR-095 — Deletion tombstones prevent stale replica and backup resurrection
+
+**Status:** Approved
+
+Forget/erase operations create durable tombstones at the owning authority, restrict retrieval immediately and propagate to dependent records, indexes, caches, workers, replicas and restoration paths. Offline/unreachable copies and external-provider deletion are reported as pending or unverified until evidence exists.
+
+### ADR-096 — Backup and restore are isolated from live authority and sync
+
+**Status:** Approved
+
+Backups are domain-scoped recovery snapshots, not live replicas. Restore occurs in staging and reapplies current deletion, correction, grant, device-revocation and policy state before retrieval or execution. Secrets/private keys are excluded from ordinary backup and stale operations are reconciled, not replayed.
+
+### ADR-097 — Device-local and secret material stays within its owning security boundary
+
+**Status:** Approved
+
+Raw screen/audio/camera captures, live desktop state, private keys and connector credentials are not generally synchronized. Authorized tasks may transfer minimum derived evidence or obtain a just-in-time scoped credential reference through the appropriate owner. Device identity keys are not reused as general data-encryption keys.
+
+### ADR-098 — Strong consistency is reserved for authority and workflow state
+
+**Status:** Approved
+
+Permission, revocation, campaign policy and workflow transitions require authoritative current checks and guarded state changes. Memory and client projections may converge asynchronously using revisions, provenance and conflict handling. External-provider observations remain timestamped snapshots, not authority over provider state.
+
+### ADR-099 — Retention and lifecycle are defined by data domain
+
+**Status:** Approved
+
+Memory, workflow history, event journals, notifications, artifacts, caches, worker workspaces, connector snapshots and backups have distinct ownership and retention rules. A storage product's default TTL or backup policy cannot silently define LIA's retention behavior.
+
+### ADR-100 — Technology selection follows subsystem contract readiness
+
+**Status:** Approved
+
+Candidates may be shortlisted and tested as each P3 workstream stabilizes its contracts. Formal technology selection is completed at P3.8 after P3.5 data, P3.6 platform/integration and P3.7 agent/model-runtime requirements are available. P4 finalizes concrete integration contracts; P5 begins the first vertical-slice product implementation.
+
+
 # 9. Change log
 
   ------------------------------------------------------------------------
@@ -2230,6 +2290,8 @@ Notifications derive from committed domain events and have independent per-chann
 
 **1.9.0 — 14 Nov 2026:** Completed P3.4 workflow and event architecture. Defined command/event/notification separation, canonical event envelopes, durable state/event journal and outbox/inbox delivery, at-least-once semantics with aggregate-local ordering, workflow object hierarchy and guarded campaign/run/step state machines, timezone-aware schedule occurrences and default skip/report misfire policy, bounded DAG execution, fenced worker leases, retry classification and side-effect reconciliation, exact-action approvals, pause/cancel/revocation controls and independent notification delivery. Added event propagation, workflow execution and schedule/misfire diagrams plus validation scenarios and ADR-081–ADR-090. Implementation technologies remain deferred.
 
+**1.10.0 — 14 Nov 2026:** Completed P3.5 data ownership and synchronization architecture. Defined canonical data-domain owners, separation of governed memory from workflow/control storage, S0–S3 placement and scoped synchronization rules, domain-specific consistency and conflict handling, offline sync, deletion/tombstone propagation, backup/restore safeguards, data lifecycle/observability and P3.8 technology-selection timing. Added four data lifecycle/synchronization diagrams, validation scenarios and ADR-091–ADR-100. Concrete storage, sync, backup and key-management products remain deferred.
+
 
 # 10. Current working state
 
@@ -2240,9 +2302,10 @@ Notifications derive from committed domain events and have independent per-chann
 **P3.2 status:** Complete — hosted-default hybrid deployment topology, self-hosted target, runtime placement, offline boundaries and initial recovery objectives approved  
 **P3.3 status:** Complete — identity principals, pairing, credential lifecycle, authenticated sessions, command envelopes, relay trust, revocation and offline leases approved  
 **P3.4 status:** Complete — durable events, workflow state machines, schedule/occurrence semantics, worker leases, retry/reconciliation, approvals, cancellation and notification delivery approved  
+**P3.5 status:** Complete — canonical data ownership, scoped synchronization, conflict resolution, deletion propagation and backup/restore semantics approved  
 **Overall status:** P3 is active. No programming language, framework, database, model provider, cloud vendor, transport protocol, cryptographic library or production infrastructure product has been selected.  
 **P3.5 status:** Pending — data ownership, persistence and synchronization  
-**Next action:** Define canonical data ownership and storage boundaries, memory/task/event synchronization, conflict resolution, retention, deletion propagation, backup/restore and cross-device consistency in P3.5.
+**Next action:** Define platform and integration adapter contracts for Linux/Windows desktop nodes, mobile capabilities, home automation and external service connectors in P3.6.
 
 
 ## Phase 2 exit criteria
@@ -4484,6 +4547,7 @@ P3 shall not silently relax P2 targets or introduce a tool/provider whose behavi
 **P3.2 status:** Complete — deployment topology, runtime placement, offline boundaries and initial availability/recovery targets approved  
 **P3.3 status:** Complete — device identity, pairing, credentials, authenticated sessions, command envelopes, relay boundaries, revocation and offline authorization approved  
 **P3.4 status:** Complete — durable event delivery, workflow state machines, scheduling, worker leases, reconciliation and notification semantics approved  
+**P3.5 status:** Complete — data ownership, synchronization scope, conflict handling, deletion propagation and backup/restore semantics approved  
 **Purpose:** Transform the approved product and quality requirements into a coherent, secure, distributed architecture with explicit component responsibilities, data ownership, communication contracts and platform execution boundaries.
 
 P3 shall preserve the Phase 2 requirements baseline and the approved multi-device scope extension. Architecture choices must be justified against requirements and quality attributes; technologies are selected only after responsibilities, trust boundaries and contracts are sufficiently clear.
@@ -4969,7 +5033,7 @@ flowchart TB
 | P3.2 — Distributed runtime and deployment topology | Always-on coordinator deployment, local/hosted workers, process boundaries, availability and recovery | Complete |
 | P3.3 — Device identity and secure communication | Enrollment, device keys, sessions, relay, remote desktop transport and revocation | Complete |
 | P3.4 — Workflow and event architecture | Durable task state, event model, scheduler, campaign runs, leases, retry/reconciliation and notification events | Complete |
-| P3.5 — Data ownership and synchronization | Memory authority, task/event records, device caches, conflict resolution, retention and deletion propagation | Pending |
+| P3.5 — Data ownership and synchronization | Memory authority, task/event records, device caches, conflict resolution, retention and deletion propagation | Complete |
 | P3.6 — Platform and integration adapter contracts | Linux/Windows desktop nodes, mobile capabilities, home automation and external service connectors | Pending |
 | P3.7 — Agent intelligence and model runtime | Conversation orchestration, planning, model gateway, tool/action request schema and context boundaries | Pending |
 | P3.8 — Architecture validation and technology selection | ADR review, quality scenarios, threat analysis, component trade-offs and justified stack selection | Pending |
@@ -4979,8 +5043,9 @@ flowchart TB
 P3 establishes logical architecture but does not select:
 
 - Specific cloud provider, hosting vendor, region, infrastructure product, deployment packaging/orchestration and self-hosting distribution product. The hosted-default and self-hosted-target deployment profiles are decided; vendor and implementation choices remain deferred.
-- Database, event broker, workflow engine or scheduler implementation.
+- Concrete database/storage engine, event broker, workflow engine and scheduler products. Their logical responsibilities and semantic contracts are defined in P3.4/P3.5; candidate products are compared and selected in P3.8.
 - Device relay, transport protocol, remote desktop streaming or cryptographic library.
+- Concrete synchronization engine, conflict-resolution implementation, backup tooling, artifact/object store, schema migration tool and physical placement of canonical memory data. P3.5 defines ownership and lifecycle semantics; implementation is evaluated in P3.8.
 - Desktop/mobile programming language, UI framework or rendering engine.
 - Home automation standard, gateway product or vendor-specific connector.
 - Model provider, model routing framework, speech provider or local inference runtime.
@@ -6160,7 +6225,469 @@ The implementation shall measure durable event acceptance latency, queue age, ev
 
 **P3.4 status:** Complete — durable event semantics, workflow object identities and state machines, schedule/occurrence rules, worker assignment and fencing leases, bounded retries, side-effect reconciliation, approval/control semantics and notification delivery are defined.
 
-The governing decisions are recorded as ADR-081–ADR-090 in the main decision register. No database, broker, queue, workflow engine, scheduler, transport or implementation language has been selected. P3.5 will define canonical data ownership, persistence/synchronization boundaries, conflict resolution, retention and deletion propagation.
+The governing decisions are recorded as ADR-081–ADR-090 in the main decision register. No database, broker, queue, workflow engine, scheduler, transport or implementation language has been selected.
+
+## 19.44 Data architecture principles and authority boundaries
+
+P3.5 establishes data ownership before selecting storage products or synchronization technologies. LIA is a multi-device system, but it is not one undifferentiated database replicated to every device.
+
+The governing model is **domain-owned data with one canonical authority per record domain and purpose-limited replicas/projections**. Different data domains may have different authoritative owners. A local copy, cache, index, backup or event payload does not become authoritative merely because it contains a newer timestamp.
+
+### Governing principles
+
+1. **One canonical writer per authoritative record:** Each record has a defined owning domain/service and authoritative revision. Multiple devices may contribute evidence or proposed updates, but cannot independently overwrite canonical state.
+2. **Authority follows the data domain:** Workflow state is owned by the workflow authority; memory by the governed memory authority; live environment state by its originating device; provider-owned facts by the external provider.
+3. **Sync is an authorized operation:** Discover, read, use, derive, modify, share and delete remain distinct P2.5 memory operations. Enrollment or connectivity does not authorize synchronization.
+4. **Replicate the minimum useful projection:** A device receives only records, fields and derived views required for an enabled capability, active task or explicitly configured continuity scope.
+5. **Local-first observations:** Raw screen frames, microphone audio, camera frames and transient input/context remain local and task-scoped by default. A permitted task may transfer a specific derived result or artifact under the relevant grant.
+6. **Caches are disposable projections:** Cache/index corruption or staleness must not mutate canonical records. Rebuild from authorized sources and report unavailability when reconstruction is impossible.
+7. **No blind last-write-wins:** Conflict resolution is semantic and domain-specific. A newer wall-clock timestamp alone cannot overwrite a concurrent user correction, deletion or authoritative workflow transition.
+8. **Deletion is a distributed lifecycle operation:** Deletion intent immediately restricts access and creates a durable tombstone; propagation continues across replicas, indexes, derived records, workers and backup restoration paths.
+9. **Backup is not synchronization:** A backup is a point-in-time recovery copy, not a live peer and not permission to restore stale grants, deleted records or revoked device credentials.
+10. **Physical placement remains deployment-configurable:** Managed-hosted and user-controlled deployments use the same logical ownership and access contracts. Physical memory placement, storage products and cryptographic implementation are selected in P3.8.
+
+P3.5 preserves P2.5's distinction between memory, permission authority, task scheduling and execution. It also preserves P3.2's coordinator/worker separation and P3.3's independent device identities.
+
+## 19.45 Canonical data domains and ownership matrix
+
+The table defines logical ownership. It does not require each row to be a separate database or service. Data may be co-located physically only when ownership, access, retention and failure boundaries remain enforceable.
+
+| Data domain | Canonical authority/owner | Permitted replicas/projections | Explicit non-authority |
+|---|---|---|---|
+| User account identity and account security state | Account/identity authority | Authenticated account clients receive session-appropriate identity/status | Device-local profile copies and application caches |
+| Device registry, enrollment, trust, capability manifest and revocation epoch | Device identity registry defined by P3.3 | Current device status/capability summaries to authorized clients | Device cache, local network presence or device name |
+| Permission grants, policy versions and approval records | Permission/risk authority | Narrow device-bound cached authorization evidence with explicit expiry; relevant workflow references | Workflow store, model context, notification content or worker lease |
+| Campaign definitions and user-approved policy envelopes | Coordinator campaign/workflow authority | Read-only scoped client views; workers receive task-relevant constraints | Worker copy, planner output or prior run snapshot as current authority |
+| Workflow runs, plans, steps, attempts, operation journal and transition history | Durable workflow authority | Worker-local attempt journal and bounded outbox; client projections for inspection | Worker heartbeat, dashboard cache or model summary |
+| Schedules, timer occurrences, retry timers and worker leases | Coordinator scheduler/workflow authority | Due-work dispatch and bounded worker lease evidence | Device clocks or local timer cache |
+| Domain events, outbox/inbox delivery and notification intents | Owning coordinator subsystem defined by P3.4 | Durable consumer inboxes, worker event outboxes and per-channel delivery projections | Broker/transport queue contents alone |
+| Canonical memory records and governed memory relationships | P2.5 Memory Authority, by account/project/task/experience scope | Authorized device caches, retrieval indexes and task-specific context projections | Workflow store, arbitrary device copies or model context |
+| Original external documents, messages, media and service records | Original owner/provider; LIA owns only permitted captured copies or derived records | Source references, authorized snapshots, task-scoped extracts or approved artifacts | LIA snapshot as proof of current external-provider state |
+| Desktop environment/window/process state | Originating desktop node for live state | Timestamped, purpose-limited task evidence or metadata projection when authorized | Coordinator cache or another device's stale view |
+| Mobile-native state and mobile hardware observations | Originating mobile node or relevant OS/provider | Explicit task-scoped results and user-approved account continuity | Desktop node or coordinator inference |
+| Home-device live state and actuation result | Connected device/provider/gateway for current physical state; LIA workflow authority for its command/result history | Timestamped observations and device-scoped workflow evidence | Prior LIA observation as proof of current physical state |
+| Generated task artifacts and deliverables | Artifact/run domain under the authorized task or campaign owner | Explicitly shared output references and authorized client downloads | Temporary worker workspace after task cleanup |
+| Notification preferences and LIA delivery attempts | Account preference and notification-routing authority | Per-client preference projection; provider delivery receipt/status | Provider acceptance as proof that the user read it or task completed |
+| Device private keys, connector credentials and recovery secrets | Device OS secure storage or separately governed credential/secret authority | Just-in-time, narrowly scoped access to an authorized executor when required | Memory archive, general sync, event payload, model context or ordinary backup |
+| Device-specific presentation and local environment configuration | The device that owns the setting | Only user-selected roaming settings may be copied to another device | Global account configuration unless explicitly designated account-wide |
+| Temporary/session-only context | Owning active session/runtime | No cross-device or long-term synchronization by default | Persistent memory archive, campaign history or general account replica |
+
+### Authority invariant
+
+Every record or object reference exposed to a worker or client must resolve to an owning domain, authoritative revision or provider/source version, owner/scope, sensitivity/retention classification and applicable access decision. If ownership or authority cannot be established, the record is unavailable or uncertain rather than merged by guesswork.
+
+A logical data domain may contain subordinate scopes. An account memory domain can contain project-local and task-local compartments, but account-level access does not automatically imply access to each compartment. A project record does not become global memory merely because several devices have used it.
+
+## 19.46 Data classification, locality and synchronization eligibility
+
+P2.5 defines sensitivity classes S0–S3. P3.5 uses those same classes and adds a separate placement/synchronization decision. Sensitivity is not a transport instruction by itself: two S1 records may have different owners, purposes and permitted destinations.
+
+| Sensitivity | P2.5 meaning | P3.5 default placement/synchronization posture |
+|---|---|---|
+| S0 | Ordinary, low-sensitivity information | May be synchronized to the relevant authorized account/project/task scope when useful and permitted |
+| S1 | Personal information | Minimize fields and recipients; synchronize only to explicitly enabled scope and devices that need it |
+| S2 | Sensitive information | Explicit long-term retention authorization remains required; default to local/restricted storage and no broad device replication; task-specific transfer requires explicit purpose and scope |
+| S3 | Secrets, credentials and equivalent secret material | Excluded from ordinary memory and general synchronization; held only in a protected credential/secret boundary and delivered just in time to an authorized executor when necessary |
+
+### Synchronization scopes
+
+Each synchronized record or collection is assigned an explicit scope:
+
+- **Account scope:** User-approved settings or memory intended to follow the user across enrolled clients.
+- **Project scope:** Information available only to devices/agents currently authorized for that project.
+- **Task/run scope:** Minimum context, inputs, outputs and evidence needed by workers assigned to one task/run.
+- **Device scope:** State owned by one node; shared only through a separately authorized task projection.
+- **Session/temporary scope:** Transient conversation or working state that is not promoted to persistent cross-device memory by default.
+- **External-provider scope:** Data governed by the external account/provider and connector's authorization.
+- **Never-general-sync scope:** Private keys, connector refresh credentials, recovery secrets, raw capture streams and other data explicitly excluded from general replication.
+
+Scopes are not automatically transitive. A project-scoped record referenced by an account-level task does not become account-readable. A worker receives a task projection only after each referenced record passes its own access check.
+
+### Sync eligibility rules
+
+Before creating a replica or transfer, the sync path validates: canonical owner and record identity; source/destination principals, device trust and current session; operation permission; purpose/domain scope, sensitivity and retention; destination capability/location policy; current record revision, deletion marker and policy/revocation version; and whether the destination needs raw data, a derived representation, a reference or no copy.
+
+Permission to read a record does not imply permission to cache it indefinitely. Permission to use information for a task does not imply permission to retain it after the task. A worker releases task-scoped copies/workspaces when cleanup and retention conditions are met.
+
+### Default placement rules
+
+- Raw screen, microphone and camera data remain at the capture device and within the originating task/session by default. Only a task-authorized excerpt, observation or artifact may be transferred when source and destination grants allow it.
+- Desktop metadata and live window/process state are owned by the desktop. Remote clients receive an authorized live projection, not an unrestricted synchronized desktop history.
+- Memory records synchronize according to their account/project/task/experience compartment. Retrieval indexes may be rebuilt from authorized records and are not canonical memory.
+- Worker context is assembled for a specific step and excludes the full conversation archive, unrelated projects and all-account memory by default.
+- Service-worker artifacts are promoted into the task's canonical artifact domain only after validation and authorized persistence; temporary workspace data is cleaned according to retention policy.
+- External provider credentials are referenced through connector authority and never copied into generic task payloads or event envelopes.
+- A mobile companion may cache user-approved task status, preferences and memory views, but enrollment does not create a mirror of the desktop's files, screenshots or entire memory archive.
+
+## 19.47 Synchronization architecture and consistency classes
+
+The coordinator/session infrastructure provides authenticated reachability and sync orchestration; the Memory Authority and each domain authority continue to own canonical records. The synchronization layer computes an authorized delta/projection and transfers it to a registered replica. It does not become a new universal data owner.
+
+A sync exchange authenticates the account/device/session, resolves scope, checks grants/sensitivity/retention/deletion/policy versions, compares canonical revisions, transfers minimum data with integrity/schema validation, applies a non-authoritative replica update, acknowledges the exact revision and reconciles pending local changes. It records status without logging protected content.
+
+A client may present locally available information while offline, but labels source revision and sync state when staleness is material. Pending local memory writes or task evidence are not reported as globally saved until canonical authority acknowledges them.
+
+### Consistency classes
+
+| Data class | Consistency contract |
+|---|---|
+| Device trust, credential revocation and active grants | Strong/current check before new session or side effect; bounded offline lease only under P3.3 |
+| Campaign envelope, approvals and workflow state | Coordinator-serialized authoritative transitions with aggregate version checks |
+| Event/outbox/inbox delivery | At-least-once delivery, deduplication and aggregate-local ordering under P3.4 |
+| Canonical memory records | Authoritative commit at Memory Authority; replicas converge by version/causal metadata and explicit conflict handling |
+| User account preferences | Canonical account version with field-aware merge or explicit conflict |
+| Device-specific preferences and live environment | Strong within owning device; no cross-device merge unless explicitly designated roaming state |
+| External-provider state | Provider/source is authoritative; LIA stores timestamped observations/snapshots |
+| Generated artifacts | Canonical artifact reference and content integrity after authorized promotion; temporary workspace is local to worker |
+| Notifications | Independent asynchronous per-channel delivery state |
+
+This is not global strong consistency. The architecture applies strong checks to authority/control and workflow state, while allowing eventual convergence for permitted memory and client projections. Cross-device availability does not justify stale grants or stale physical-device assumptions.
+
+### Offline writes and sync checkpoints
+
+- Local writes use a bounded durable local outbox with stable record/change IDs, base revision, source device identity and provenance.
+- The UI distinguishes Local only/Pending sync, Accepted by canonical authority, Conflict requiring resolution and Rejected/expired.
+- An offline device cannot make a global account preference or memory record canonical merely by saving it locally.
+- Upon reconnect, authenticate and refresh trust/revocation state first; exchange tombstones and policy changes before ordinary content deltas, then reconcile pending writes against canonical revisions.
+- Expired scope/grants, stale task envelopes and revoked device identities are not renewed by an unsent local outbox.
+- Repeated sync delivery is idempotent. Checkpoints refer to the exact canonical revision acknowledged, not the latest local timestamp.
+
+## 19.48 Conflict detection and resolution
+
+Conflict resolution is defined by data semantics, not by one universal merge algorithm. Last-write-wins based solely on wall-clock time is prohibited for canonical user memory, deletion, grants, approvals and workflow state.
+
+| Conflict class | Resolution |
+|---|---|
+| Independent append-only memory/event records | Merge as separate records after authorization and deduplication; do not collapse distinct experiences because content looks similar |
+| Concurrent edits to one semantic memory record | Preserve both proposed versions/provenance; mark disputed or create a conflict record; request user resolution when material |
+| Explicit user correction versus inferred/derived value | Explicit authorized correction governs current interpretation; dependent derived memories are re-evaluated and lineage retained |
+| Concurrent account preference changes | Merge independent fields; for conflicting values preserve both candidates and ask for resolution or use a separately user-approved precedence rule |
+| Device-specific configuration | Keep local unless explicitly classified as roaming/account-scoped |
+| Workflow/run/step state | Coordinator transition guard and aggregate sequence decide; workers submit evidence/commands, never merge canonical state directly |
+| Duplicate external provider event | Deduplicate using P3.4 source-event identity |
+| External provider state changes | Provider remains authoritative; store a newer timestamped observation |
+| Delete versus update | Deletion wins; reject stale write/restore and require explicit new creation if the user wants the information again |
+| Schema/version mismatch | Quarantine/hold incompatible payload; migrate through a controlled path or request a compatible client; do not silently discard unknown fields |
+
+Every canonical mutable record has a stable identity and monotonic revision. A proposed modification identifies its base revision. If the canonical revision changed, the owner checks whether the update is merge-safe or conflicting. Record revisions preserve actor/origin, valid/recorded time, source provenance, scope, sensitivity and derivation lineage. Source/experience history is append-oriented. Corrections are new versions/events rather than destructive rewriting. User resolution is an authenticated versioned event. Inferred or model-generated content cannot silently override an explicit correction. Unresolved material conflict prevents a replica from being reported fully synchronized.
+
+## 19.49 Deletion, forgetting and propagation across replicas
+
+P2.5 distinguishes forgetting a fact, erasing an experience and erasing a domain. P3.5 defines how those operations propagate through a distributed system.
+
+### Deletion propagation
+
+1. Authenticate the deletion request and resolve exact record/domain, owner, scope, source lineage and requested operation.
+2. The owning authority commits a deletion intent/tombstone and advances the deletion revision.
+3. Active retrieval and new sync projections stop exposing the target immediately at the authority and reachable replicas.
+4. Enumerate dependent summaries, semantic facts, graph edges, embeddings/index entries, cached context, worker workspaces, artifact copies and permitted provider copies.
+5. Send idempotent deletion events and record each acknowledgement or explicit failure/pending state.
+6. Reachable devices purge or cryptographically invalidate their in-scope cache. Offline devices are marked pending deletion and cannot access/sync ordinary scoped content before applying deletion state on reconnect.
+7. Backups retain the deletion marker/ledger independently of the snapshot so restore cannot resurrect the target.
+8. External providers receive deletion requests only where authorized and supported; LIA reports requested, accepted, verified, failed or unsupported status accurately.
+9. Report canonical deletion, dependent-data propagation, disconnected-device pending state, backup expiry and external-provider status separately.
+
+### Tombstone rules
+
+- A tombstone is a durable denial marker with stable deletion ID, target/domain, owner, scope, deletion revision, request/commit time and propagation status.
+- Tombstones take precedence over stale replicas, offline outboxes, event replay and backup snapshots. A stale device cannot recreate deleted data by uploading an older revision.
+- Tombstones remain available at least as long as any backup, replica or queued event capable of reintroducing the data can be restored or reconnected. If that horizon is unbounded, the authority requires a fresh deletion-ledger check before admitting the replica or backup.
+- Tombstones contain only minimum metadata needed to prevent resurrection and demonstrate completion; they do not preserve deleted content.
+- Derived records that materially reveal deleted source content are deleted or recomputed without the source. If safe separation cannot be established, they remain restricted.
+- User-visible deletion completion distinguishes LIA-controlled records from exported files, external-provider copies and unreachable offline devices that LIA cannot verify or erase immediately.
+- Revoking a device's sync authorization prevents future access but does not claim every offline cached copy has already been erased.
+
+Workflow/event history may retain a minimal operational audit reference where required to explain a task outcome or permission decision, but must not retain deleted content as a hidden substitute. Such references follow applicable audit/retention policy, are access-restricted and are not ordinary memory. P2.5 erasure semantics remain authoritative.
+
+## 19.50 Backup, restore and disaster-recovery data rules
+
+Backups protect recovery; they are not live synchronization and never override current authority, deletion or retention state.
+
+| Backup domain | Backup posture | Restore constraint |
+|---|---|---|
+| Coordinator workflow/control state | Durable replicated state and tested backup/recovery appropriate to P3.2 target | Reconcile current device, grant, revocation and campaign-policy state |
+| Event journals/outbox/inbox/operation evidence | Recoverable journals/checkpoints with bounded retention and stable IDs | Deduplicate replay; do not reissue stale commands |
+| Canonical memory/source archive | User-governed encrypted backup per scope/retention/deployment | Reapply corrections, tombstones, scope restrictions and current sensitivity policy |
+| Memory indexes/retrieval caches | Rebuildable or separately backed up where expensive | Regenerate only from authorized surviving source records |
+| Generated task artifacts | Backup per artifact owner, retention and campaign policy | Restore with provenance, integrity digest and original access restrictions |
+| Device configuration | Back up only settings selected for backup/roaming | Do not restore device secrets/private keys as ordinary configuration |
+| Credentials/private keys/recovery secrets | Excluded from general LIA backup | Re-enrollment or separately governed secure recovery |
+| Temporary/session working data | Not backed up by default | Not restored into persistent memory or future tasks |
+| External-provider data | Prefer source references/provider reconciliation; snapshot only when authorized | Provider remains authoritative |
+
+Backup payloads are encrypted and access-controlled. Keys are separated from ordinary content; implementation is P3.8. Backups preserve provenance, versions, scope, sensitivity, deletion markers and derivation lineage. A snapshot is taken at a consistent logical boundary or includes journal/checkpoint information needed for recovery. Backup job success is distinct from restore-test success. Backup schedule, retention, user control, destination and cost/availability are explicit per deployment; exact intervals/products are deferred to P3.8/P5. Backups may not include S3 secrets, private device keys or raw transient capture data. Exported data is outside LIA's control after export.
+
+### Restore procedure
+
+1. Restore into isolated staging, not live retrieval or active task execution.
+2. Verify ownership, account/domain identity, integrity manifest, schema compatibility and snapshot consistency.
+3. Load current deletion/tombstone ledger, revocation epochs, grant state and policy restrictions from an authority newer than or independent of the snapshot.
+4. Apply tombstones, corrections, erased-domain markers and credential/device revocations before making records available.
+5. Validate provenance, sensitivity, retention and derived-memory lineage; quarantine records whose ownership/lineage cannot be established.
+6. Reconcile workflow aggregates, attempts, operations and external provider state. Unknown side effects remain in reconciliation rather than being replayed.
+7. Rebuild indexes/caches only from currently authorized surviving records.
+8. Produce a restore report with restored, skipped, quarantined, deleted, pending and failed statuses.
+9. Re-enable sync and execution only after account/device trust and domain access rules are current.
+
+An older backup cannot roll back account-wide device revocation, grant revocation or campaign cancellation. Those decisions are revalidated from the authoritative control plane before any task resumes.
+
+## 19.51 Data lifecycle, retention and operational observability
+
+Each data domain declares creation, canonical acceptance, access, replication, update/correction, archival, deletion and backup/restore behavior. These lifecycle rules follow the domain owner, not whichever service/database stores the bytes.
+
+- Memory follows P2.5 retention, sensitivity, correction, temporary mode and deletion rules.
+- Task/run data follows workflow purpose, campaign policy, artifact ownership and bounded operational-history needs.
+- Event/outbox/inbox data follows P3.4 deduplication, replay, audit and retention requirements, with payload minimization.
+- Device caches and worker workspaces are bounded, scoped and disposable when task/access purpose ends.
+- Notifications have separate delivery history and expiry; message payloads are not retained as extra memory by default.
+- Security/audit events retain sufficient identifiers/decisions to explain operations without duplicating protected payloads.
+- Connector data follows provider authorization/account boundaries; revocation stops new reads/writes and initiates cleanup of in-scope caches.
+- Backup retention and tombstone lifetime are coordinated so deletion markers outlive any backup capable of resurrection.
+
+Sync diagnostics may expose domain, record IDs, revision, source/destination device IDs, transfer size, status, conflict category, deletion acknowledgement and timing. They must not log protected contents, secrets, raw capture data or entire task context. Every sync report distinguishes canonical/replica revision, pending local changes, conflicts/schema mismatch, deletion propagation, destination unavailability/authorization denial, and backup/last verified restore state. The UI must not flatten these into one ambiguous "Synced" or "Backed up" status.
+
+## 19.52 Data ownership and synchronization diagrams
+
+### Domain authorities and restricted replicas
+
+~~~mermaid
+flowchart TB
+    USER["Authenticated user/account"]
+    COORD["Coordinator control plane"]
+    WORKFLOW["Workflow authority"]
+    POLICY["Permission and grant authority"]
+    MEMORY["Governed Memory Authority"]
+    DEVICE["Originating device authorities"]
+    PROVIDER["External providers/home gateways"]
+    SYNC["Scoped synchronization and projection layer"]
+    D1["Desktop replica/cache"]
+    D2["Mobile replica/cache"]
+    D3["Authorized service-worker workspace"]
+    AUDIT["Content-minimized audit and sync state"]
+
+    USER --> COORD
+    COORD --> WORKFLOW
+    COORD --> POLICY
+    MEMORY --> SYNC
+    WORKFLOW --> SYNC
+    POLICY --> SYNC
+    DEVICE --> SYNC
+    PROVIDER --> SYNC
+    SYNC --> D1
+    SYNC --> D2
+    SYNC --> D3
+    SYNC --> AUDIT
+    D1 -. "proposals / evidence" .-> SYNC
+    D2 -. "user-approved changes" .-> SYNC
+    D3 -. "task-scoped outputs" .-> SYNC
+~~~
+
+### Conflict and convergence flow
+
+~~~mermaid
+flowchart TD
+    A["Local or remote change proposed"]
+    B["Authenticate source and check write/share permission"]
+    C["Resolve owning domain and canonical revision"]
+    D{"Base revision current?"}
+    E["Validate update against current policy and schema"]
+    F{"Semantically merge-safe?"}
+    G["Commit new canonical revision"]
+    H["Create conflict record; preserve both versions"]
+    I["Request user resolution or domain-specific review"]
+    J["Apply explicit resolution as new revision"]
+    K["Replicate authorized projection"]
+    L["Acknowledge exact revision to replica"]
+    M["Remain pending/conflicted"]
+
+    A --> B --> C --> D
+    D -->|Yes| E --> G --> K --> L
+    D -->|No| F
+    F -->|Yes| E
+    F -->|No| H --> I
+    I -->|Resolved| J --> K
+    I -->|Unresolved| M
+~~~
+
+### Deletion and offline-replica recovery
+
+~~~mermaid
+sequenceDiagram
+    participant U as Authenticated user
+    participant A as Owning data authority
+    participant T as Tombstone/deletion ledger
+    participant S as Sync coordinator
+    participant D as Reachable device replica
+    participant O as Offline device replica
+    participant B as Backup/restore service
+
+    U->>A: Request scoped forget/erase operation
+    A->>T: Commit deletion intent and revision
+    A->>S: Stop new projections and issue deletion event
+    S->>D: Purge cache/index/derived copies
+    D-->>S: Deletion acknowledgement
+    S->>O: Mark deletion pending for offline device
+    A->>B: Publish tombstone to restore authority
+    B-->>A: Confirm restore guard recorded
+    Note over O: Offline copy cannot be claimed erased yet
+    O->>S: Reconnect and authenticate
+    S->>O: Apply tombstones before ordinary sync
+    O->>O: Purge or cryptographically invalidate target
+    O-->>S: Deletion acknowledgement
+    S-->>A: Update propagation status
+    A-->>U: Report verified and pending scopes
+~~~
+
+### Backup and restore policy flow
+
+~~~mermaid
+flowchart TD
+    A["Select domain-consistent backup snapshot"]
+    B["Create integrity manifest and encrypted backup"]
+    C["Store snapshot separately from live replicas"]
+    D["Restore into isolated staging"]
+    E["Verify ownership, integrity, schema and consistency"]
+    F["Load current tombstones, revocations and policy state"]
+    G["Apply deletion/scope/revocation state"]
+    H["Quarantine invalid or untrusted records"]
+    I["Reconcile workflow and external side effects"]
+    J["Rebuild authorized indexes/caches"]
+    K["User-visible restore report"]
+    L["Enable live retrieval and sync after policy checks"]
+
+    A --> B --> C
+    C --> D --> E --> F --> G --> H --> I --> J --> K --> L
+~~~
+
+## 19.53 P3.5 architecture validation scenarios and requirement traceability
+
+These scenarios define future implementation verification. They do not claim that synchronization, backup, deletion or storage behavior has been implemented or tested.
+
+| Scenario | Required result | Requirement/acceptance trace |
+|---|---|---|
+| Newly enrolled device requests account memory | Only explicitly authorized account/project/task projection is returned; enrollment alone grants no memory access | FR-243, SEC-060–063, AC-046 |
+| Device attempts to sync S2 content without applicable grant | Transfer is denied or held; no partial disclosure through indexes/counts/metadata | P2.5 access model, SEC-039–058, AC-046 |
+| S3 connector credential appears in task payload | Secret is excluded; executor obtains only its separately authorized credential reference | SEC-053, SEC-068, AC-044 |
+| Raw screen/audio/camera data enters a sync request | Default policy denies general replication; task-specific transfer requires source/destination/purpose authorization | CTX-001–017, FR-243, AC-034/046 |
+| Offline device creates a memory update | Local pending state is visible; canonical memory is not claimed saved until authority accepts it | FR-060–068, NFR-023–027, AC-019/046 |
+| Two devices concurrently correct one memory record | Conflicting versions/provenance are preserved; no timestamp-only overwrite | P2.5 correction/integrity, AC-019/046 |
+| User explicitly corrects model-derived memory | Explicit correction governs current interpretation and affected derivations are re-evaluated | P2.5 epistemic/lineage requirements, AC-019 |
+| Deletion request arrives while one device is offline | Canonical retrieval is denied and device is marked pending deletion; system does not claim offline copy erased | P2.5 deletion, SEC-055/066, AC-019/046 |
+| Old backup is restored after deletion | Tombstones are reapplied before memory/index retrieval; deleted data is not resurrected | SEC-037, NFR-027, AC-019/031/046 |
+| Revoked device reconnects with stale outbox | Revocation/tombstones apply first; stale writes are rejected and cannot restore access or deleted content | SEC-065–067, NFR-025/027, AC-040/046 |
+| Workflow store restored but external upload outcome unknown | Reconciliation occurs before further publication; no blind duplicate upload | FR-237, AC-042/043 |
+| External provider state differs from LIA cached observation | Provider is authoritative and LIA refreshes a timestamped observation | FR-246–247, AC-043/044 |
+| Memory index is corrupted but canonical records remain | Rebuild only from currently authorized records; report retrieval degradation until complete | P2.5 retrieval/governance, AC-027/046 |
+| Schema migration encounters incompatible record | Record is quarantined or migrated through a versioned path; unknown fields are not silently discarded | NFR-033, AC-032 |
+| Backup contains device private key or connector secret | Such material is excluded from ordinary backup and restore | SEC-053/068, SEC-061, AC-040/044 |
+| Artifact copied from temporary worker workspace | It becomes canonical only after authorized promotion; workspace cleanup follows task retention | FR-235–239, NFR-023–027, AC-042 |
+| User requests account/project scope deletion | Dependent records, indexes, derivations and eligible caches are enumerated; outstanding offline/provider/backup scope is disclosed | P2.5 erasure policy, SEC-037–038, AC-019/046 |
+
+Implementation evidence shall include sync convergence tests, conflict-resolution fixtures, multi-device offline/online cycles, deletion propagation across replicas/backups, restore drills, data-scope leakage tests, migration rollback and integrity checks. Metrics distinguish sync lag, pending outbox age, conflict count/resolution time, deletion acknowledgement coverage, backup age, restore-test success, index rebuild duration and per-domain data transfer volume. Numerical thresholds and physical storage capacity are ratified after data model and deployment profiles are evaluated; no unsupported capacity claim is made here.
+
+## 19.54 Technology-selection sequence and readiness gate
+
+The architecture phases define when technology decisions become evidence-based. Technology selection is not postponed indefinitely, and it is not one arbitrary choice made before subsystem contracts exist.
+
+| Technology area | Contract/readiness input | Selection checkpoint |
+|---|---|---|
+| Data stores, memory storage, search/indexing and artifact storage | P3.5 canonical domains, query/update patterns, sensitivity, retention, deletion, backup/restore, locality and consistency | Candidate evaluation after P3.5; formal decision at P3.8 |
+| Workflow engine, scheduler, event broker and delivery infrastructure | P3.4 state machines, durability/outbox, at-least-once delivery, aggregate ordering, timers, leases, reconciliation; P3.5 data transactions and ownership | Candidate evaluation after P3.5; formal decision at P3.8 |
+| Device/session transport and cryptographic implementation | P3.3 trust, pairing, command and revocation contracts; P3.5 data-protection and key-separation needs | Security/interoperability evaluation during P3.8 |
+| Desktop/mobile languages, UI/runtime frameworks and OS integration libraries | P3.6 capability and adapter contracts, Linux/Windows compatibility, hardware/resource targets and P5 vertical-slice scope | Candidate evaluation after P3.6; formal decision at P3.8 |
+| Home automation standards and external connector frameworks | P3.6 device/action capability contracts, provider authorization, event and failure behavior | Candidate evaluation after P3.6; formal decision at P3.8 |
+| Model providers, model routing, local inference and speech runtimes | P3.7 agent/tool boundaries, privacy and data locality, quality evaluation, latency/resource profiles and fallback requirements | Candidate evaluation after P3.7; formal decision at P3.8 |
+| Observability, deployment packaging and operational tooling | P3.2 deployment profiles and P3.4–P3.7 service/runtime contracts | Formal baseline at P3.8; deployment refinement in P4 |
+
+### P3.8 selection procedure
+
+For each technology decision, P3.8 shall:
+
+1. Record the problem, required capabilities, hard constraints and quality attributes from approved requirements.
+2. Identify multiple viable candidates and document why plausible alternatives are excluded.
+3. Evaluate security, privacy, data locality, Linux/Windows/mobile support, portability, license, maintenance health, ecosystem maturity, operational burden and cost.
+4. Run focused prototypes or technical spikes for risks that cannot be resolved through documentation and architecture analysis.
+5. Measure relevant latency, throughput, resource use, recovery behavior and failure handling on declared reference environments where practical.
+6. Assess vendor/provider lock-in, migration/export path, data ownership and failure/deprecation exit strategy.
+7. Record a decision, rejected alternatives, evidence, residual risks and conditions for reconsideration in an ADR.
+8. Confirm selected components can satisfy interfaces and quality targets before finalizing P4 integration contracts.
+
+P3.8 may select different technologies for local and hosted deployment profiles where necessary, but logical contracts and interoperability requirements remain consistent. A technology may be conditionally selected only when unresolved risk and validation milestone are explicitly recorded.
+
+### Implementation start boundary
+
+- P3.1–P3.7 establish architecture and subsystem contracts. They may use small throwaway technical spikes when evidence is needed, but such spikes are not the product implementation baseline.
+- P3.8 evaluates and approves the implementation stack and remaining architecture decisions.
+- P4 defines concrete integration contracts, component interfaces, versioning and conformance requirements against the selected stack.
+- P5 begins the first vertical-slice implementation and its repeatable test/evidence process.
+- A technology decision does not mean its integration is implemented, benchmarked or verified. Those statuses change only when corresponding engineering evidence exists.
+
+This ordering avoids premature lock-in and endless deferral: candidates can be explored as each owning contract stabilizes, while final stack approval occurs at the P3.8 gate before P4/P5.
+
+## 19.55 P3.5 architecture decision records
+
+### ADR-091 — Domain-owned canonical data with one authority per record
+
+**Status:** Approved
+
+LIA assigns each record to one canonical owning domain. Workflow, permission, memory, device-local, provider-owned, artifact and notification data retain separate authorities. Replicas, caches, indexes and backups are non-authoritative projections and cannot silently replace their source.
+
+### ADR-092 — Governed memory remains separate from workflow/control storage
+
+**Status:** Approved
+
+The P2.5 Memory Authority owns canonical memory and governed relationships. The workflow coordinator stores only task state, evidence references and minimum authorized context required for execution. Physical placement of canonical memory storage remains deployment-configurable and is selected through P3.8.
+
+### ADR-093 — Scoped, minimum-necessary synchronization
+
+**Status:** Approved
+
+Synchronization is an independently authorized operation. Records are projected only to account, project, task/run, device or explicitly permitted scopes. Sensitivity, owner, purpose, retention and destination capability are checked before transfer. Enrollment does not grant memory or file synchronization.
+
+### ADR-094 — Domain-specific consistency and semantic conflict resolution
+
+**Status:** Approved
+
+Control/permission and workflow state use authoritative current checks and coordinator-serialized transitions. Permitted memory/client replicas converge through versioned synchronization and explicit conflicts. Timestamp-only last-write-wins is not accepted for canonical memory, deletion, grants, approvals or workflow state.
+
+### ADR-095 — Deletion tombstones prevent stale replica and backup resurrection
+
+**Status:** Approved
+
+Forget/erase operations create durable tombstones at the owning authority, restrict retrieval immediately and propagate to dependent records, indexes, caches, workers, replicas and restoration paths. Offline/unreachable copies and external-provider deletion are reported as pending or unverified until evidence exists.
+
+### ADR-096 — Backup and restore are isolated from live authority and sync
+
+**Status:** Approved
+
+Backups are domain-scoped recovery snapshots, not live replicas. Restore occurs in staging and reapplies current deletion, correction, grant, device-revocation and policy state before retrieval or execution. Secrets/private keys are excluded from ordinary backup and stale operations are reconciled, not replayed.
+
+### ADR-097 — Device-local and secret material stays within its owning security boundary
+
+**Status:** Approved
+
+Raw screen/audio/camera captures, live desktop state, private keys and connector credentials are not generally synchronized. Authorized tasks may transfer minimum derived evidence or obtain a just-in-time scoped credential reference through the appropriate owner. Device identity keys are not reused as general data-encryption keys.
+
+### ADR-098 — Strong consistency is reserved for authority and workflow state
+
+**Status:** Approved
+
+Permission, revocation, campaign policy and workflow transitions require authoritative current checks and guarded state changes. Memory and client projections may converge asynchronously using revisions, provenance and conflict handling. External-provider observations remain timestamped snapshots, not authority over provider state.
+
+### ADR-099 — Retention and lifecycle are defined by data domain
+
+**Status:** Approved
+
+Memory, workflow history, event journals, notifications, artifacts, caches, worker workspaces, connector snapshots and backups have distinct ownership and retention rules. A storage product's default TTL or backup policy cannot silently define LIA's retention behavior.
+
+### ADR-100 — Technology selection follows subsystem contract readiness
+
+**Status:** Approved
+
+Candidates may be shortlisted and tested as each P3 workstream stabilizes its contracts. Formal technology selection is completed at P3.8 after P3.5 data, P3.6 platform/integration and P3.7 agent/model-runtime requirements are available. P4 finalizes concrete integration contracts; P5 begins the first vertical-slice product implementation.
+
+**P3.5 closure:** Canonical data ownership, data-domain boundaries, sensitivity and synchronization scope, replica authority, consistency classes, offline sync, semantic conflict resolution, deletion/tombstone propagation, backup/restore, retention and operational observability are defined. Physical data-store, sync-engine, backup, index and key-management technologies remain unselected. P3.6 will define platform and integration adapter contracts for Linux/Windows desktop nodes, mobile capabilities, connected-home devices and external services.
+
 
 
 The governing decisions are recorded as ADR-069–ADR-073 in the main decision register. No cloud vendor, database, event broker, workflow engine, transport protocol, programming language or model provider has been selected. P3.3 will define device identity, credential lifecycle, authenticated session establishment, relay boundaries, revocation and offline-lease enforcement.
