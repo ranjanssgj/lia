@@ -119,6 +119,20 @@ She maintains continuity across time, sessions and activities, allowing
 her relationship with the user and understanding of their digital
 environment to develop.
 
+LIA's persistent identity is not confined to a single computer. It
+extends across user-enrolled personal devices, including supported
+desktop computers, smartphones and connected home/device environments.
+Each device contributes only the capabilities and context that the user
+has explicitly enabled. A shared coordination and task system preserves
+continuity while local device agents execute operations within their own
+platform and permission boundaries.
+
+LIA can supervise long-running objectives across devices and services,
+resume work after interruptions, and communicate progress through the
+notification channels selected by the user. Remote reachability does not
+imply unrestricted access to a device that is offline, asleep, locked or
+otherwise unavailable.
+
 **Design philosophy:** LIA should feel like someone who lives in the
 computer, rather than software that happens to be represented by a
 character.
@@ -148,6 +162,7 @@ not mean every capability belongs in the first release.
 6.  Autonomous behavior.
 7.  Physical embodiment and animation.
 8.  Runtime self-management.
+9.  Multi-device continuity and connected-environment coordination.
 
 ## 2.4 Personality and behavioral model
 
@@ -251,6 +266,33 @@ independently. Perceived character sleep must eventually be
 distinguished from actual runtime suspension or shutdown.
 
 ------------------------------------------------------------------------
+
+## 2.9 Multi-device and connected-environment extension
+
+**Status:** Approved product-scope extension, formalized during P3 discovery.
+
+LIA has one persistent user identity across multiple independently
+enrolled device nodes and supported service integrations. The initial
+device ecosystem includes Linux and Windows desktop computers, smartphones,
+supported home-automation devices and gateways, and external applications
+and services through separately authorized connectors.
+
+A durable coordination layer maintains device identity, connectivity,
+tasks, schedules, events, permissions, memory references and notification
+routing. It does not replace local execution: a PC operation is performed
+by the authorized PC agent, and a home action by the relevant authorized
+connector or device gateway.
+
+LIA shall supervise recurring and multi-step objectives over hours, days
+or longer periods. Task supervision means monitoring approved workflow
+state, deadlines, dependencies, worker health and external events. It
+does not imply unrestricted continuous capture of the user's screen,
+microphone, camera or private activity.
+
+The device and workflow requirements added during P3 discovery are
+tracked as FR-225–FR-248, NFR-036–NFR-044, SEC-061–SEC-074 and
+AC-040–AC-046. These additions extend the completed Phase 2 baseline
+through controlled change; they do not invalidate earlier requirements.
 
 # 3. Project roadmap and progress
 
@@ -1276,6 +1318,49 @@ autonomous operations alike, subject to the authorization policy.
 | FR-223 | LIA shall not force-close a window or discard unsaved user work. If an application reports unsaved changes, or safe close state cannot be established, LIA shall stop the close operation and obtain the required user decision. | P0 | Approved |
 | FR-224 | The user shall be able to drag/reposition, show/hide and pin/lock LIA's character representation. LIA may reposition herself for a direct embodied operation only when permitted by the user's positioning controls; a pinned/locked or manually placed position takes precedence, and unprompted roaming is disabled by default. | P0 | Approved |
 
+
+## 4.22 Multi-device operation, remote access and long-running workflows
+
+**Status:** Approved product-scope extension during P3 discovery.
+
+| ID | Requirement | Priority | Status |
+|---|---|---:|---|
+| FR-225 | LIA shall operate under one authenticated user identity across multiple enrolled devices and supported service integrations, including desktop computers, smartphones and home-automation endpoints. | P0 | Approved |
+| FR-226 | LIA shall maintain a user-inspectable device registry containing each enrolled device's identity, owner, platform/type, declared capabilities, trust state, connectivity and permission status. | P0 | Approved |
+| FR-227 | A device shall be explicitly enrolled and paired by an authenticated user action; each enrolled device shall have a distinct device identity and revocable credentials. | P0 | Approved |
+| FR-228 | Each device agent or integration shall declare its available capabilities, constraints, current availability and relevant resource state; LIA shall not assume capability parity across devices or platforms. | P0 | Approved |
+| FR-229 | LIA shall route each workflow action to a qualified device node or service according to required capability, current connectivity, authorization, resource availability, data locality and trust scope. | P0 | Approved |
+| FR-230 | An authenticated user shall be able to access and control an enrolled PC remotely through an authorized mobile or other enrolled client when the PC agent is online and its required OS session/capabilities are available. Remote viewing and remote control shall be separately permissioned. | P0 | Approved |
+| FR-231 | LIA shall respect PC sleep, shutdown, lock-screen, secure-desktop and session limitations. An unreachable device shall not receive stale queued GUI commands; its task shall become blocked or deferred until live state and authorization can be revalidated. | P0 | Approved |
+| FR-232 | LIA shall support durable multi-step objectives that span multiple devices, services, user sessions and scheduled execution windows. | P0 | Approved |
+| FR-233 | LIA shall support persistent workflow or campaign definitions that generate recurring task runs according to a schedule, timezone, event or condition. | P0 | Approved |
+| FR-234 | LIA shall monitor authorized tasks continuously at the workflow level, including step state, progress, deadlines, dependencies, worker availability, blockers and relevant external events, without requiring continuous user-screen or microphone surveillance. | P0 | Approved |
+| FR-235 | Each executable workflow step shall declare its target/resource, required capability, authorization basis, input/output, dependencies, deadline or timeout, resource constraints, checkpoint and expected verification evidence. | P0 | Approved |
+| FR-236 | Multi-step workflows shall support sequential, parallel and conditional execution, bounded retries and bounded iteration; unbounded self-triggering loops shall not be permitted. | P0 | Approved |
+| FR-237 | LIA shall checkpoint and safely resume eligible workflows after process restart, device disconnection or worker failure; before retry or reassignment it shall reconcile the real-world state to avoid duplicate side effects. | P0 | Approved |
+| FR-238 | The user shall be able to inspect an objective/campaign, its plan, individual runs and steps, assigned devices, execution history, outputs, blockers, authorization basis and verified outcome. | P0 | Approved |
+| FR-239 | The user shall be able to pause, resume, cancel or revoke a recurring objective/campaign; cancellation and revocation shall prevent new side effects and stop active work at a safe boundary. | P0 | Approved |
+| FR-240 | LIA shall route task notifications and reports through the user's explicitly configured and connected notification channels, with per-category routing, urgency, digest and delivery-status controls. | P0 | Approved |
+| FR-241 | LIA shall support home-automation and connected-device integrations through capability-declaring adapters with independently scoped observation and action permissions for each device/action class. | P1 | Approved |
+| FR-242 | LIA shall classify connected-device operations by their real-world side effects and shall apply the applicable risk, confirmation and safety policy before execution. | P0 | Approved |
+| FR-243 | Cross-device memory and task-context synchronization shall follow the ownership, sensitivity, purpose and sharing rules defined in P2.5; enrollment of a device shall not grant access to all user or project memory. | P0 | Approved |
+| FR-244 | LIA shall allow the user to define a recurring autonomous campaign with an objective, schedule, permitted sources, target services/devices, output constraints, resource/spend limits, approval mode, success criteria and notification preferences. | P0 | Approved |
+| FR-245 | A recurring campaign shall support draft-only, per-run/per-output approval, and explicitly pre-authorized bounded autonomous execution modes. The default for a new campaign involving external publication or other consequential side effects shall be review-required until the user grants a bounded delegation. | P0 | Approved |
+| FR-246 | Before external publication or other governed consequential output, LIA shall run the campaign's required quality, factual, source, rights/licensing, destination and policy checks; when a required check fails or remains materially uncertain, LIA shall hold the output and report the blocker rather than force completion. | P0 | Approved |
+| FR-247 | LIA shall report recurring campaign outcomes, including completed work, skipped runs, no-eligible-output decisions, blockers, failed steps and externally verified publication/action results. | P0 | Approved |
+| FR-248 | LIA shall be able to resume a multi-device objective on a different eligible worker only when the required data scope, capability, authorization and execution-state verification permit reassignment. | P1 | Approved |
+
+**Task supervision versus environmental perception:** FR-234 concerns
+durable workflow state and authorized external events. It does not
+authorize continuous screen capture, passive keystroke logging,
+microphone capture or camera use. Perception remains governed by P2.3
+and source-specific permissions.
+
+**Recurring campaign authorization:** An autonomous campaign is a
+persistent objective with a bounded execution policy, not an unrestricted
+standing instruction. It may run without per-step user prompts only
+within its explicit and revocable delegation envelope. R3/R4 confirmation
+is governed by SEC-070 and the amended policy in Section 16.4.
 
 # 5. P2.1 decisions and closure
 
@@ -3578,6 +3663,26 @@ Measurements shall:
 
 Reference measurements shall be taken on the first supported Linux environment and on Windows before a cross-platform support claim. The first slice shall meet its applicable P2.2 targets before it is accepted. A target may be revised only with measured evidence, a recorded rationale, impact assessment and approval; unvalidated targets remain engineering gates, not marketing claims.
 
+## 13.10 Distributed coordination and multi-device quality requirements
+
+The multi-device scope adds distributed-runtime quality requirements.
+These apply to the always-on coordination service, enrolled device nodes,
+workflow engine and notification routing. Numeric service availability,
+recovery and scale targets shall be finalized in P3.2 after the deployment
+model is selected and before P5 release validation.
+
+| ID | Requirement | Target/default |
+|---|---|---|
+| NFR-036 | The coordination service shall publish measurable availability, recovery-time and recovery-point objectives for the selected deployment model. | Values ratified in P3.2/P3.3 before P5; service health and outage windows observable to the user |
+| NFR-037 | Confirmed workflow definitions, run state, checkpoints, authorization references and verified outcomes shall survive coordinator/worker restart within the declared storage failure model. | Zero loss of acknowledged durable workflow state in acceptance testing |
+| NFR-038 | Distributed event and command delivery shall tolerate duplicate delivery and out-of-order arrival without duplicating non-idempotent side effects. | Event IDs, ordering/version metadata and idempotent/reconciliation behavior required |
+| NFR-039 | Device connectivity recovery shall reconcile node identity, current capability state, grant validity and actual resource state before a new action is issued. | No blind replay of expired or stale device commands |
+| NFR-040 | Long-running workflow monitoring shall use bounded event-driven processing and bounded polling where needed. | No unbounded LLM polling loop; explicit retry, timeout, backoff and resource budgets |
+| NFR-041 | Cross-device synchronization shall expose version/conflict state and shall preserve P2.5 ownership, sensitivity, provenance and deletion semantics. | No silent last-writer-wins overwrite for materially conflicting task, permission or memory state |
+| NFR-042 | Notification routing shall record attempted, accepted, delivered where provider evidence exists, failed and expired states. | Bounded retry and user-visible delivery failure; no claim of delivery without provider evidence |
+| NFR-043 | The architecture shall support multiple enrolled device nodes and concurrent workflow runs per user without assuming that every node is online simultaneously. | Test scale and maximum supported active-run/device counts ratified in P3.2/P3.3 before P5 |
+| NFR-044 | An ongoing campaign shall not depend on the user's primary PC remaining powered on when its next steps can execute on an independently available authorized worker. | PC-specific steps remain blocked while that PC is offline; other eligible steps may continue |
+
 ## 13.9 P2.2 closure
 
 **P2.2 status:** Complete — non-functional requirements baseline approved. Numerical targets are measurable engineering targets to validate on reference hardware during implementation. External model/provider latency remains separately accounted for. The phase closes the specification, not the performance verification.
@@ -3865,6 +3970,28 @@ The governing rule is: **intention is not permission; memory is not permission; 
 | SEC-059 | Security and permission decisions shall have sufficient content-minimized audit records to explain actor, scope, decision, reason, time and outcome. | P1 |
 | SEC-060 | Memory and protected local resources shall be isolated to the authenticated OS user profile unless an explicitly supported sharing grant applies. | P0 |
 
+### P2.6 controlled-scope amendment — SEC-061 to SEC-074
+
+The following requirements extend the original P2.6 baseline for
+multi-device operation and recurring autonomous workflows.
+
+| ID | Requirement | Priority |
+|---|---|---:|
+| SEC-061 | Every device shall be explicitly paired to the authenticated user and shall receive a distinct device identity and revocable credential; membership on the same network shall not establish trust. | P0 |
+| SEC-062 | Device-to-coordination and device-to-device sessions shall be authenticated and encrypted, with replay protection and bounded session lifetime. | P0 |
+| SEC-063 | Remote desktop observation/streaming, window metadata, OS control, input simulation, file access and application modification shall be independently permissioned; remote access shall not inherit local blanket authority. | P0 |
+| SEC-064 | Remote device access shall use an authenticated outbound-established session or an equivalently protected mechanism; exposing unauthenticated inbound desktop-control ports directly to the public internet shall not be the default. | P0 |
+| SEC-065 | A disconnected device shall not execute stale queued GUI commands on reconnect; state and grants shall be refreshed and the workflow step re-evaluated before execution. | P0 |
+| SEC-066 | Device revocation shall invalidate active sessions, device credentials, delegated grants and relevant cached authorization state for that device. | P0 |
+| SEC-067 | Device-local executors shall validate the authenticated command, intended resource, freshness and valid scoped grant before every side effect; unavailable or unverifiable authorization shall fail closed. | P0 |
+| SEC-068 | Third-party connector credentials shall be isolated per integration/account, limited to required scopes, protected from model/context access and individually revocable. | P0 |
+| SEC-069 | Notification channels shall be separately connected and authorized. Receipt or content of a notification shall not grant execution authority; consequential actions initiated from a notification shall resolve through an authenticated client and applicable confirmation policy. | P0 |
+| SEC-070 | A user may pre-authorize repetitive R3 operations inside a named recurring campaign only through a bounded delegation envelope specifying target/account, purpose, action class, schedule/frequency, content or resource constraints, source policy, spend/budget ceiling, approval mode and expiry. The grant shall be revocable and auditable; R4 actions remain per-operation confirmation actions and may not be included in a recurring auto-execution envelope. | P0 |
+| SEC-071 | A new campaign involving external publication or consequential side effects shall default to draft/review mode; autonomous publication requires an explicit campaign-specific delegation and successful pre-publication checks. | P0 |
+| SEC-072 | Home-automation devices and operations shall be separately authorized by resource and action. Door locks, garage doors, security systems and safety-critical appliances shall be treated as R4 by default unless a documented security assessment and user-approved policy establishes otherwise. | P0 |
+| SEC-073 | Worker reassignment shall not transfer a task's authority to a device or integration that lacks the required grant; reassignment shall revalidate purpose, data scope, target and current permissions. | P0 |
+| SEC-074 | Revoking a campaign, device or connector grant shall prevent the next side effect under that grant and shall invalidate relevant sessions or cached authorization state before further execution. | P0 |
+
 ## 16.1 Authorization model
 
 Every action authorization decision shall consider:
@@ -3888,11 +4015,13 @@ Authorization is evaluated for every side effect, not merely once at application
 | One-time | Applies to one specifically described operation on one target | Preferred for first-use and ad hoc operations |
 | Session | Applies to a bounded capability and scope for the active session | Useful for a user-directed multi-step session |
 | Standing | Persists across sessions within an explicit capability/resource scope | Opt-in; reviewable and revocable |
-| Delegated task | Limited authority associated with a named objective, plan and permitted actions | Cannot exceed the user's grants; expires or is revoked with the task/grant |
+| Delegated task/campaign | Limited authority associated with a named objective, recurring workflow and permitted actions | Cannot exceed the user's grants; contains an expiry and bounded envelope; revocation halts future side effects |
 
 Default permission policy:
 
 - Default deny for capabilities that have not been granted.
+- A new recurring campaign that could publish, send, upload or otherwise cause an R3 external side effect starts in draft/review mode. Auto-execution requires an explicit campaign-specific delegation under SEC-070.
+- A first campaign grant shall identify an expiry/review date; the initial default delegation period is 30 days, after which the campaign returns to review-required mode unless the user renews or explicitly selects a longer bounded period.
 - Setup may request the minimum desktop metadata capability required for active-window awareness; refusal leaves LIA in a reduced mode.
 - Screen capture and continuous screen perception are Off until explicitly enabled.
 - Microphone is used in push-to-talk mode only when the user activates it; continuous and wake-word modes require separate opt-in.
@@ -3926,10 +4055,10 @@ A direct request never silently expands to other targets, future operations, bro
 | R0 — Read-only, low impact | Read permitted window metadata or non-sensitive app state | Requires capability grant; no per-operation confirmation under a valid scoped grant |
 | R1 — Reversible local action | Move a window, focus a window, open a permitted app | Requires a scoped grant or exact one-time user delegation; no extra confirmation for a clear, low-impact direct request |
 | R2 — Local modification | Create/edit/save files, alter app data, change local settings | Requires a scoped Modify grant; show target/scope and provide a preview for multi-step or bulk changes; confirmation policy may require per-operation approval |
-| R3 — Consequential external or destructive side effect | Send/publish/submit, upload/share externally, purchase, transaction, install software, permanent deletion, or execute a command with material side effects | Explicit per-operation confirmation after showing exact target, recipient, content, amount or effect; standing grants do not suppress confirmation |
-| R4 — Privileged/high-impact security or financial operation | Elevation, credential changes, security control changes, large-scale deletion or high-impact account/financial action | Block by default; explicit per-operation authorization and OS-native elevation/confirmation where applicable; no blanket standing authorization |
+| R3 — Consequential external or destructive side effect | Send/publish/submit, upload/share externally, purchase, transaction, install software, permanent deletion, or execute a command with material side effects | Per-operation confirmation is the default. A narrowly bounded recurring campaign delegation under SEC-070 may pre-authorize a defined repetitive R3 action class within exact constraints; any out-of-envelope or changed parameter requires confirmation. |
+| R4 — Privileged/high-impact security or financial operation | Elevation, credential changes, security control changes, high-impact physical safety/security controls, large-scale deletion or high-impact account/financial action | Block by default; explicit per-operation authorization and OS-native elevation/confirmation where applicable; never eligible for recurring auto-execution delegation |
 
-If an action spans multiple classes, the highest applicable risk class governs. The confirmation must be bound to the exact action parameters. If the target, content, recipient, amount, file set or scope changes after confirmation, the confirmation expires and must be repeated.
+If an action spans multiple classes, the highest applicable risk class governs. A campaign delegation is valid only for the exact approved parameters and constraints. If the target, content category, recipient, amount, file set, source policy, schedule, frequency or scope changes beyond its envelope, the delegated authority no longer applies. R4 actions always require per-operation authorization and confirmation.
 
 Some operations may remain unsupported even with consent if they cannot be performed or verified safely.
 
@@ -3968,6 +4097,12 @@ Some operations may remain unsupported even with consent if they cannot be perfo
 | Stale or spoofed desktop state | Refresh target state and verify outcome; do not act on uncertain identity |
 | Repeated or runaway automation | Bounded retries, operation IDs, user-visible status and emergency stop |
 | Permission revocation during a task | Recheck before next side effect; stop at a safe boundary |
+| Compromised or lost enrolled device | Revoke its device identity, sessions and scoped grants; other devices remain independently protected |
+| Remote-control relay compromise | Authenticate and encrypt sessions end-to-end where applicable; bind commands to device, scope, nonce and expiry; the relay is not execution authority |
+| Stale command replay after reconnect | Discard stale commands, reconcile actual state and re-plan only within the active grant |
+| Untrusted external trend or content source | Treat as untrusted input, verify independently and do not let content alter workflow authority or publication policy |
+| Unauthorized home-device actuation | Enforce resource/action grants and R4 defaults for locks, garage, security and safety devices |
+| Misconfigured recurring auto-publish | Enforce campaign envelope, pre-publication checks, expiry, frequency ceiling and immediate user revocation |
 
 Security events shall be auditable without copying unnecessary sensitive content. Authentication, key storage, encryption mechanisms, update-signing strategy and platform sandbox implementation are P3 design decisions, constrained by these requirements.
 
@@ -4037,6 +4172,18 @@ AC-001–AC-011 remain the approved first-vertical-slice acceptance conditions i
 | AC-039 | Failure and offline operation | NFR-018–027, NFR-032–034 | Network loss, model-provider outage, memory store failure, adapter failure and safe restoration of independent capabilities |
 
 Each FR/CTX/UX/SEC/NFR requirement shall be linked to at least one acceptance group or explicitly marked not applicable with rationale. Every P0 requirement must have a testable acceptance criterion. P1 requirements must have coverage planned before the release that claims them. AC-001–AC-011 are mandatory for acceptance of the first vertical slice.
+
+### Distributed-device and recurring-workflow acceptance groups
+
+| ID | Acceptance group | Requirements covered | Required evidence |
+|---|---|---|---|
+| AC-040 | Device enrollment and registry | FR-225–229, SEC-061–062, SEC-066 | Explicit pairing, unique device identity, capability manifest, trust state, per-device grant and complete revocation |
+| AC-041 | Secure remote PC access | FR-230–231, SEC-062–067, NFR-038–039 | Authenticated remote session, separately permissioned view/control, locked/offline handling, no public inbound exposure by default and no stale-command replay |
+| AC-042 | Durable multi-device workflow | FR-232–239, FR-248, NFR-037–041, SEC-073–074 | Multi-step workflow across eligible nodes, checkpoint/restart, worker loss/reassignment, duplicate delivery and verified side-effect reconciliation |
+| AC-043 | Recurring campaign and bounded delegation | FR-233–239, FR-244–247, SEC-070–071 | Schedule/timezone, defined execution envelope, review/auto mode, expiry, out-of-scope hold, failed quality gate and user pause/revoke |
+| AC-044 | Notification routing and delivery | FR-240, FR-247, NFR-042, SEC-069 | User-selected channel, category/priority routing, delivery-state evidence, bounded retries and secure authenticated action path |
+| AC-045 | Home automation and physical safety | FR-241–242, SEC-072 | Device/action-level grants, capability reporting, safe default for locks/security/safety devices and auditable result |
+| AC-046 | Cross-device memory and context synchronization | FR-243, NFR-041, SEC-060 | Authorized scoped sync, provenance preservation, conflict handling, deletion/revocation propagation and no cross-domain leakage |
 
 ## 17.3 First-slice release gates
 
