@@ -25,7 +25,7 @@ The schema binds:
 
 digest_sha256 is the lowercase hexadecimal SHA-256 digest of the UTF-8 RFC 8785 JSON Canonicalization Scheme representation of the complete package object with the top-level digest_sha256 property omitted. JSON object keys are canonicalized; array order is preserved. A consumer must reject digest mismatch and must not attempt a looser reserialization.
 
-Each referenced source/item also carries its own SHA-256 digest. A package digest proves integrity of the package envelope, not truth or authorization of its contents. The source owner and access decision must still be checked.
+Each referenced source/item also carries its own SHA-256 digest. A package digest proves integrity of the package envelope, not truth or authorization of its contents. The source owner and access decision must still be checked. The checked-in example uses synthetic digest sentinel values to test schema shape only; it is not a digest-valid vector. CONTEXT-01 must use separately generated, fixed canonicalization/hash vectors.
 
 ## 4. Source resolution and scope
 

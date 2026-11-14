@@ -1,6 +1,6 @@
 # P4 Conformance Matrix
 
-**Revision:** 0.1.0  
+**Revision:** 0.2.0  
 **Status:** Draft — all implementation proofs are Not Run  
 **Rule:** A contract is not Verified by documentation, linting, code generation, or a vendor statement alone.
 

@@ -154,10 +154,16 @@ CREATE INDEX event_outbox_pending_idx
     ON lia_control.event_outbox (recorded_at)
     WHERE published_at IS NULL;
 
+CREATE UNIQUE INDEX event_outbox_source_identity_idx
+    ON lia_control.event_outbox (account_id, producer_id, source_event_id)
+    WHERE source_event_id IS NOT NULL;
+
 CREATE TABLE lia_control.event_inbox (
     consumer_id TEXT NOT NULL,
     event_id UUID NOT NULL,
     account_id UUID NOT NULL,
+    producer_id TEXT NOT NULL,
+    source_event_id TEXT,
     event_digest_sha256 BYTEA NOT NULL CHECK (octet_length(event_digest_sha256) = 32),
     aggregate_type TEXT NOT NULL,
     aggregate_id TEXT NOT NULL,
@@ -172,6 +178,10 @@ CREATE TABLE lia_control.event_inbox (
 CREATE INDEX event_inbox_unprocessed_idx
     ON lia_control.event_inbox (consumer_id, received_at)
     WHERE processed_at IS NULL;
+
+CREATE UNIQUE INDEX event_inbox_source_identity_idx
+    ON lia_control.event_inbox (consumer_id, account_id, producer_id, source_event_id)
+    WHERE source_event_id IS NOT NULL;
 
 -- Ownership notes:
 -- * Permission grants/approvals are referenced by ID; they are not copied here.

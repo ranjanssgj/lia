@@ -44,6 +44,8 @@ CREATE TABLE local_operation_attempt (
 CREATE TABLE local_outbox (
     event_id TEXT PRIMARY KEY,
     account_id TEXT NOT NULL,
+    producer_id TEXT NOT NULL,
+    source_event_id TEXT,
     event_type TEXT NOT NULL,
     schema_version TEXT NOT NULL,
     aggregate_type TEXT NOT NULL,
@@ -65,6 +67,10 @@ CREATE TABLE local_outbox (
 CREATE INDEX local_outbox_pending_idx
     ON local_outbox (delivery_state, occurred_at)
     WHERE delivery_state = 'pending';
+
+CREATE UNIQUE INDEX local_outbox_source_identity_idx
+    ON local_outbox (account_id, producer_id, source_event_id)
+    WHERE source_event_id IS NOT NULL;
 
 CREATE TABLE capability_manifest_cache (
     device_id TEXT NOT NULL,
