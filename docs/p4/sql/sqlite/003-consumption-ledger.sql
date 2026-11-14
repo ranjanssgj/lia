@@ -100,7 +100,7 @@ BEGIN
 END;
 
 CREATE TRIGGER local_operation_claims_immutable_after_lease
-BEFORE UPDATE OF account_id, target_device_id, target_credential_generation,
+BEFORE UPDATE OF account_id, operation_id, target_device_id, target_credential_generation,
     capability_id, capability_schema_version, resource_type, resource_id,
     resource_generation, expected_resource_revision, resource_observed_at,
     resource_owning_device_id, arguments_schema_uri, arguments_sha256,
@@ -115,7 +115,7 @@ BEGIN
 END;
 
 CREATE TRIGGER local_offline_lease_immutable_claims
-BEFORE UPDATE OF issuer_id, audience, operation_id, account_id, target_device_id,
+BEFORE UPDATE OF lease_id, issuer_id, audience, operation_id, account_id, target_device_id,
     target_credential_generation, capability_id, capability_schema_version,
     resource_type, resource_id, resource_generation, resource_observed_revision,
     resource_observed_at, resource_owning_device_id, arguments_schema_uri,
@@ -126,7 +126,8 @@ BEGIN
     SELECT RAISE(ABORT, 'offline lease claims are immutable');
 END;
 
--- Nonces outlive the message expiry plus configured maximum accepted clock skew.
+-- Set nonce.expires_at to signed-message expiry PLUS the configured maximum accepted clock skew.
+-- Nonce claims are immutable and cannot be deleted before that retention deadline.
 -- Rows are retained through restore/rollback and are never reset by an app downgrade.
 CREATE TABLE local_consumed_nonce (
     account_id TEXT NOT NULL,
@@ -188,3 +189,24 @@ CREATE TABLE local_session_sequence (
 -- One BEGIN IMMEDIATE transaction inserts nonce, marks the operation as possibly effected,
 -- advances the lease to consumed, and commits before the adapter executes. A missing response
 -- after commit requires reconciliation, never blind replay.
+
+CREATE TRIGGER local_consumed_nonce_immutable
+BEFORE UPDATE ON local_consumed_nonce
+BEGIN
+    SELECT RAISE(ABORT, 'consumed nonce records are immutable');
+END;
+
+CREATE TRIGGER local_consumed_nonce_retention
+BEFORE DELETE ON local_consumed_nonce
+WHEN julianday(OLD.expires_at) IS NULL OR julianday(OLD.expires_at) > julianday('now')
+BEGIN
+    SELECT RAISE(ABORT, 'consumed nonce cannot be deleted before its replay-retention deadline');
+END;
+
+CREATE TRIGGER local_session_sequence_monotonic
+BEFORE UPDATE ON local_session_sequence
+WHEN NEW.session_id IS NOT OLD.session_id
+  OR NEW.last_session_sequence < OLD.last_session_sequence
+BEGIN
+    SELECT RAISE(ABORT, 'session sequence cannot change identity or move backwards');
+END;

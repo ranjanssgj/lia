@@ -138,7 +138,7 @@ RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    IF ROW(NEW.issuer_id, NEW.audience, NEW.account_id, NEW.target_device_id,
+    IF ROW(NEW.lease_id, NEW.issuer_id, NEW.audience, NEW.account_id, NEW.target_device_id,
            NEW.target_credential_generation, NEW.operation_id, NEW.capability_id,
            NEW.capability_schema_version, NEW.resource_type, NEW.resource_id,
            NEW.resource_generation, NEW.resource_observed_revision, NEW.resource_observed_at,
@@ -147,7 +147,7 @@ BEGIN
            NEW.revocation_epoch, NEW.risk_tier, NEW.nonce, NEW.signing_key_generation,
            NEW.issued_at, NEW.not_before, NEW.expires_at)
        IS DISTINCT FROM
-       ROW(OLD.issuer_id, OLD.audience, OLD.account_id, OLD.target_device_id,
+       ROW(OLD.lease_id, OLD.issuer_id, OLD.audience, OLD.account_id, OLD.target_device_id,
            OLD.target_credential_generation, OLD.operation_id, OLD.capability_id,
            OLD.capability_schema_version, OLD.resource_type, OLD.resource_id,
            OLD.resource_generation, OLD.resource_observed_revision, OLD.resource_observed_at,
@@ -173,14 +173,14 @@ BEGIN
     IF EXISTS (
         SELECT 1 FROM lia_control.offline_lease_issuance l
          WHERE l.account_id = OLD.account_id AND l.operation_id = OLD.operation_id
-    ) AND ROW(NEW.target_device_id, NEW.target_credential_generation,
+    ) AND ROW(NEW.account_id, NEW.operation_id, NEW.target_device_id, NEW.target_credential_generation,
               NEW.capability_id, NEW.capability_schema_version, NEW.resource_type,
               NEW.resource_id, NEW.resource_generation, NEW.expected_resource_revision,
               NEW.resource_observed_at, NEW.resource_owning_device_id, NEW.arguments_schema_uri,
               NEW.arguments_sha256, NEW.purpose, NEW.originating_task_id, NEW.grant_reference,
               NEW.policy_version, NEW.revocation_epoch, NEW.risk_tier)
       IS DISTINCT FROM
-          ROW(OLD.target_device_id, OLD.target_credential_generation,
+          ROW(OLD.account_id, OLD.operation_id, OLD.target_device_id, OLD.target_credential_generation,
               OLD.capability_id, OLD.capability_schema_version, OLD.resource_type,
               OLD.resource_id, OLD.resource_generation, OLD.expected_resource_revision,
               OLD.resource_observed_at, OLD.resource_owning_device_id, OLD.arguments_schema_uri,

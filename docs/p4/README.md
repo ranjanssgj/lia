@@ -71,6 +71,14 @@ This package proposes the following protocol-level contract. These choices are n
 
 The Ed25519 profile must be reconsidered before production if a FIPS or other cryptographic compliance requirement is introduced. The repository currently does not establish such a requirement. The security conformance suite must include valid, invalid, expired, rotated, revoked, replayed, altered, and out-of-order credentials and commands.
 
+## Offline lease consumption and replay barrier
+
+The coordinator-side `offline_lease_issuance` table records issuance, delivery and reported consumption; it is not the device replay barrier. The resource-owning device verifies issuer/audience, device and credential generation, signature, time window, current locally enforceable policy/revocation state, exact capability/resource generation and observation freshness before effect.
+
+For a single-use offline lease, the device uses one SQLite `BEGIN IMMEDIATE` transaction to (1) insert the account/message-domain/nonce/reference record, (2) mark the operation as possibly having taken effect with a reconciliation-safe status, (3) advance the lease to `consumed`, and (4) advance the authenticated control-session sequence using a compare-and-swap predicate. The transaction commits before the adapter performs the effect. If the process crashes after commit, the operation is reconciled; the lease is never replayed. A consumed lease is not proof that the effect succeeded.
+
+The signed lease and operation claims, including their identifiers, are immutable once issued/stored. Session sequence numbers cannot move backwards. A consumed nonce record is immutable and cannot be deleted before the signed message expiry plus the configured maximum accepted clock skew. Backup/restore and downgrade procedures must preserve these ledgers and revocation state. The configured clock-skew allowance is a deployment compatibility/security parameter and must be recorded with the device runtime profile.
+
 ## Versioning and compatibility rules
 
 - Protobuf package and service version: `lia.v1`. Add fields with new field numbers; never reuse a retired field number or name. Reserve removed fields. Enum zero values mean unspecified. Unknown fields are ignored only when the operation's required semantics remain understood.
