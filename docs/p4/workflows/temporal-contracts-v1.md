@@ -93,7 +93,7 @@ Queries expose current state, reason, blockers, and history references without m
 | DispatchOperation | signed command envelope, operation/attempt IDs, target | Deliver to resource-owning executor | Stable operation ID; transport retry is safe only with executor dedupe |
 | ReconcileOperation | operation/attempt IDs and last known evidence | Inspect actual target/provider state after uncertain outcome | Query by idempotency/reference; no blind repeat |
 | VerifyOperationEvidence | evidence refs and acceptance criteria | Independently verify the resulting state | Evidence IDs and verifier version are immutable |
-| WriteTransitionProjectionAndOutbox | committed transition ID, aggregate revision and minimum event data | Persist a rebuildable read projection and outbox row after Temporal commits the transition | Stable transition/event ID; transaction is idempotent; projection never drives side effects |
+| WriteTransitionProjectionAndOutbox | committed transition ID, aggregate revision and minimum event data | Persist a rebuildable objective/run/request projection and outbox row after Temporal commits the transition; grant metadata is projected only from Permission Authority events | Stable transition/event ID; account + aggregate ID + source revision; stale revisions are ignored; transaction is idempotent; projection never drives side effects |
 | PublishDomainEvent | committed outbox event ID | Publish event to JetStream | Same event_id on every retry; publish ack is not side-effect completion |
 | DeliverNotification | notification intent ID and channel preference ref | Attempt user-facing delivery | Independent bounded delivery state |
 | RecordArtifactReference | artifact digest, owner/scope/classification | Promote a validated output into the authorized artifact domain | Content digest and owner idempotency key |
@@ -104,6 +104,14 @@ Queries expose current state, reason, blockers, and history references without m
 | PurgeExpiredProjection | owner domain, projection reference and tombstone revision | Remove expired non-authoritative projections after owner confirmation | Revision-guarded, idempotent; cannot remove canonical source data |
 
 Activities are the only place for nondeterministic I/O, network requests, database access, model invocation, OS/provider calls, and external side effects. Activity handlers must be independently idempotent or expose a reconciliation query.
+
+## 5.1 API read projections and ownership
+
+The PostgreSQL `objective_summary_projection`, `run_summary_projection` and `request_status_projection` tables support the OpenAPI list/read endpoints. They are rebuildable views of committed Temporal/API transitions: Temporal owns objective/run execution state, and an accepted request status is only a status projection. A request is durably accepted only after its initial projection and `api_idempotency_record` (account/principal/route/key + request digest) commit; subsequent transitions update the same `request_id` with a strictly increasing revision. `run_id`/`operation_id` references are nullable until those owners have created the corresponding records.
+
+`grant_summary_projection` is populated only from authorized Permission Authority change events and uses the authority-owned monotonic revision (distinct from `policy_version`) to reject stale delivery. It contains metadata needed by `GrantSummary`, not grant secrets, policy inputs, or a local grant authority. The API must still ask Permission Authority for current authorization before any side effect. Reads filter by `account_id` and independently enforce principal/object/scope authorization. Projections may be purged and rebuilt from their canonical owners; they must never be used to advance Temporal state, authorize an action, or prove effect completion.
+
+Projection writes and the event outbox commit in one PostgreSQL transaction after the owning transition commits. Upserts are idempotent and compare source/aggregate revisions; an older revision cannot overwrite a newer row. `getRequestStatus` reads `request_status_projection`; a missing or out-of-scope request returns the non-enumerating 404 contract.
 
 ## 6. Determinism and replay rules
 

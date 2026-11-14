@@ -110,12 +110,16 @@ message OpenSessionResponse {
 
 message GetCapabilityManifestRequest {
   string device_id = 1;
-  string known_manifest_revision = 2;
+  // Monotonic adapter manifest revision the caller already holds; 0 means none.
+  // Contract range: 1..9007199254740991 (0 is the request sentinel).
+  uint64 known_manifest_revision = 2;
 }
 
 message CapabilityManifest {
   string device_id = 1;
-  string manifest_revision = 2;
+  // Monotonic per adapter identity; matches manifest_revision in the manifest JSON Schema.
+  // Contract range: 1..9007199254740991 for exact JSON/JCS interoperability.
+  uint64 manifest_revision = 2;
   string contract_version = 3;
   string platform_id = 4;
   string platform_version = 5;
@@ -311,6 +315,10 @@ message DeviceEvent {
   bytes payload_digest_sha256 = 9;
   string correlation_id = 10;
   string causation_id = 11;
+  // Device-source identity used for coordinator-side deduplication (event_outbox.source_event_id).
+  string source_event_id = 12;
+  // Sensitivity class S0-S3 as 0-3, assigned by the producing device; the coordinator may only raise it.
+  uint32 sensitivity = 13;
 }
 
 message SessionClose {
@@ -359,7 +367,8 @@ message OperationCancellation {
 
 message ManifestRefreshRequest {
   string reason_code = 1;
-  string known_manifest_revision = 2;
+  // 0 means the caller has no known manifest; otherwise use the JSON-safe revision range.
+  uint64 known_manifest_revision = 2;
 }
 
 message CoordinatorPing {
@@ -389,9 +398,10 @@ message SubmitOperationEvidenceRequest {
 }
 
 message SubmitOperationEvidenceResponse {
-  repeated string accepted_event_ids = 1;
-  repeated string already_accepted_event_ids = 2;
-  repeated string quarantined_event_ids = 3;
+  // Keyed by OperationResult.attempt_id (globally unique); the request carries results, not events.
+  repeated string accepted_attempt_ids = 1;
+  repeated string already_accepted_attempt_ids = 2;
+  repeated string quarantined_attempt_ids = 3;
   string next_reconciliation_cursor = 4;
 }
 
