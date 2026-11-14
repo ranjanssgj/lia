@@ -2040,6 +2040,49 @@ Worker selection must account for data ownership, sensitivity, scope, destinatio
 The initial managed profile targets 99.5% monthly coordination availability, an RTO of 60 minutes or less after a declared major outage, and RPO 0 for acknowledged critical workflow, operation-journal, grant/revocation and campaign-state records. These targets require implementation evidence and cost/reliability validation before they may be represented as a service guarantee. Self-hosted deployments publish their own configured recovery posture.
 
 
+### ADR-074 — Separate user, device, installation, session and connector identities
+
+**Status:** Approved
+
+Human account authentication, device installation identity, runtime sessions, authorization grants, service workers and external connector identities are independent. Each enrolled installation owns a unique device key. Identity authenticates a principal but does not grant resource access or operational permission.
+
+### ADR-075 — Explicit, proof-of-possession device pairing
+
+**Status:** Approved
+
+New devices are enrolled only through an account-bound, single-use, short-lived pairing intent, local key generation, proof of private-key possession and explicit owner approval. A QR/code, LAN membership, Bluetooth proximity or device discovery alone is insufficient. Initial enrollment grants no blanket capabilities.
+
+### ADR-076 — Per-installation key protection and revocable credential generations
+
+**Status:** Approved
+
+Each installation generates and protects its own private key. Public-key records are bound to a device enrollment and credential generation. Sessions, user credentials, grants, offline leases and connector secrets remain distinct credential classes. Lost keys require re-enrollment; private keys are not exported or synchronized through ordinary backups.
+
+### ADR-077 — Fresh authenticated sessions and target-bound command envelopes
+
+**Status:** Approved
+
+Operational sessions authenticate the device and coordinator, establish fresh encrypted session keys and bind session purpose and current trust state. Every command carries stable operation identity, target, capability, scope, expiry, replay protection, grant/policy reference and authenticated issuer integrity. The target validates locally before each side effect.
+
+### ADR-078 — Relay is transport, never authority
+
+**Status:** Approved
+
+The session broker/relay provides outbound-established reachability, routing and delivery status. It cannot enroll devices, grant permissions, change command scope or claim execution success. Direct peer paths, if used, preserve the same authenticated identity, authorization envelope, encryption and audit boundaries.
+
+### ADR-079 — Revocation invalidates online trust and bounds offline authority
+
+**Status:** Approved
+
+Revocation stops new sessions and side effects on connected devices, invalidates credentials/grants and prevents reassignment from inheriting authority. A disconnected node cannot receive immediate revocation; only exact R0/R1 local operations may use an offline lease with a maximum five-minute validity. No higher-risk, cross-device or external side effect is authorized offline.
+
+### ADR-080 — Enrollment and recovery are explicit lifecycle operations
+
+**Status:** Approved
+
+Device replacement, reinstall, key loss, suspected compromise and account recovery use explicit audited lifecycle flows. Revoked credentials and grants are not silently restored by backup or account sign-in. Remote wipe of an offline or compromised node is best effort, not a guarantee.
+
+
 # 9. Change log
 
   ------------------------------------------------------------------------
@@ -2122,6 +2165,8 @@ The initial managed profile targets 99.5% monthly coordination availability, an 
 
 **1.7.0 — 14 Nov 2026:** Completed P3.2 deployment/runtime topology. Evaluated managed-hosted, self-hosted and peer-to-peer-only coordination models; approved a hosted-default, self-hosted-target hybrid architecture; defined coordinator and worker placement, modular process boundaries, authoritative state and data locality, bounded offline execution, reconnect/reconciliation behavior, and initial managed availability/recovery targets. Added the deployment topology diagram and ADR-069–ADR-073. No vendor or implementation technology was selected.
 
+**1.8.0 — 14 Nov 2026:** Completed P3.3 device identity and secure communication architecture. Defined identity principals and trust states, explicit proof-of-possession pairing, per-installation key/credential lifecycle, authenticated session establishment, target-bound command envelopes, relay/remote-session boundaries, revocation/recovery and a five-minute maximum offline lease for exact R0/R1 local operations. Added pairing and session sequence diagrams, security validation scenarios and ADR-074–ADR-080. Transport, cryptographic profile and implementation technologies remain deferred.
+
 
 # 10. Current working state
 
@@ -2130,9 +2175,10 @@ The initial managed profile targets 99.5% monthly coordination availability, an 
 **P2.1–P2.7 status:** Complete as requirements baselines; runtime implementation and verification remain future engineering work  
 **P3.1 status:** Complete — architecture drivers, system context and logical decomposition approved  
 **P3.2 status:** Complete — hosted-default hybrid deployment topology, self-hosted target, runtime placement, offline boundaries and initial recovery objectives approved  
-**P3.3 status:** Pending — device identity, credential lifecycle and secure communication contracts  
-**Overall status:** P3 is active. No programming language, framework, database, model provider, cloud vendor, transport protocol or production infrastructure product has been selected.  
-**Next action:** Define device identity, enrollment/pairing, credential lifecycle, authenticated sessions, relay boundaries, revocation and offline-lease enforcement in P3.3; then proceed to durable event and workflow delivery contracts in P3.4.
+**P3.3 status:** Complete — identity principals, pairing, credential lifecycle, authenticated sessions, command envelopes, relay trust, revocation and offline leases approved  
+**P3.4 status:** Pending — durable event and workflow architecture  
+**Overall status:** P3 is active. No programming language, framework, database, model provider, cloud vendor, transport protocol, cryptographic library or production infrastructure product has been selected.  
+**Next action:** Define event identities and ordering, durable workflow state transitions, delivery guarantees, worker leases, retry/reconciliation, schedule semantics and notification events in P3.4.
 
 
 ## Phase 2 exit criteria
@@ -4855,7 +4901,7 @@ flowchart TB
 |---|---|---|
 | P3.1 — Architecture drivers and system context | Scope extension, quality drivers, system context, logical planes and responsibility boundaries | Complete |
 | P3.2 — Distributed runtime and deployment topology | Always-on coordinator deployment, local/hosted workers, process boundaries, availability and recovery | Complete |
-| P3.3 — Device identity and secure communication | Enrollment, device keys, sessions, relay, remote desktop transport and revocation | Pending |
+| P3.3 — Device identity and secure communication | Enrollment, device keys, sessions, relay, remote desktop transport and revocation | Complete |
 | P3.4 — Workflow and event architecture | Durable task state, event model, scheduler, campaign runs, leases, retry/reconciliation and notification events | Pending |
 | P3.5 — Data ownership and synchronization | Memory authority, task/event records, device caches, conflict resolution, retention and deletion propagation | Pending |
 | P3.6 — Platform and integration adapter contracts | Linux/Windows desktop nodes, mobile capabilities, home automation and external service connectors | Pending |
@@ -4864,7 +4910,7 @@ flowchart TB
 
 ## 19.14 Decisions intentionally deferred
 
-P3.1 establishes logical architecture but does not select:
+P3 establishes logical architecture but does not select:
 
 - Specific cloud provider, hosting vendor, region, infrastructure product, deployment packaging/orchestration and self-hosting distribution product. The hosted-default and self-hosted-target deployment profiles are decided; vendor and implementation choices remain deferred.
 - Database, event broker, workflow engine or scheduler implementation.
@@ -4874,7 +4920,7 @@ P3.1 establishes logical architecture but does not select:
 - Model provider, model routing framework, speech provider or local inference runtime.
 - Exact API schemas, wire formats, service process boundaries, deployment manifests or infrastructure topology.
 
-These decisions belong to P3.2–P3.8. Each technology choice must be justified against the requirements, measured quality targets, operational cost, privacy and portability.
+The remaining implementation choices belong to P3.4–P3.8. Each technology choice must be justified against the requirements, measured quality targets, operational cost, privacy and portability.
 
 **P3.1 closure:** Architecture drivers, distributed system context, logical responsibility boundaries, multi-device execution model, secure remote-access principles, durable campaign/task model and reference YouTube workflow are approved. P3 remains active; deployment, detailed contracts, data architecture and technology evaluation remain open.
 
@@ -5093,6 +5139,342 @@ flowchart TB
 ## 19.21 P3.2 closure
 
 **P3.2 status:** Complete — deployment alternatives, hosted-default/self-hosted-target topology, runtime placement, coordination-versus-worker boundaries, data-locality constraints, partition behavior and initial managed availability/recovery targets are defined.
+
+## 19.22 Identity principals and trust model
+
+P3.3 separates the identities that authenticate a person, an enrolled execution endpoint, a runtime installation and an external integration. These identities are related by explicit ownership and delegation records; they are not interchangeable.
+
+| Identity | Represents | Credential/authority boundary |
+|---|---|---|
+| User/account principal | The human owner and authenticated account | Authenticates through the user-authentication flow; account ownership does not automatically trust every device |
+| Device enrollment record | One explicitly enrolled device node under an account | Holds device class, owner, trust state, capability claims, enrollment history, status and revocation epoch |
+| Device installation identity | A particular LIA agent/client installation | Owns a unique per-installation key pair and proof-of-possession credential |
+| Runtime/session identity | One live authenticated process or communication session | Short-lived, audience-bound and linked to device installation, account, purpose and current policy/revocation version |
+| Service-worker identity | A specific isolated worker runtime or worker-pool member | Receives task-scoped work authority; cannot enroll devices, issue grants or expand campaign scope |
+| Connector/account identity | A connected external service account or integration | Owns isolated provider credentials and scopes; cannot authenticate as a desktop/mobile device |
+| Authorization principal/delegation | A user grant or explicitly approved task/campaign delegation | Names actor, capability, resource, purpose, scope, origin, duration and risk constraints defined by P2.6 |
+
+### Identity invariants
+
+- Device identity proves which enrolled installation is communicating. It does not prove current human intent and does not create an OS, memory, file, remote-control, home or external-service grant.
+- User authentication, device authentication and operation authorization are separate checks. A successful sign-in is not a pairing event; a valid device key is not user approval for a new capability.
+- Each installation receives a distinct key pair. Private keys are not copied between devices, exported as ordinary backups or synchronized through general-purpose account/cloud backup.
+- Hardware-backed key storage or platform attestation may strengthen assurance where supported, but neither is universally required or a substitute for explicit pairing and scoped grants.
+- Hardware serials, MAC addresses, IP addresses, local network membership, Bluetooth proximity or device names are not identity credentials.
+- Reinstalling or materially re-provisioning an agent creates a new installation identity and requires enrollment again. The prior identity remains revocable and auditable; it is not silently inherited.
+- A capability manifest is an authenticated declaration, not proof that an operation is currently available. The local adapter validates capability and target state at execution time.
+- Service workers and external connectors have identities separate from personal devices. Credentials are never reused across these principals.
+
+### Device trust states
+
+| State | Meaning | Allowed behavior |
+|---|---|---|
+| Unregistered | No enrollment record | No authenticated operational device session |
+| Pairing pending | Enrollment exists but proof/approval/commit is incomplete | Enrollment protocol only |
+| Active | Enrollment is valid and not suspended or revoked | May establish sessions and request capabilities; every operation still requires a grant |
+| Restricted | Enrolled but trust, version, capability or security conditions limit it | Explicitly allowed low-risk/recovery functions only |
+| Suspended | Temporarily disabled by user or policy | No new task dispatch or operational sessions |
+| Revoked | Enrollment and credentials are no longer trusted | Reject new sessions and commands; fresh pairing required |
+| Compromised | Device or installation key is suspected/confirmed compromised | Immediate revocation; no ordinary renewal or silent recovery |
+
+State transitions are audited with actor, reason, time, prior/new state and affected credential/session/grant references. A device cannot self-promote from Restricted, Suspended, Revoked or Compromised to Active.
+
+## 19.23 Explicit pairing and device enrollment
+
+Pairing is a deliberate account-owner action. It establishes a device identity and trust relationship only; it does not grant blanket access to remote control, memory, files, applications, home devices or connectors.
+
+### Enrollment protocol
+
+1. **Initiation:** An authenticated account session requests enrollment and selects a device class. The coordinator creates a one-time pairing intent bound to the account, expected class, enrollment flow, nonce and strict expiry.
+2. **Local key creation:** The new installation generates its unique device key pair locally before completing enrollment. The private key remains in its local protected key store.
+3. **Out-of-band association:** The new device presents a QR/deep-link or short pairing code referencing the pending intent. This code is a short-lived bootstrap association, not a reusable password or sole proof of identity.
+4. **Proof of possession:** The new installation proves possession of its private key in the authenticated enrollment exchange. The exchange binds account, pairing intent, device key, device class and enrollment transcript to prevent substitution or replay.
+5. **Owner verification:** The user reviews the device name/class and identity fingerprint or equivalent confirmation value on the already authenticated client, then explicitly approves or rejects this exact pairing.
+6. **Commit:** The coordinator atomically creates the enrollment record, binds the public key and issues a distinct device identity. A failed exchange does not leave an operational half-enrolled device.
+7. **Restricted initialization:** The device submits its capability manifest and software/platform facts. It begins with no blanket resource grants; default-deny permissions remain in force.
+8. **Grant configuration:** The user separately enables exact capabilities and scopes. Remote viewing, metadata, window control, input, file access, application modification and home-device actions remain distinct.
+9. **Confirmation:** Both endpoints receive an enrollment result tied to the same device ID and credential generation.
+
+### Pairing protections
+
+- Pairing intents are single-use, account-bound, purpose-bound and short-lived. Expiry, successful use, cancellation or repeated invalid attempts invalidate the intent.
+- A QR image or pairing code alone cannot establish operational trust; proof of possession and authenticated owner approval are required.
+- The user can compare a confirmation value across endpoints before approval. Account/device substitution must be detectable.
+- Same Wi-Fi/LAN, Bluetooth discovery, IP range or physical proximity may assist discovery but never substitute for authenticated owner approval.
+- Enrollment must not silently enable screen capture, microphone, camera, remote input, file access, privileged operations or home actuation.
+- Device replacement, reinstall, invalidated OS-user key storage or suspected key loss requires fresh enrollment unless a separately reviewed recovery process proves continuity.
+- Home gateways, service workers and connector runtimes use explicit enrollment flows appropriate to their class. They do not inherit the desktop's session.
+- Users can cancel pending pairing intents and inspect recent enrollment attempts.
+
+~~~mermaid
+sequenceDiagram
+    participant U as Authenticated owner client
+    participant C as Coordinator identity service
+    participant N as New device installation
+    U->>C: Request enrollment for selected device class
+    C->>C: Create account-bound one-time pairing intent
+    C-->>U: Pairing reference and confirmation context
+    N->>N: Generate unique local device key pair
+    N->>C: Begin enrollment with pairing reference and public key
+    C->>N: Fresh challenge bound to pairing intent
+    N->>C: Proof of private-key possession
+    C-->>U: Present device identity and confirmation value
+    U->>C: Approve or reject this exact device
+    C->>C: Atomically bind enrollment and credential generation
+    C-->>N: Device identity and restricted initial session
+    C-->>U: Enrollment result and grant-configuration entry
+~~~
+
+## 19.24 Device credentials and lifecycle
+
+### Credential classes
+
+| Credential | Holder | Purpose | Lifecycle rule |
+|---|---|---|---|
+| Device installation private key | One enrolled device installation | Authenticate installation and prove key possession | Generated locally, protected by OS/platform secure storage where available, rotated and revoked independently |
+| Device public-key record | Coordinator/device registry | Verify enrolled installation | Bound to device ID and credential generation; not secret |
+| Pairing intent/code | Enrollment participants | Bootstrap one specific enrollment | Single-use, account-bound, short expiry; invalidated after completion/cancellation |
+| User session credential | Authenticated client | Represent authenticated user session | Separate from device identity; bounded lifetime, audience and renewal policy |
+| Device session credential | Device process and coordinator | Represent one authenticated connection | Short-lived, device-bound and invalidated by expiry, revocation or policy-version change |
+| Authorization grant/delegation | Permission authority and executor | Permit a precisely scoped operation or task | Separately versioned, inspectable, expiring and revocable |
+| Offline authorization lease | One enrolled device | Permit a narrowly bounded offline-eligible operation | Signed, short-lived, device/task/resource/capability-bound; never general access |
+| Connector credential | One integration/account boundary | Authenticate to external provider | Isolated by provider/account, minimal scopes, separately revocable and inaccessible to general model context |
+
+Credentials are not interchangeable. A device session token does not establish user approval, and a connector refresh credential cannot authenticate a desktop agent.
+
+### Key protection and rotation
+
+- Device private keys are generated and retained locally. Use the strongest supported OS-backed secure storage without making hardware-backed storage mandatory on every target.
+- Private keys, access tokens, pairing secrets and recovery material are excluded from ordinary memory, prompts, model context, telemetry, crash reports and general logs.
+- The coordinator stores public-key and credential metadata, not copies of device private keys.
+- Routine rotation introduces and verifies a new key before the old key is retired, with a bounded overlap and explicit credential-generation change. Exact overlap duration is an implementation policy.
+- Suspected compromise, lost device, invalid key-store state or unexplained proof-of-possession failure triggers immediate credential revocation rather than routine rotation.
+- Session credentials are short-lived and limited by account, device, audience, capability class and current authorization/revocation version. They cannot be extended indefinitely by an unattended connection.
+- A device that loses its private key cannot recover it from the coordinator. It must pass a new authenticated enrollment flow; the prior enrollment is revoked or explicitly retired.
+- Account recovery restores account access, not the private keys or trusted status of every previously enrolled device.
+- Backup/restore must not silently resurrect revoked device keys, sessions, grants or pairing intents.
+
+## 19.25 Authenticated session establishment and renewal
+
+### Separate authentication layers
+
+Every operational session requires the relevant layers:
+
+1. **User authentication:** Confirms an authenticated account/client session for user-originated activity, approval and account/device management.
+2. **Device authentication:** Confirms that the connecting installation possesses the private key bound to an active enrollment.
+3. **Session establishment:** Creates a fresh authenticated, encrypted channel bound to device identity, account, key generation, purpose and current trust/revocation version.
+4. **Operation authorization:** Evaluates exact capability, resource, purpose, scope, duration, origin and risk before a side effect.
+
+A session may be authenticated while a requested operation remains unauthorized. A device's persistent connection is not a standing grant.
+
+### Session establishment rules
+
+- Device agents initiate outbound connections to the coordinator by default. They authenticate with proof of possession against a fresh server challenge and validate the coordinator's identity.
+- The coordinator validates account ownership, active device status, credential generation, challenge freshness, protocol/session policy and required user-authentication context before creating a session.
+- The handshake establishes fresh session traffic keys and binds both sides to the same transcript, device ID, account, key ID, session ID, purpose and negotiated security parameters.
+- Sessions use authenticated encryption, replay protection, integrity protection, bounded lifetime and key update. Exact algorithms and transport are selected after the P3.8 security/technology review.
+- Renewal requires fresh proof of possession and revalidation of device status and policy version. An open socket does not keep an expired or revoked session valid.
+- Reconnect is a new authentication event. Old session tokens, sequence windows and queued commands are not resumed as trusted state.
+- User-interactive approvals are bound to the authenticated user session and exact action details. A background device session cannot manufacture user confirmation.
+- Session purpose is explicit: enrollment, health/event reporting, memory sync, task dispatch, remote metadata, remote view, remote input/control or recovery. The channel cannot silently widen its purpose.
+- Time-bounded tokens and commands use coordinator-issued time and expiry semantics. Excessive clock uncertainty causes authentication/authorization to fail closed rather than extend validity.
+- A device can maintain an outbound connection operationally, but cryptographic session and operation credentials still expire or rotate within bounded lifetimes.
+
+~~~mermaid
+sequenceDiagram
+    participant D as Enrolled device agent
+    participant B as Session broker
+    participant I as Identity and trust registry
+    participant P as Permission authority
+    D->>B: Open outbound connection and request session
+    B->>I: Resolve device ID and credential generation
+    I-->>B: Active enrollment and trust state
+    B-->>D: Fresh challenge and server identity proof
+    D->>B: Device proof of possession and client transcript
+    B->>I: Verify signature, freshness, key generation and revocation epoch
+    I-->>B: Device authentication result
+    B->>P: Resolve session purpose and permitted scope
+    P-->>B: Session-level allowlist or restricted state
+    B-->>D: Fresh encrypted session bound to device and purpose
+    Note over D,B: Each operation is separately authorized before execution
+~~~
+
+## 19.26 Command authorization envelope and local enforcement
+
+Every command that can observe protected context or cause a side effect is bound to an authenticated source, a specific destination and a current authorization decision. A model proposal, scheduler event, notification, queue item or relay message is not itself an executable command.
+
+### Required command envelope fields
+
+| Field | Purpose |
+|---|---|
+| Command ID | Unique identity for this dispatch attempt and replay detection |
+| Operation ID | Stable identity of the intended operation across retries/reconciliation |
+| Account and initiating principal | Owner and whether origin is user, delegated task or authorized service |
+| Source device/session | Authenticated initiating endpoint where applicable |
+| Target device ID and credential generation | Prevents delivery to a replaced or different installation |
+| Capability and action class | Names exact operation, not broad device control |
+| Resource and target selector | Identifies app/window/file/device/account/resource affected |
+| Purpose/task/campaign reference | Binds operation to originating objective or approved delegation |
+| Scope and parameter digest | Binds exact arguments, payload/destination constraints and affected-resource set |
+| Grant ID and policy version | References authorization decision and evaluated policy |
+| Risk and confirmation reference | Records risk tier and any exact-parameter user confirmation |
+| Issued-at, expiry and nonce/sequence | Provides freshness and replay protection |
+| Expected target/state version | Prevents acting on materially stale target/state |
+| Issuer authentication/signature | Verifies dispatch authorization came from trusted authorization boundary |
+
+### Dispatch and execution contract
+
+1. The planner or workflow engine proposes a typed step with a stable operation ID.
+2. The permission authority evaluates exact operation, grant, purpose, risk, target, parameter digest and current policy version.
+3. The workflow/dispatch authority creates a short-lived command envelope for one target device and one permitted action.
+4. The coordinator routes the authenticated envelope through the existing device session or an authorized direct path.
+5. The target agent verifies issuer authenticity, recipient device/key generation, session binding, expiry, nonce/sequence, operation ID, grant/policy freshness, capability and target state.
+6. The local executor performs its own final permission and platform-capability checks immediately before the side effect.
+7. The executor records the attempt and actual result, then returns authenticated evidence tied to the operation ID.
+8. The workflow engine reconciles the result and records verified success, verified failure or unknown outcome. Command delivery is not action completion.
+
+The relay may carry a command but cannot create, broaden, re-sign or approve its authority. A changed target, parameter digest, grant, expiry or risk tier invalidates the authorization. A new action requires a new decision and envelope.
+
+### Replay and duplication rules
+
+- A command ID/nonce may be accepted only within its declared session and freshness window; duplicate delivery must not create a second side effect.
+- A stable operation ID allows executor and coordinator to reconcile repeated dispatch with the original attempt.
+- Sequence gaps, stale timestamps, expired envelopes, invalid signatures, mismatched targets or consumed one-time authorization are rejected or sent to reconciliation.
+- If an action may already have occurred, the executor checks actual state before retry. Network timeout is not proof of failure.
+- Wire schema, serialization, signature algorithms and exact replay-window mechanics are P3.8 implementation decisions; semantic fields and enforcement points are architecture requirements now.
+
+## 19.27 Secure relay and remote-session boundaries
+
+The session broker/relay provides reachability and routing. It is not an authorization authority and is not trusted to decide what a device may do.
+
+### Relay responsibilities
+
+- Accept authenticated outbound sessions from enrolled devices and clients.
+- Associate each connection with active device/session identity and route versioned messages to the intended recipient.
+- Enforce session lifetime, connection limits, basic abuse controls and bounded buffering.
+- Route acknowledgements and status events without treating delivery as execution.
+- Expose connection health, last-seen state, latency and disconnect reason.
+- Minimize retained content and operational metadata; sensitive media/payload retention is disabled by default.
+
+### Relay non-responsibilities
+
+- It cannot enroll a device or approve a pairing request.
+- It cannot issue a permission grant or campaign delegation.
+- It cannot change target, parameters, operation ID, scope or expiry of an authorized command.
+- It cannot convert notification receipt into user approval.
+- It cannot bypass the local executor's final authorization and freshness checks.
+- It cannot make an offline device available or guarantee successful delivery.
+
+Authenticated command envelopes retain issuer integrity across relay forwarding so a compromised relay can at most observe permitted routing metadata, delay, drop or replay data within detectable limits; it cannot forge a valid operation authorization. Sensitive remote viewing/control data receives authenticated encryption in transit, with endpoint-to-endpoint protection where the data path and product semantics permit it. Exact termination and visibility for remote media is a P3.8 decision and must be disclosed before that mode is enabled.
+
+### Remote-access capability separation
+
+| Remote capability | Independent grant required | Session constraints |
+|---|---|---|
+| Device health/presence | Device status observation | No desktop content or input |
+| Window/process metadata | Named metadata observation scope | No screenshot or control implied |
+| Screen/remote view | Screen/view scope and visible active-session state | Separate from input; privacy stop and session end available |
+| Window control | Specific window operation capabilities | Target freshness and local OS session validation |
+| Keyboard/pointer input | Input capability and explicit task/session scope | No passive global input capture; stop/user-interruption precedence |
+| File discovery/read | Path-scoped discovery/read grant | Separate from write, move and delete |
+| File modification | Path-scoped create/modify/move grant | Risk and preview/confirmation policy applies |
+| Application modification | Per-application Modify grant | Does not imply message sending, purchase or publication |
+| Home-device observation/control | Per-resource, per-action grant | R4 device classes remain subject to per-operation confirmation |
+
+The default remote path remains outbound-established from the device. Direct peer-to-peer transport may optimize a path but must preserve the same identities, authenticated command envelopes, encryption, grants, replay protection and audit. No direct path may bypass coordinator authorization or target-device local enforcement.
+
+## 19.28 Revocation, suspension and compromised-device recovery
+
+Revocation is a first-class lifecycle transition, not merely deletion of a device from a user interface.
+
+### Revocation scopes
+
+| Scope | Effect |
+|---|---|
+| Session termination | Invalidates one session and its traffic credentials; device enrollment remains active |
+| Credential revocation | Rejects one key generation/credential; may require re-enrollment or verified key rotation |
+| Device suspension | Blocks new operational sessions and dispatch pending owner/policy review |
+| Device revocation | Revokes installation identity, active sessions, device-scoped grants and pending pairing/renewal flows |
+| Account-wide security revocation | Invalidates all enrolled device sessions/credentials and requires account recovery/re-authentication |
+| Connector revocation | Invalidates selected provider/account credential and related tasks without implicitly revoking unrelated devices |
+
+### Device revocation procedure
+
+1. An authenticated user or account-security process selects the exact enrolled device and reason.
+2. The registry marks the enrollment Revoked or Compromised and advances its revocation epoch.
+3. The identity/session layer rejects new sessions and renewal attempts for the revoked credential generation.
+4. Active sessions are closed or marked unusable; command dispatch and worker assignment stop for that device.
+5. Device-scoped grants, delegated work assignments, cached authorization references and pending enrollment/rotation intents are invalidated centrally.
+6. Affected workflow steps enter Blocked/Needs reassignment or Unknown outcome as appropriate. A new worker must independently pass capability, locality and permission checks.
+7. The audit trail records revocation and rejected attempts without recording secrets or unnecessary payloads.
+8. If the device reconnects, it receives a revocation response only; it cannot silently re-enroll or restore former grants.
+9. Local caches are deleted or cryptographically invalidated on a reachable device where possible. Remote wipe is best effort and is never guaranteed for an offline or compromised endpoint.
+
+### Distributed revocation limit
+
+A coordinator cannot deliver a new revocation state to a fully disconnected device. P3.2 therefore permits only a bounded offline authorization lease for explicitly eligible R0/R1 local operations. The initial maximum lease lifetime is **five minutes** from coordinator authorization. No R2, R3 or R4 operation, cross-device remote-control action, external publication, connector action or home safety/security actuation may rely on offline authorization.
+
+For a connected device, revocation is enforced before its next side effect through session invalidation and policy-version checks. For an offline device, a previously issued eligible lease can remain usable only until its fixed expiry; no new lease or expanded scope can be obtained while disconnected. The product must disclose this bounded propagation window and must not claim instantaneous remote revocation of an unreachable device. A local emergency stop/revocation control can disable the agent immediately when the owner has physical/local access.
+
+Revocation does not automatically erase canonical user memory or unrelated device records. It removes the revoked node's access and propagates relevant cache invalidation/deletion instructions under P2.5.
+
+## 19.29 Offline leases, reconnect and secure recovery
+
+An offline lease is a narrowly scoped signed authorization assertion, not a bearer credential for general LIA use.
+
+### Lease constraints
+
+- The lease names one device installation and credential generation.
+- It identifies one explicitly locally executable operation or narrowly defined one-operation class, exact resource/target and bounded parameters.
+- It binds originating task/purpose, grant ID, policy/revocation epoch and permitted risk class.
+- It has issue time, fixed expiry, unique lease ID and replay/consumption state.
+- Initial maximum validity is five minutes. Expiry is not extended by local activity or reconnecting through an untrusted route.
+- Only explicitly allowlisted R0/R1 local operations may qualify. Offline execution is user-visible and auditable.
+- It cannot authorize new campaign runs, unattended recurring work, cross-device sessions, remote input, connector calls, data export, purchases, file/application modification or physical security/safety actions.
+- A device with uncertain local time, altered key state, invalid lease signature, mismatched target, changed policy epoch or ambiguous prior execution fails closed.
+- The same lease cannot be replayed on another device or used for a second side effect.
+
+### Reconnection procedure
+
+1. Re-establish a fresh authenticated device session and verify active enrollment/credential generation.
+2. Retrieve current trust, revocation, capability and policy versions.
+3. Submit the bounded local execution journal/outbox with stable operation IDs and lease references.
+4. Reconcile each local operation against coordinator workflow state; verify actual state where possible.
+5. Reject expired or stale queued commands and invalidate consumed/obsolete offline leases.
+6. Restore only grants and task assignments that remain valid under current policy. Replan or request user input where state changed.
+7. Report synchronization and execution outcomes distinctly; an offline local success is not mislabeled as already synchronized to the coordinator.
+
+A reconnect does not replay old GUI commands. If the local execution journal is missing, corrupt or inconsistent, affected operations remain Unknown/Blocked pending inspection. The system does not reconstruct authority from log messages or model-generated summaries.
+
+## 19.30 P3.3 security validation scenarios
+
+P3.3 closes the architecture contract only when the following scenarios are represented in future verification work. They are test requirements, not claims that implementation or security assessment has occurred.
+
+| Scenario | Expected architectural result | Existing acceptance trace |
+|---|---|---|
+| Pairing code stolen or replayed | Single-use/expiry and proof-of-possession prevent enrollment without authenticated owner approval | AC-040 |
+| Rogue device on same LAN | No trust or operational access without explicit pairing | AC-040 |
+| Device key copied to another installation | Key/device binding and possession checks reject or flag the mismatch | AC-040, AC-041 |
+| Revoked device reconnects | No session renewal, dispatch or grant restoration; audit rejection | AC-040, AC-041 |
+| Relay attempts command modification | Issuer-integrity and target validation reject altered envelope | AC-041 |
+| Captured command replayed | Session/nonce/operation identity prevents duplicate side effects | AC-041, AC-042 |
+| Stale command delivered after sleep/reconnect | Target freshness and expiry checks reject it; state is reconciled | AC-041, AC-042 |
+| Permission revoked during connected execution | Next side effect is blocked at local enforcement boundary | AC-041, AC-042 |
+| Device remains offline during revocation | No new lease; existing R0/R1 authority expires within five-minute ceiling; higher-risk actions unavailable offline | AC-040, AC-041 |
+| User session stolen but device key absent | User/session and device authentication layers do not collapse into one credential | AC-040, AC-041 |
+| Device key store lost after restore | Re-enrollment is required; revoked credentials are not resurrected | AC-040 |
+| Connector credential compromised | Connector revocation remains isolated from unrelated device identities and grants | AC-044 |
+| Coordinator/identity service outage | Devices fail closed for new remote sessions and higher-risk actions; eligible local operation follows only bounded lease | AC-041, AC-042 |
+| Home gateway or service worker attempts lateral access | Its own identity and grants restrict it to explicitly delegated resources and tasks | AC-045 |
+
+These cases must eventually be exercised with valid, invalid, expired, revoked, replayed, altered and out-of-order credentials/messages. Security testing includes account isolation, credential-store inspection, logging/telemetry inspection, device loss, key rotation, backup/restore and coordinator/relay failure. P3.8 will choose concrete test tooling and cryptographic/interoperability profiles.
+
+## 19.31 P3.3 closure
+
+**P3.3 status:** Complete — device/principal identity, pairing, credential separation and rotation, authenticated session establishment, command-envelope enforcement, relay trust boundaries, revocation and bounded offline authorization are defined.
+
+The governing decisions are recorded as ADR-074–ADR-080 in the main decision register. Exact transport, cryptographic algorithms/library, credential/token formats, wire schemas and implementation technology remain deferred to P3.8. P3.4 will define durable events, workflow delivery, scheduling, leases, retries, idempotency and reconciliation.
+
 
 The governing decisions are recorded as ADR-069–ADR-073 in the main decision register. No cloud vendor, database, event broker, workflow engine, transport protocol, programming language or model provider has been selected. P3.3 will define device identity, credential lifecycle, authenticated session establishment, relay boundaries, revocation and offline-lease enforcement.
 
