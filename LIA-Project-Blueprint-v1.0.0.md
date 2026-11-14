@@ -2009,6 +2009,37 @@ Recurring workflows, task supervision and notifications require an always-on coo
 Distributed command delivery may be duplicated, delayed or interrupted. Each operation has an identity and execution history; the system reconciles actual state before retry/reassignment. Unknown side-effect outcomes remain explicit and are not treated as failure or success without evidence.
 
 
+### ADR-069 — Coordinator-led hybrid deployment with a hosted default
+
+**Status:** Approved
+
+The initial reference deployment uses an always-on managed coordinator independent of the user's primary PC. A user-controlled/self-hosted coordinator remains a first-class architectural deployment target using the same logical contracts. Peer-to-peer communication may optimize selected paths but is not the sole authority or durable coordination mechanism. Specific providers, hosting regions and packaging remain deferred.
+
+### ADR-070 — Separate coordination authority from worker execution
+
+**Status:** Approved
+
+The coordinator owns authoritative device registry, policy/grant references, workflow state, scheduling and notification state. Device agents and service workers execute only assigned, authorized steps and report evidence. The initial deployment may package logical control-plane modules together, but worker execution remains isolated from coordinator authority and model output cannot directly mutate authoritative task state.
+
+### ADR-071 — Bounded offline execution under an explicit lease
+
+**Status:** Approved
+
+When disconnected from the coordinator, a device may execute only explicitly offline-eligible R0/R1 operations covered by a short-lived, device- and task-bound offline lease. R2–R4 operations are blocked pending current authorization; recurring external publication and other consequential external actions do not continue through a coordinator partition. Exact lease format, lifetime and cryptographic enforcement are P3.3 work.
+
+### ADR-072 — Data locality is a worker-routing constraint
+
+**Status:** Approved
+
+Worker selection must account for data ownership, sensitivity, scope, destination and permitted processing location. Hosted workers receive only task-specific data that the user-authorized policy permits. Raw microphone, camera and screen observations are not synchronized to the coordinator by default. Memory access remains governed by P2.5, independently of device enrollment.
+
+### ADR-073 — Initial managed-coordinator availability and recovery targets
+
+**Status:** Approved as initial engineering targets; not yet validated
+
+The initial managed profile targets 99.5% monthly coordination availability, an RTO of 60 minutes or less after a declared major outage, and RPO 0 for acknowledged critical workflow, operation-journal, grant/revocation and campaign-state records. These targets require implementation evidence and cost/reliability validation before they may be represented as a service guarantee. Self-hosted deployments publish their own configured recovery posture.
+
+
 # 9. Change log
 
   ------------------------------------------------------------------------
@@ -2089,6 +2120,8 @@ Distributed command delivery may be duplicated, delayed or interrupted. Each ope
 
 **1.6.0 — 14 Nov 2026:** Opened P3 and completed P3.1 architecture drivers and logical decomposition. Extended the product baseline for multi-device identity, smartphones, connected-home integrations, secure remote PC access, durable multi-day workflows, continuous task supervision and user-routed notifications (FR-225–FR-248). Added distributed-runtime quality requirements (NFR-036–NFR-044), device/security and bounded campaign-delegation controls (SEC-061–SEC-074), acceptance groups (AC-040–AC-046), ADR-059–ADR-068, the system-context and component diagrams, remote-session sequence, recurring-task and YouTube campaign workflow, and P3.2–P3.8 workstream plan.
 
+**1.7.0 — 14 Nov 2026:** Completed P3.2 deployment/runtime topology. Evaluated managed-hosted, self-hosted and peer-to-peer-only coordination models; approved a hosted-default, self-hosted-target hybrid architecture; defined coordinator and worker placement, modular process boundaries, authoritative state and data locality, bounded offline execution, reconnect/reconciliation behavior, and initial managed availability/recovery targets. Added the deployment topology diagram and ADR-069–ADR-073. No vendor or implementation technology was selected.
+
 
 # 10. Current working state
 
@@ -2096,9 +2129,10 @@ Distributed command delivery may be duplicated, delayed or interrupted. Each ope
 **Phase 2 status:** Complete — original requirements baseline approved, with the multi-device/campaign scope extension recorded as a controlled amendment  
 **P2.1–P2.7 status:** Complete as requirements baselines; runtime implementation and verification remain future engineering work  
 **P3.1 status:** Complete — architecture drivers, system context and logical decomposition approved  
-**P3.2 status:** Active — distributed runtime/deployment topology and communication model  
-**Overall status:** P3 is active. No programming language, framework, database, model provider, cloud vendor or production deployment topology has been selected.  
-**Next action:** Define the always-on coordination deployment, device-node runtime placement, secure communication topology, availability/recovery objectives and hosted versus user-controlled deployment trade-offs in P3.2. Then define device identity/session contracts and event/workflow delivery semantics.
+**P3.2 status:** Complete — hosted-default hybrid deployment topology, self-hosted target, runtime placement, offline boundaries and initial recovery objectives approved  
+**P3.3 status:** Pending — device identity, credential lifecycle and secure communication contracts  
+**Overall status:** P3 is active. No programming language, framework, database, model provider, cloud vendor, transport protocol or production infrastructure product has been selected.  
+**Next action:** Define device identity, enrollment/pairing, credential lifecycle, authenticated sessions, relay boundaries, revocation and offline-lease enforcement in P3.3; then proceed to durable event and workflow delivery contracts in P3.4.
 
 
 ## Phase 2 exit criteria
@@ -4337,7 +4371,7 @@ P3 shall not silently relax P2 targets or introduce a tool/provider whose behavi
 
 **Phase status:** Active  
 **P3.1 status:** Complete — architecture drivers, system context and logical decomposition approved  
-**P3.2 status:** Active — distributed runtime/deployment topology and communication model  
+**P3.2 status:** Complete — deployment topology, runtime placement, offline boundaries and initial availability/recovery targets approved  
 **Purpose:** Transform the approved product and quality requirements into a coherent, secure, distributed architecture with explicit component responsibilities, data ownership, communication contracts and platform execution boundaries.
 
 P3 shall preserve the Phase 2 requirements baseline and the approved multi-device scope extension. Architecture choices must be justified against requirements and quality attributes; technologies are selected only after responsibilities, trust boundaries and contracts are sufficiently clear.
@@ -4820,7 +4854,7 @@ flowchart TB
 | Workstream | Scope | Status |
 |---|---|---|
 | P3.1 — Architecture drivers and system context | Scope extension, quality drivers, system context, logical planes and responsibility boundaries | Complete |
-| P3.2 — Distributed runtime and deployment topology | Always-on coordinator deployment, local/hosted workers, process boundaries, availability and recovery | Active |
+| P3.2 — Distributed runtime and deployment topology | Always-on coordinator deployment, local/hosted workers, process boundaries, availability and recovery | Complete |
 | P3.3 — Device identity and secure communication | Enrollment, device keys, sessions, relay, remote desktop transport and revocation | Pending |
 | P3.4 — Workflow and event architecture | Durable task state, event model, scheduler, campaign runs, leases, retry/reconciliation and notification events | Pending |
 | P3.5 — Data ownership and synchronization | Memory authority, task/event records, device caches, conflict resolution, retention and deletion propagation | Pending |
@@ -4832,7 +4866,7 @@ flowchart TB
 
 P3.1 establishes logical architecture but does not select:
 
-- Cloud provider, hosting vendor, region or self-hosting product.
+- Specific cloud provider, hosting vendor, region, infrastructure product, deployment packaging/orchestration and self-hosting distribution product. The hosted-default and self-hosted-target deployment profiles are decided; vendor and implementation choices remain deferred.
 - Database, event broker, workflow engine or scheduler implementation.
 - Device relay, transport protocol, remote desktop streaming or cryptographic library.
 - Desktop/mobile programming language, UI framework or rendering engine.
@@ -4843,4 +4877,251 @@ P3.1 establishes logical architecture but does not select:
 These decisions belong to P3.2–P3.8. Each technology choice must be justified against the requirements, measured quality targets, operational cost, privacy and portability.
 
 **P3.1 closure:** Architecture drivers, distributed system context, logical responsibility boundaries, multi-device execution model, secure remote-access principles, durable campaign/task model and reference YouTube workflow are approved. P3 remains active; deployment, detailed contracts, data architecture and technology evaluation remain open.
+
+## 19.15 Deployment topology alternatives and decision
+
+P3.2 evaluates three primary coordination models against the requirement that recurring workflows, remote device access, task supervision and notifications continue independently of the user's primary PC.
+
+| Deployment model | Strengths | Limitations and operational risks | P3.2 assessment |
+|---|---|---|---|
+| Managed hosted coordinator | Independently available when personal devices are offline; stable remote reachability; centralized durable scheduling, event intake and notification routing; lower setup and maintenance burden for the user | Requires trust in a service operator, recurring operating cost and disciplined data minimization; depends on network access and provider operations | Selected as the default reference deployment for the initial complete multi-device product |
+| User-controlled/self-hosted coordinator | Greater control over hosting, data placement, upgrades and operational policy; supports user-operated home servers or rented infrastructure | The user must maintain an always-on host, secure remote reachability, updates, backups, monitoring and recovery; a home-hosted coordinator inherits local power and connectivity failures | Retained as a first-class architectural deployment target using the same logical contracts; production parity and packaging require later validation |
+| Peer-to-peer-only coordination | Can provide efficient direct device-to-device paths and reduce dependence on a central relay for some transfers | Cannot reliably schedule or supervise work when all relevant peers are offline; device sleep, mobile background limits, NAT/reachability, event durability and notification delivery complicate always-on behavior; no stable global authority during partitions | Rejected as the sole coordination model; direct connections may be an optimization, never the only source of durable task authority |
+
+### Approved deployment decision
+
+LIA uses a **hybrid, coordinator-led topology**:
+
+1. The initial reference deployment uses a managed, always-on coordination plane that remains reachable independently of the user's desktop PC.
+2. Linux and Windows desktop agents, mobile clients and home/device gateways remain separately enrolled execution nodes. They retain ownership of the local resources and operations they expose.
+3. Optional service workers may execute eligible tasks that do not require an unavailable personal device. Such workers have their own identity, execution boundary and scoped grants.
+4. The same logical coordination contracts must support a user-controlled deployment profile. A self-hosted instance may run on an always-on home server or user-selected hosted machine; the user is responsible for its availability and operations.
+5. Direct peer-to-peer communication may be used when appropriate for local transfers or sessions, but task state, authorization and recovery must not depend on a peer-to-peer path remaining continuously available.
+
+The coordinator is not the user's desktop and does not become a universal remote executor. It records and routes authorized work. A desktop operation still runs on the relevant desktop node, and a home-device operation still passes through the relevant home integration boundary.
+
+The managed deployment is the default for ease of use and reliable autonomous scheduling. Self-hosting is a deployment choice, not a separate product architecture. The user must be able to understand which deployment profile is active, where authoritative task state resides and which dependencies are unavailable.
+
+## 19.16 Runtime placement and deployable boundaries
+
+### Runtime placement
+
+| Runtime or node | Placement | Responsibilities | Explicit boundary |
+|---|---|---|---|
+| Coordination runtime | Managed hosted environment by default; user-controlled host in the self-hosted profile | Device registry, task/campaign state, scheduler, worker routing, event intake, policy/grant records, session coordination, notification routing and synchronization coordination | Does not directly execute local desktop or physical-device operations |
+| Agent intelligence runtime | Hosted or local according to the deployment and privacy profile | Conversation orchestration, context assembly, planning, model/provider routing and plan evaluation | Produces proposals and typed requests; cannot directly mutate authoritative workflow state or bypass permission checks |
+| Desktop device runtime | Each enrolled Linux or Windows PC | Local presence, device health, permitted context observation, OS/application adapters, local execution and outcome verification | Interactive GUI operations require the relevant OS user session and supported platform capabilities |
+| Mobile companion runtime | User's enrolled smartphone | Conversation, authenticated approvals, device/task dashboard, remote-session initiation and supported mobile-native capabilities | Mobile background execution and hardware access are bounded by the mobile OS; the phone is not assumed to be an always-on worker |
+| Home/device gateway runtime | User-controlled local gateway or supported integration endpoint | Device discovery, state observation and separately authorized home/device actions | No blanket home access; each resource and action retains its own risk and grant boundary |
+| Optional service-worker runtime | Managed worker pool or user-operated worker node | Eligible research, content processing, rendering, scheduled integration work and other tasks not dependent on a personal device being online | Isolated from coordinator authority; receives only the task payload, secrets and capabilities required for its assigned step |
+| External connector runtime | Isolated connector boundary, hosted or local as appropriate | Provider API access, external event intake, upload/publication and supported service integrations | Credentials are scoped to the relevant integration/account and are not made available to general model context |
+
+### Logical modules and initial packaging
+
+The control plane retains the logical modules defined in Section 19.4: identity/registry, session broker, permission authority, workflow orchestrator, scheduler/worker router, event routing, notification routing, memory synchronization facade and audit/observability.
+
+These are ownership boundaries, not a requirement to deploy every module as a separate network service. The initial implementation should prefer a **modular control-plane deployment** with explicit internal contracts and separately isolated worker runtimes. A module should become an independently deployed service only when a concrete security, scaling, availability or operational requirement justifies the additional distributed-systems complexity.
+
+The following separation is mandatory even when modules share a deployment unit:
+
+- The workflow engine is the authoritative writer of workflow/run/step state.
+- The planner can submit a proposed plan or replan request but cannot directly alter authoritative state.
+- The permission authority evaluates grants and risk; the scheduler cannot expand authority to make a worker eligible.
+- Device agents own local execution and must verify actual outcomes.
+- Model/provider access is mediated through a gateway. Model output is untrusted and cannot directly access the authoritative task store, device credentials or unrestricted operating-system interfaces.
+- Service workers execute in a constrained environment and cannot modify device registry, account grants or another worker's task authority.
+- Connector credentials are isolated by integration and account; a connector failure must not collapse unrelated device execution.
+
+This design preserves the ability to split or consolidate deployable processes later without changing subsystem ownership.
+
+### Worker selection and execution locality
+
+A worker is eligible only when its declared capabilities, current connectivity, resource availability, trust state, data-locality policy and grant scope all satisfy the step requirements.
+
+The worker router shall prefer, in order of relevance to the task:
+
+1. The node that owns the target resource when the operation is inherently local, such as moving a PC window or controlling a paired home device.
+2. A user-authorized local/service worker when the task needs user-controlled data or local resources but does not require the primary desktop session.
+3. A managed service worker for tasks that are explicitly eligible for hosted processing and whose data and permissions allow that placement.
+
+A worker's availability does not create a grant. Reassignment requires a fresh eligibility and permission check, and it does not transfer the previous worker's credentials or authority.
+
+## 19.17 Authoritative state, data placement and locality
+
+### Coordinator-owned authoritative records
+
+The coordination plane is authoritative for:
+
+- Account-to-device enrollment and device trust/revocation state.
+- Campaign definitions, schedule/timezone and policy-envelope references.
+- Workflow, run and step state, dependency readiness, deadlines, leases and checkpoints.
+- Stable operation identifiers, dispatch history, reported outcomes and reconciliation status.
+- Grant identifiers, policy versions, expiry/revocation state and authorization decision references.
+- Notification preferences, delivery attempts and provider-reported delivery states.
+- Minimal audit and observability records needed to explain task and permission decisions.
+
+A worker may maintain an execution journal and a bounded local outbox while disconnected, but it cannot silently replace the coordinator's canonical workflow history. Reconnection requires reconciliation by stable operation identity.
+
+### Device- and worker-owned data
+
+The originating device remains the natural owner of raw local observations and device-specific state. Device agents retain only the local cache, task inputs and execution evidence required for their current authorized work. Service workers use bounded task workspaces and must not retain unrelated user data after the applicable retention period.
+
+The P2.5 memory platform remains a separately governed data domain. Task orchestration records may reference memory items or scoped context, but the workflow store is not a second unrestricted memory archive.
+
+Raw microphone audio, camera frames and screen frames are not copied to the coordinator by default. A task may transfer specific data to another node only when the source, destination, purpose, scope, sensitivity, retention and authorization checks allow it. Data transfer and worker selection must honor locality constraints rather than silently moving all task context to a hosted worker.
+
+The coordinator may store metadata and references needed to resume a task. It must not assume that a reference is readable by every worker; access is re-evaluated at retrieval and execution time.
+
+## 19.18 Offline operation, partitions and recovery behavior
+
+The architecture distinguishes coordinator availability from the availability of each execution node. A PC can be online while a service worker is unavailable, or the coordinator can be healthy while the user's PC is asleep. These states must not be collapsed into one generic "LIA online" indicator.
+
+### Coordinator unavailable
+
+- Durable schedules and workflow dispatch pause when the authoritative coordinator cannot be reached. No new distributed step is assumed to have started.
+- Device-local presence and other independent local capabilities may continue.
+- A device may use only a short-lived, bounded offline authorization lease issued while the coordinator was reachable. The P3.2 default offline allowance is limited to R0/R1 operations explicitly eligible for offline execution.
+- R2, R3 and R4 operations are blocked while the coordinator cannot provide the required current authorization. R4 still requires its per-operation authorization and confirmation even when online.
+- Recurring publication, external sharing, purchases, consequential external actions and home safety/security actions are not dispatched during a coordinator partition.
+- Devices record local execution events in a bounded outbox. The UI reports local completion separately from coordinator synchronization.
+- Notifications that cannot be routed are queued with bounded expiry where possible; they are not reported as delivered.
+
+The offline lease is not a standing blanket grant. It is device-bound, capability-bound, resource-bound, task/purpose-bound and time-bounded. It must not authorize a new target, a new campaign or an expanded operation. Exact token format, lease lifetime, revocation propagation and cryptographic enforcement are P3.3 decisions.
+
+### Device or worker unavailable
+
+- PC-specific steps become Blocked/Waiting for device when the relevant PC agent or required OS session is unavailable.
+- A different worker may handle only a distinct step whose capability, data locality and permissions it independently satisfies.
+- A local GUI command is never transferred to a service worker as a substitute for the unavailable PC.
+- Scheduled runs remain durable. The scheduler may defer them, report a missed execution window or create a later run according to the campaign's explicit schedule policy; it must not silently compress missed runs into a burst.
+- A worker lease expiry triggers reconciliation of the original operation before any retry or reassignment. An unknown side-effect outcome remains Unknown/Blocked until evidence resolves it.
+
+### Reconnection
+
+On reconnect, the device re-authenticates, refreshes its capability and grant state, submits its bounded outbox and reconciles each outstanding operation by stable ID. The coordinator compares the reported execution journal with authoritative workflow state, verifies actual outcomes where possible and then resumes or replans within the still-active campaign envelope. Old GUI commands are not replayed.
+
+## 19.19 Initial availability and recovery objectives
+
+The following are **initial architecture targets** for the managed coordination profile. They are engineering objectives to guide P3 design and P5 validation, not measured service results or a public service-level guarantee.
+
+| Measure | Initial target | Measurement boundary |
+|---|---|---|
+| Managed coordination availability | 99.5% monthly | Authenticated core coordination, task-state and event-ingress functions; excludes user-network outages and third-party model, notification or integration-provider availability |
+| Managed coordination recovery time (RTO) | 60 minutes or less after a declared major service outage | Restore core coordination and durable task processing; individual offline device recovery remains independent |
+| Recovery point for acknowledged critical control state | RPO 0 for acknowledged workflow/run/step transitions, operation-journal records, grant/revocation changes and campaign definitions | An acknowledgement is issued only after the record is durably committed. The storage/replication design must preserve this property under the declared failure model |
+| Device reconnection | No fixed promise that an offline device will reconnect by a deadline | Device health, last-seen state and reconnect status are observable; stale work is reconciled rather than replayed |
+| End-to-end task completion | No single global availability percentage | Depends on the required device, worker, model/provider, connector, user approval and external service; blockers are represented explicitly |
+
+For a self-hosted deployment, LIA shall expose the configured backup, recovery and availability posture rather than imply the managed profile's targets. A process restart must not lose acknowledged durable workflow state. Recovery after host, storage or site loss depends on the user's chosen redundancy and backup configuration; the deployment must disclose the resulting RTO/RPO and whether recovery has been tested.
+
+The coordinator's availability is not a promise that every campaign can complete. A scheduled campaign may remain blocked because its authorized PC is offline, a connector is unavailable, a grant has expired or a quality gate has failed. The system reports the dependency and preserves the run state instead of marking the campaign successful.
+
+## 19.20 Deployment topology reference diagram
+
+~~~mermaid
+flowchart TB
+    subgraph CLIENTS["User experience clients"]
+        DESKTOP["Desktop companion"]
+        PHONE["Mobile companion"]
+        CHANNELS["User-selected notification channels"]
+    end
+
+    subgraph COORD["Always-on coordination plane"]
+        ID["Identity and device registry"]
+        SESSION["Session broker and event ingress"]
+        POLICY["Permission and grant authority"]
+        WORKFLOW["Durable workflow and campaign state"]
+        SCHEDULE["Scheduler and worker router"]
+        NOTIFY["Notification router"]
+        SYNC["Governed memory-sync facade"]
+        AUDIT["Audit and health state"]
+    end
+
+    subgraph INTEL["Agent intelligence plane"]
+        DIALOG["Conversation orchestrator"]
+        CONTEXT["Scoped context assembly"]
+        PLANNER["Planner and replan proposals"]
+        GATEWAY["Model/provider gateway"]
+    end
+
+    subgraph NODES["Independently enrolled execution nodes"]
+        PC["Linux/Windows PC agent"]
+        MOBILE["Mobile capability client"]
+        HOME["Home/device gateway"]
+        SERVICE["Optional isolated service worker"]
+    end
+
+    subgraph OUTSIDE["External services"]
+        CONNECTORS["Authorized service connectors"]
+        PROVIDERS["Model and speech providers"]
+    end
+
+    DESKTOP <--> DIALOG
+    PHONE <--> DIALOG
+    PHONE <--> SESSION
+    DESKTOP <--> PC
+    ID --> SESSION
+    SESSION <--> PC
+    SESSION <--> MOBILE
+    SESSION <--> HOME
+    SESSION <--> SERVICE
+    SESSION <--> WORKFLOW
+    POLICY --> WORKFLOW
+    POLICY --> PC
+    POLICY --> HOME
+    DIALOG <--> CONTEXT
+    CONTEXT <--> SYNC
+    CONTEXT <--> PLANNER
+    PLANNER <--> GATEWAY
+    GATEWAY <--> PROVIDERS
+    PLANNER --> WORKFLOW
+    WORKFLOW <--> SCHEDULE
+    SCHEDULE --> SESSION
+    PC --> WORKFLOW
+    MOBILE --> WORKFLOW
+    HOME --> WORKFLOW
+    SERVICE --> WORKFLOW
+    WORKFLOW <--> CONNECTORS
+    WORKFLOW --> NOTIFY
+    NOTIFY --> CHANNELS
+    NOTIFY --> PHONE
+    WORKFLOW --> AUDIT
+    POLICY --> AUDIT
+    ID --> AUDIT
+~~~
+
+## 19.21 P3.2 architecture decision records
+
+### ADR-069 — Coordinator-led hybrid deployment with a hosted default
+
+**Status:** Approved
+
+The initial reference deployment uses an always-on managed coordinator independent of the user's primary PC. A user-controlled/self-hosted coordinator remains a first-class architectural deployment target using the same logical contracts. Peer-to-peer communication may optimize selected paths but is not the sole authority or durable coordination mechanism. Specific providers, hosting regions and packaging remain deferred.
+
+### ADR-070 — Separate coordination authority from worker execution
+
+**Status:** Approved
+
+The coordinator owns authoritative device registry, policy/grant references, workflow state, scheduling and notification state. Device agents and service workers execute only assigned, authorized steps and report evidence. The initial deployment may package logical control-plane modules together, but worker execution remains isolated from coordinator authority and model output cannot directly mutate authoritative task state.
+
+### ADR-071 — Bounded offline execution under an explicit lease
+
+**Status:** Approved
+
+When disconnected from the coordinator, a device may execute only explicitly offline-eligible R0/R1 operations covered by a short-lived, device- and task-bound offline lease. R2–R4 operations are blocked pending current authorization; recurring external publication and other consequential external actions do not continue through a coordinator partition. Exact lease format, lifetime and cryptographic enforcement are P3.3 work.
+
+### ADR-072 — Data locality is a worker-routing constraint
+
+**Status:** Approved
+
+Worker selection must account for data ownership, sensitivity, scope, destination and permitted processing location. Hosted workers receive only task-specific data that the user-authorized policy permits. Raw microphone, camera and screen observations are not synchronized to the coordinator by default. Memory access remains governed by P2.5, independently of device enrollment.
+
+### ADR-073 — Initial managed-coordinator availability and recovery targets
+
+**Status:** Approved as initial engineering targets; not yet validated
+
+The initial managed profile targets 99.5% monthly coordination availability, an RTO of 60 minutes or less after a declared major outage, and RPO 0 for acknowledged critical workflow, operation-journal, grant/revocation and campaign-state records. These targets require implementation evidence and cost/reliability validation before they may be represented as a service guarantee. Self-hosted deployments publish their own configured recovery posture.
+
+**P3.2 closure:** Deployment alternatives, hosted-default/self-hosted-target topology, runtime placement, coordination-versus-worker boundaries, data-locality constraints, partition behavior and initial managed availability/recovery targets are defined. No cloud vendor, database, event broker, workflow engine, transport protocol, programming language or model provider has been selected. P3.3 will define device identity, credential lifecycle, authenticated session establishment, relay boundaries, revocation and offline-lease enforcement.
+
 
