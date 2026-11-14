@@ -29,7 +29,7 @@ This is a contract design package. It does not claim that the services, adapters
 
 | Contract | Artifact | Version | Authority |
 |---|---|---:|---|
-| Device/control-plane RPC | [control_plane.proto](proto/lia/v1/control_plane.proto) | lia.v1 | Device registry, session authority, and operation executor |
+| Device/control-plane RPC | [control_plane.proto](proto/lia/v1/control_plane.proto) | lia.v1 | Sessions, capabilities, signed commands, single-use offline leases and execution evidence |
 | User/coordinator HTTP API | [lia-v1.yaml](openapi/lia-v1.yaml) | /v1 | Authenticated API plus domain authorization |
 | Presentation IPC | [presentation-agent-v1.md](ipc/presentation-agent-v1.md) | 1 | Rust local agent; Godot is presentation-only |
 | Security profile | [security-profile-v1.md](security/security-profile-v1.md) | 1 | OIDC, device mTLS, signed commands and local peer identity |

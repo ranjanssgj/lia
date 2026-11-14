@@ -190,7 +190,7 @@ message CommandEnvelope {
 }
 
 message CommandSignature {
-  // P4 profile: lia-ed25519-jcs-v1. The profile identifier fixes algorithm and canonicalization.
+  // profile_id selects an allowlisted signing domain and fixes algorithm/canonicalization.
   string profile_id = 1;
   string signing_key_id = 2;
   bytes signature = 3;

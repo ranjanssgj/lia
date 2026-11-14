@@ -54,15 +54,23 @@ The exact certificate issuing hierarchy, trust-anchor rotation, certificate key 
 
 ## 4. Command and offline-lease signature profile
 
-Proposed profile identifier: `lia-ed25519-jcs-v1`.
+Two allowlisted Ed25519 signature profiles share a fixed 64-byte raw signature representation but use different signed message types and domain-separation prefixes.
 
-- Signature algorithm: Ed25519 (64-byte raw signature).
+**Online command profile:** lia-ed25519-jcs-v1.
+
 - Envelope representation: Protocol Buffers JSON mapping for CommandEnvelope, serialized as UTF-8 JSON and canonicalized using RFC 8785 JSON Canonicalization Scheme.
-- Signing input: ASCII bytes `LIA-COMMAND-V1\n` concatenated with the canonical JSON UTF-8 bytes. The signature field itself is not part of CommandEnvelope.
-- Verification key lookup: signing_key_id resolves to a currently trusted coordinator command-signing public key and key generation. The algorithm is fixed by the profile identifier; verifiers do not accept an algorithm selected by untrusted input.
-- Domain separation: command and offline-lease profiles use different fixed prefixes and cannot be replayed across message classes.
-- Bound claims include issuer, audience/target device, account, credential generation, command/operation IDs, resource generation/revision, capability/schema version, exact arguments digest, purpose/task references, grant/policy version, risk, confirmation, not-before, expiry, nonce/sequence and correlation/causation.
-- The verifier compares the signed payload with the typed protobuf fields, checks the digest and current capability/resource/permission state, verifies signature and target, then atomically records command/nonce consumption before any non-idempotent side effect.
+- Signing input: ASCII bytes LIA-COMMAND-V1 followed by a newline byte, then the canonical JSON UTF-8 bytes. Signature fields are excluded.
+- The envelope binds issuer, audience/target, account, target credential generation, operation/command IDs, resource generation/revision, capability/schema version, exact arguments digest, purpose/task references, grant/policy/revocation version, risk, approval, not-before, expiry, nonce/sequence and correlation/causation.
+
+**Offline authorization lease profile:** lia-offline-lease-ed25519-jcs-v1.
+
+- Signed message: Protocol Buffers JSON mapping for OfflineAuthorizationLease, serialized as UTF-8 JSON and canonicalized using RFC 8785 JSON Canonicalization Scheme.
+- Signing input: ASCII bytes LIA-OFFLINE-LEASE-V1 followed by a newline byte, then the canonical JSON UTF-8 bytes. The command profile prefix is never accepted for a lease and vice versa.
+- The lease binds issuer/audience, account, one target device and credential generation, one operation ID, exact capability/schema and resource generation, arguments digest, purpose/task, grant, policy and revocation epochs, risk, issued/not-before/expiry, nonce and signing-key generation.
+- The coordinator issues an expiry no later than five minutes after issue time. The device accepts only R0/R1 local operations in the P3.3 allowlist; R2–R4, remote/cross-device, connector, publication and home safety/security operations are rejected.
+- A lease is single-use and bound to one exact operation. The device verifies current local trust/revocation state, resource generation and arguments digest, atomically records lease consumption before effect, and reports the local journal for reconciliation after reconnect.
+
+For both profiles, signing_key_id resolves to a currently trusted coordinator command-signing public key and key generation. The profile identifier fixes the algorithm and canonicalization; verifiers never accept an algorithm selected by untrusted input. The verifier compares the signed payload with the typed protobuf fields, checks digests/current target/capability/resource/permission state and signature, then atomically records command or lease consumption before any non-idempotent side effect.
 
 Command-signing keys are separate from TLS client/server keys and provider credentials. Public-key rotation is versioned by key ID. The verifier supports an overlap window for rotation, but a revoked key, stale credential generation, policy/revocation epoch mismatch, expired command, consumed nonce or wrong target fails closed.
 
