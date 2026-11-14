@@ -389,7 +389,12 @@ components:
       headers:
         Retry-After:
           description: Seconds until the caller may retry.
-          schema: { type: string, pattern: '^[0-9]+
+          schema: { type: string, pattern: '^[0-9]+$' }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unprocessable:
+      description: Request is structurally valid but violates a domain invariant.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
@@ -491,12 +496,3 @@ components:
         scopeSummary: { type: string }
         expiresAt: { type: [string, 'null'], format: date-time }
         targetDeviceId: { type: [string, 'null'], format: uuid }
- }
-      content:
-        application/problem+json:
-          schema: { $ref: '#/components/schemas/Problem' }
-    Unprocessable:
-      description: Request is structurally valid but violates a domain invariant.
-      content:
-        application/problem+json:
-          schema: { $ref: '#/components/schemas/Problem' }
