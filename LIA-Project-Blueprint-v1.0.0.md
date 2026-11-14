@@ -302,7 +302,7 @@ through controlled change; they do not invalidate earlier requirements.
   P0      Concept and vision                 Complete
   P1      Product definition                 Complete
   P2      Requirements engineering           Complete — baseline approved
-  P3      System architecture                Active — P3.1 complete
+  P3      System architecture                Active — P3.1–P3.5 complete; P3.6 next
   P4      Integration contracts              Pending
   P5      First vertical slice               Pending
   P6      Companion integration              Pending
@@ -2304,7 +2304,7 @@ Candidates may be shortlisted and tested as each P3 workstream stabilizes its co
 **P3.4 status:** Complete — durable events, workflow state machines, schedule/occurrence semantics, worker leases, retry/reconciliation, approvals, cancellation and notification delivery approved  
 **P3.5 status:** Complete — canonical data ownership, scoped synchronization, conflict resolution, deletion propagation and backup/restore semantics approved  
 **Overall status:** P3 is active. No programming language, framework, database, model provider, cloud vendor, transport protocol, cryptographic library or production infrastructure product has been selected.  
-**P3.5 status:** Pending — data ownership, persistence and synchronization  
+**P3.6 status:** Pending — platform and integration adapter contracts  
 **Next action:** Define platform and integration adapter contracts for Linux/Windows desktop nodes, mobile capabilities, home automation and external service connectors in P3.6.
 
 
@@ -4548,6 +4548,7 @@ P3 shall not silently relax P2 targets or introduce a tool/provider whose behavi
 **P3.3 status:** Complete — device identity, pairing, credentials, authenticated sessions, command envelopes, relay boundaries, revocation and offline authorization approved  
 **P3.4 status:** Complete — durable event delivery, workflow state machines, scheduling, worker leases, reconciliation and notification semantics approved  
 **P3.5 status:** Complete — data ownership, synchronization scope, conflict handling, deletion propagation and backup/restore semantics approved  
+**P3.6 status:** Pending — platform and integration adapter contracts  
 **Purpose:** Transform the approved product and quality requirements into a coherent, secure, distributed architecture with explicit component responsibilities, data ownership, communication contracts and platform execution boundaries.
 
 P3 shall preserve the Phase 2 requirements baseline and the approved multi-device scope extension. Architecture choices must be justified against requirements and quality attributes; technologies are selected only after responsibilities, trust boundaries and contracts are sufficiently clear.
