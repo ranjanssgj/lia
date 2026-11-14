@@ -4482,6 +4482,8 @@ P3 shall not silently relax P2 targets or introduce a tool/provider whose behavi
 **Phase status:** Active  
 **P3.1 status:** Complete — architecture drivers, system context and logical decomposition approved  
 **P3.2 status:** Complete — deployment topology, runtime placement, offline boundaries and initial availability/recovery targets approved  
+**P3.3 status:** Complete — device identity, pairing, credentials, authenticated sessions, command envelopes, relay boundaries, revocation and offline authorization approved  
+**P3.4 status:** Complete — durable event delivery, workflow state machines, scheduling, worker leases, reconciliation and notification semantics approved  
 **Purpose:** Transform the approved product and quality requirements into a coherent, secure, distributed architecture with explicit component responsibilities, data ownership, communication contracts and platform execution boundaries.
 
 P3 shall preserve the Phase 2 requirements baseline and the approved multi-device scope extension. Architecture choices must be justified against requirements and quality attributes; technologies are selected only after responsibilities, trust boundaries and contracts are sufficiently clear.
@@ -6154,70 +6156,11 @@ These are architecture validation scenarios for future implementation and test p
 
 The implementation shall measure durable event acceptance latency, queue age, event lag, duplicate rate, consumer retry rate, schedule drift, worker lease expiry, reconciliation duration, task recovery after restart, notification delivery state and workflow completion by dependency class. Numerical event throughput, queue lag, schedule precision and lease/heartbeat durations are ratified after technology/load design and before P5; no unsupported capacity claim is made here.
 
-## 19.43 P3.4 architecture decision records
+## 19.43 P3.4 closure
 
-### ADR-081 — Separate commands, domain events and notification intents
+**P3.4 status:** Complete — durable event semantics, workflow object identities and state machines, schedule/occurrence rules, worker assignment and fencing leases, bounded retries, side-effect reconciliation, approval/control semantics and notification delivery are defined.
 
-**Status:** Approved
-
-Commands request an operation or transition; events record facts; notification intents communicate committed facts to users. These message classes have distinct validation, authority and lifecycle semantics. Event or notification payloads never grant execution permission.
-
-### ADR-082 — Durable workflow state with append-only transition history and outbox/inbox delivery
-
-**Status:** Approved
-
-The coordinator maintains canonical workflow aggregates, immutable transition/event history and durable outbox delivery records. Consumers use durable inbox/deduplication semantics. The design does not require pure event sourcing; it requires atomic recoverability between state transitions and event publication.
-
-### ADR-083 — At-least-once delivery with aggregate-local ordering and idempotent consumers
-
-**Status:** Approved
-
-Distributed event/command delivery is at-least-once. Stable event/command/operation IDs, deduplication and aggregate sequence/version handle duplication and reordering. Ordering is guaranteed within defined aggregates only; global total ordering and exactly-once side effects are not assumed.
-
-### ADR-084 — Workflow state machine is authoritative; planner output is a proposal
-
-**Status:** Approved
-
-A deterministic coordinator-owned state machine controls campaign/run/step transitions, deadlines, dependencies, plans, retry budgets and completion. Planner output must be validated into a versioned plan snapshot and cannot directly mark work ready, authorized or complete.
-
-### ADR-085 — Plans are bounded DAGs with explicit iteration budgets
-
-**Status:** Approved
-
-Run plans are acyclic by default. Parallelism and conditional branches are explicit. Repeated work must have a declared maximum iteration count, termination condition, deadline and resource budget. Unbounded self-triggering and LLM-driven execution loops are prohibited.
-
-### ADR-086 — Worker leases are fenced coordination claims, not authorization grants
-
-**Status:** Approved
-
-Each step attempt receives a finite worker lease with a monotonically increasing generation/fencing token. Expiry or reassignment cannot prove non-execution. Local grants and command-envelope validation remain mandatory. Worker lease duration/heartbeat parameters are implementation values to be benchmarked before P5.
-
-### ADR-087 — Reconcile possible side effects before retry or reassignment
-
-**Status:** Approved
-
-Pre-effect transient errors may receive bounded retries. Any timeout, worker loss or connection failure after a possible side effect enters reconciliation. Verified success is adopted; verified non-execution may be retried under current authority; unknown outcome remains blocked. Provider idempotency is used only where supported.
-
-### ADR-088 — Explicit schedule occurrence identity and safe misfire policy
-
-**Status:** Approved
-
-Each campaign schedule revision produces deterministic, deduplicated occurrence identities with a defined timezone. The default misfire policy skips and reports expired occurrences rather than launching catch-up bursts. Bounded catch-up/backfill requires explicit campaign configuration.
-
-### ADR-089 — Pause, cancel, approval and revoke are distinct workflow controls
-
-**Status:** Approved
-
-Pause prevents new work and reaches safe checkpoints; cancellation ends future work in the selected run/campaign; revocation removes authority before the next governed side effect. Approval is bound to an exact immutable operation digest and expiry and does not replace a current grant.
-
-### ADR-090 — Notifications are derived delivery records, not workflow authority
-
-**Status:** Approved
-
-Notifications derive from committed domain events and have independent per-channel delivery state, deduplication, bounded retry and expiry. A failed route cannot change workflow outcome; a notification reply cannot approve a consequential operation without authenticated exact-action review.
-
-**P3.4 closure:** Durable event semantics, workflow object identities and state machines, schedule/occurrence rules, worker assignment and fencing leases, bounded retries, side-effect reconciliation, approval/control semantics and notification delivery are defined. No database, broker, queue, workflow engine, scheduler, transport or implementation language has been selected. P3.5 will define canonical data ownership, persistence/synchronization boundaries, conflict resolution, retention and deletion propagation.
- P3.4 will define durable events, workflow delivery, scheduling, leases, retries, idempotency and reconciliation.
+The governing decisions are recorded as ADR-081–ADR-090 in the main decision register. No database, broker, queue, workflow engine, scheduler, transport or implementation language has been selected. P3.5 will define canonical data ownership, persistence/synchronization boundaries, conflict resolution, retention and deletion propagation.
 
 
 The governing decisions are recorded as ADR-069–ADR-073 in the main decision register. No cloud vendor, database, event broker, workflow engine, transport protocol, programming language or model provider has been selected. P3.3 will define device identity, credential lifecycle, authenticated session establishment, relay boundaries, revocation and offline-lease enforcement.
