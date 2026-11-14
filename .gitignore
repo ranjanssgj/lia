@@ -1,0 +1,36 @@
+# Rust
+/target/
+**/target/
+
+# JavaScript / TypeScript
+node_modules/
+**/node_modules/
+dist/
+coverage/
+.turbo/
+
+# Godot generated/imported state
+.godot/
+export.cfg
+export_presets.cfg
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+
+# Local databases and runtime output
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.log
+
+# Local evidence may contain sensitive data; commit only reviewed, redacted evidence.
+evidence-local/
