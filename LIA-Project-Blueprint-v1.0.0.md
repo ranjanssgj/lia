@@ -4,7 +4,7 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.13.1\
+> **Version:** 1.13.2\
 > **Last updated:** 14 November 2026\
 > **Current phase:** P3 --- System Architecture (Complete)\
 > **Current workstream:** P3.8 --- Architecture Validation and Technology Selection (Complete)\
@@ -2414,7 +2414,9 @@ The full distributed profile uses NATS JetStream for durable event streams, inde
 
 **Status:** Approved with interoperability proof gate
 
-Authenticated device/coordinator control and typed internal service communication use gRPC over HTTP/2 with Protocol Buffers. Rust services use Tonic; TypeScript services use generated compatible clients. The P3.3 authenticated command envelope, target binding, replay/expiry, grants and audit semantics remain application-level requirements. User-facing mobile/web APIs and third-party webhook interfaces use HTTPS/JSON. Event subscriptions use provider-appropriate WebSocket/SSE or gRPC streaming. Remote media transport remains outside P5.
+Authenticated device/coordinator control and typed internal service communication use gRPC over HTTP/2 with Protocol Buffers. Rust services use the released Tonic 0.14.x line as the initial implementation baseline; TypeScript services use generated compatible clients. The exact Rust crate patch, Protobuf compiler and code-generation versions are pinned in P4. The P3.3 authenticated command envelope, target binding, replay/expiry, grants and audit semantics remain application-level requirements. User-facing mobile/web APIs and third-party webhook interfaces use HTTPS/JSON. Event subscriptions use provider-appropriate WebSocket/SSE or gRPC streaming. Remote media transport remains outside P5.
+
+**Rust gRPC ecosystem transition:** Tonic moved into the gRPC project in May 2026. The project stated that Tonic would continue receiving bug-fix releases while the new `grpc` crate was developed as its intended long-term replacement. The May 2026 `grpc` preview was explicitly not recommended for production and included client APIs while server support was still forthcoming. The latest official roadmap referenced in this review (2 June 2026) still listed the server API and full gRPC interoperability suite as in progress. Tonic 0.14.9 was published on 29 October 2026. Therefore P3.8 retains the released Tonic 0.14.x line for the initial P4 proof. P4 shall reconsider migration only after the successor has a production-recommended client/server release, documented compatibility and complete interoperability evidence. No Tonic patch version is frozen by this architecture decision.
 
 ### ADR-136 — Android and iOS companion clients use native platform UI stacks
 
@@ -2572,6 +2574,8 @@ Godot and the Rust device agent communicate through a local-only authenticated I
 **1.13.0 — 14 Nov 2026:** Completed P3.8 architecture validation and technology selection. Compared implementation candidates against P2 requirements and P3.1–P3.7 contracts; approved a reference baseline covering Rust/Tokio device agents, Node.js 24 LTS/TypeScript/Fastify coordinator services, Temporal TypeScript workflows, PostgreSQL 16, pgvector, SQLite WAL, NATS JetStream, gRPC/Protobuf, Godot 4.7.2, native Kotlin/Compose and SwiftUI mobile clients, Home Assistant as the first optional home connector, OpenTelemetry and OCI/Docker Compose deployment. Defined a minimal P5 local-first profile and a separate full distributed profile, explicit rejections/deferrals, validation scenarios, implementation proof gates and ADR-126–ADR-145. Model/speech vendors, hosting vendor and object-storage vendor remain deferred pending evaluation. No implementation, prototype, benchmark, restore drill or production security test is claimed.
 
 **1.13.1 — 14 Nov 2026:** Reconciled Phase 3 completion status across the blueprint. Updated historical P3.1–P3.7 closure notes to distinguish decisions deferred at the time from subsequent P3.8 selections; moved remaining cryptographic, signing, IPC, provider and remote-media details to their correct P4/P6 proof gates; clarified model/vendor deferrals; and updated the top-level technology-selection rule and P3 phase status. No reference-stack selection changed.
+
+**1.13.2 — 14 Nov 2026:** Performed an upstream revalidation of the P3.8 Rust gRPC choice. Clarified that the initial P4 implementation uses the released Tonic 0.14.x line, recorded the upstream Tonic-to-gRPC project transition and the preview/production-readiness boundary of the successor `grpc` crate, and added an explicit P4 migration checkpoint to RPC-01. Updated ADR-135, the candidate comparison, architecture risk register and informative references. The gRPC/Protobuf architecture decision remains unchanged; exact crate/codegen pinning and any successor migration remain proof-gated. No implementation or interoperability test is claimed.
 
 
 # 10. Current working state
@@ -8303,6 +8307,7 @@ No contradiction was identified between the approved P2 authority model and P3.1
 | Godot transparent/always-on-top behavior varies by compositor/display stack | Embodiment may not work consistently on every desktop | Renderer-only boundary; first profile must pass compositor proof gate |
 | Hyprland IPC request socket is synchronous and event socket is separate | Poor socket lifecycle or polling may stall/degrade the compositor | Short-lived request connection, persistent event connection, bounded reads and no high-frequency polling |
 | Temporal Activities may be retried after worker failure | External/desktop effects could be duplicated | Stable operation IDs, effect journal, retry policy by effect class and reconciliation |
+| Rust gRPC implementation is in an upstream transition | A successor client/server crate may replace Tonic, but a preview must not become a production dependency prematurely | Use released Tonic 0.14.x for the initial P4 proof; track the official successor and migrate only after production readiness plus full LIA interoperability evidence |
 | JetStream redelivery/deduplication window is bounded | Duplicate events could repeat state changes | Durable inbox dedupe at owning domain; JetStream is transport, not workflow ledger |
 | Approximate vector search plus scope filters can reduce recall | Relevant scoped memories may be missed or isolation degraded | Exact search first; benchmark filtered recall and tenant isolation before HNSW |
 | Provider/model behavior and terms may drift | Quality, retention, region or tool behavior can change | Provider adapters, version traceability, evaluation and eligibility policy |
@@ -8345,7 +8350,7 @@ Temporal Workflow code must remain deterministic. Network/model/API calls, datab
 
 | Area | Candidates considered | Selected baseline | Rationale and constraints |
 |---|---|---|---|
-| Device/coordinator control | gRPC/Protobuf, REST/JSON, WebSocket-only RPC | gRPC over HTTP/2 with Protocol Buffers | Typed, versionable contracts and generated Rust/TypeScript clients. Rust uses Tonic. P3.3 command envelope, target binding, replay/expiry, grant and audit semantics remain application-level. |
+| Device/coordinator control | gRPC/Protobuf, REST/JSON, WebSocket-only RPC | gRPC over HTTP/2 with Protocol Buffers | Typed, versionable contracts and generated Rust/TypeScript clients. Rust initially uses the released Tonic 0.14.x line; exact patch/codegen versions and a possible successor migration are P4 proof decisions. P3.3 command envelope, target binding, replay/expiry, grant and audit semantics remain application-level. |
 | User-facing/mobile APIs | REST/JSON, gRPC-web | HTTPS REST/JSON | Broad client interoperability; WebSocket/SSE or gRPC streams for subscriptions where appropriate. Notifications remain output, never authorization. |
 | Home integration | Home Assistant API, Matter controller, vendor APIs | Home Assistant authenticated WebSocket as first optional adapter | Authenticated command/result exchange and event subscriptions. This is an optional integration profile, not a universal device standard or core runtime dependency. Per-entity/action permissions remain mandatory. |
 | External connectors | Direct provider APIs/webhooks, MCP-first, generic browser automation | Typed provider-specific adapters and authenticated webhooks | Provider identity/scopes, quota, idempotency, versioning and verification remain explicit. MCP may be an optional interoperability adapter, not LIA authority. |
@@ -8420,7 +8425,7 @@ These are required future engineering validations. P3.8 has not executed them; n
 | HYPR-01 | Discover Hyprland session and subscribe to compositor events | Capability manifest, window identity/generation, geometry freshness, reconnect/event-loss report | P4/P5 |
 | HYPR-02 | Execute same-display move preserving size | Pre/post geometry, display/workspace, operation ID and independent verification | P5 |
 | IPC-01 | Compare Unix domain socket, Windows named pipe and supervised stdio bridge | Peer/ACL boundary, schema version, size/rate limit, cancellation and crash recovery | P4 |
-| RPC-01 | Generate TypeScript and Rust clients from Protobuf | Compatibility, streaming, error taxonomy, TLS/device identity and version-skew report | P4 |
+| RPC-01 | Generate TypeScript and Rust clients from Protobuf using the selected released Rust gRPC line | Pin Tonic 0.14.x and compatible Protobuf/codegen versions; verify unary and streaming calls, TypeScript/Rust interoperability, deadlines/cancellation, message limits, TLS/device identity metadata, error mapping and version skew. Compare the successor grpc crate only if a production-recommended client/server release and complete interoperability suite are available. | P4 |
 | TEMP-01 | Worker crash/restart, timer, signal, cancellation and replay | Durable workflow recovery, deterministic replay and no duplicate external effect | P4 |
 | TEMP-02 | Timeout after an external Activity may have applied an effect | Reconciliation and durable idempotency evidence; no blind repeat | P4 |
 | DB-01 | Benchmark PG16 queries/migrations at P2.2 record volumes | Query plans, transaction/isolation tests, migration rollback and restore report | P4 |
@@ -8593,7 +8598,7 @@ JetStream provides durable event distribution; PostgreSQL outbox/inbox remains c
 
 **Status:** Approved with interoperability proof gate
 
-Device/control-plane and typed internal RPC use gRPC over HTTP/2 and Protocol Buffers. Rust uses Tonic; TypeScript uses generated compatible clients. Mobile/web APIs use HTTPS/JSON.
+Device/control-plane and typed internal RPC use gRPC over HTTP/2 and Protocol Buffers. Rust initially uses released Tonic 0.14.x; TypeScript uses generated compatible clients. Exact patch/codegen pinning and any migration to the successor grpc crate require the P4 RPC-01 proof gate. Mobile/web APIs use HTTPS/JSON.
 
 #### ADR-136 — Native Kotlin/Compose and SwiftUI companion clients
 
@@ -8670,6 +8675,9 @@ Godot and Rust communicate via local-only authenticated IPC. P4 compares Unix do
 - [NATS JetStream delivery model](https://docs.nats.io/using-nats/jetstream/model_deep_dive) — acknowledgement, redelivery and bounded message deduplication.
 - [Home Assistant WebSocket API](https://developers.home-assistant.io/docs/api/websocket/) — authentication, command/result and event stream.
 - [Fastify v5 migration guide](https://fastify.dev/docs/latest/Guides/Migration-Guide-V5/) — Node.js runtime baseline.
+- [Rust Update: gRPC Welcomes Tonic](https://grpc.io/blog/grpc-welcomes-tonic/) — Tonic stewardship transition and bug-fix maintenance statement.
+- [gRPC-Rust Preview Release](https://grpc.io/blog/grpc-rust-announcement/) and [gRPC-Rust Roadmap](https://grpc.io/blog/grpc-rust-roadmap/) — preview limitations and the server/interoperability work reported in June 2026.
+- [Tonic 0.14.9 release documentation](https://docs.rs/crate/tonic/0.14.9) — released Tonic compatibility line available at the P3.8 review date.
 - [OpenTelemetry documentation](https://opentelemetry.io/docs/) — vendor-neutral instrumentation.
 - [Android Jetpack Compose](https://developer.android.com/compose) and [Apple SwiftUI](https://developer.apple.com/swiftui/) — native companion UI foundations.
 
