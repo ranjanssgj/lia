@@ -4,7 +4,7 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.13.0\
+> **Version:** 1.13.1\
 > **Last updated:** 14 November 2026\
 > **Current phase:** P3 --- System Architecture (Complete)\
 > **Current workstream:** P3.8 --- Architecture Validation and Technology Selection (Complete)\
@@ -45,7 +45,7 @@ During an active phase, design discussions and requirement refinement take place
 
 The document distinguishes approved product/design direction from draft functional requirements, unresolved first-release scope, and implementation status. Approval of a product capability does not mean that it has been implemented or that every detailed acceptance criterion is complete.
 
-Technology and infrastructure selection remain deferred to P3 unless an earlier phase explicitly establishes a platform constraint.
+The reference technology baseline is selected through P3.8. Remaining vendor choices and proof-gated implementation details are explicitly assigned to P4–P6; a capability is not considered supported until its named evidence gate passes.
 
 ### 1.2 Requirement writing convention
 
@@ -2153,7 +2153,7 @@ LIA assigns each record to one canonical owning domain. Workflow, permission, me
 
 **Status:** Approved
 
-The P2.5 Memory Authority owns canonical memory and governed relationships. The workflow coordinator stores only task state, evidence references and minimum authorized context required for execution. Physical placement of canonical memory storage remains deployment-configurable and is selected through P3.8.
+The P2.5 Memory Authority owns canonical memory and governed relationships. The workflow coordinator stores only task state, evidence references and minimum authorized context required for execution. Physical placement of canonical memory storage remains deployment-configurable; P3.8 establishes the reference persistence technologies but not the hosted memory region or operator.
 
 ### ADR-093 — Scoped, minimum-necessary synchronization
 
@@ -2570,6 +2570,8 @@ Godot and the Rust device agent communicate through a local-only authenticated I
 **1.12.0 — 14 Nov 2026:** Completed P3.7 agent intelligence and model runtime architecture. Defined interaction/task orchestration, governed context assembly, instruction trust boundaries, model capability catalog and routing, normalized model invocation/results, typed tool proposals and brokered dispatch, deterministic plan validation, bounded orchestration/specialist delegation, governed memory formation, cancellable speech stages, provider fallback, evaluation, observability and lifecycle governance. Added five intelligence/runtime diagrams, conformance scenarios, informative security/API references and ADR-112–ADR-125. No model provider, agent framework, tool protocol, prompt platform, inference runtime or speech provider was selected.
 
 **1.13.0 — 14 Nov 2026:** Completed P3.8 architecture validation and technology selection. Compared implementation candidates against P2 requirements and P3.1–P3.7 contracts; approved a reference baseline covering Rust/Tokio device agents, Node.js 24 LTS/TypeScript/Fastify coordinator services, Temporal TypeScript workflows, PostgreSQL 16, pgvector, SQLite WAL, NATS JetStream, gRPC/Protobuf, Godot 4.7.2, native Kotlin/Compose and SwiftUI mobile clients, Home Assistant as the first optional home connector, OpenTelemetry and OCI/Docker Compose deployment. Defined a minimal P5 local-first profile and a separate full distributed profile, explicit rejections/deferrals, validation scenarios, implementation proof gates and ADR-126–ADR-145. Model/speech vendors, hosting vendor and object-storage vendor remain deferred pending evaluation. No implementation, prototype, benchmark, restore drill or production security test is claimed.
+
+**1.13.1 — 14 Nov 2026:** Reconciled Phase 3 completion status across the blueprint. Updated historical P3.1–P3.7 closure notes to distinguish decisions deferred at the time from subsequent P3.8 selections; moved remaining cryptographic, signing, IPC, provider and remote-media details to their correct P4/P6 proof gates; clarified model/vendor deferrals; and updated the top-level technology-selection rule and P3 phase status. No reference-stack selection changed.
 
 
 # 10. Current working state
@@ -4822,14 +4824,14 @@ P3 shall not silently relax P2 targets or introduce a tool/provider whose behavi
 
 # 19. P3 — System Architecture
 
-**Phase status:** Active  
+**Phase status:** Complete — P3.1–P3.8 architecture and reference technology baseline approved  
 **P3.1 status:** Complete — architecture drivers, system context and logical decomposition approved  
 **P3.2 status:** Complete — deployment topology, runtime placement, offline boundaries and initial availability/recovery targets approved  
 **P3.3 status:** Complete — device identity, pairing, credentials, authenticated sessions, command envelopes, relay boundaries, revocation and offline authorization approved  
 **P3.4 status:** Complete — durable event delivery, workflow state machines, scheduling, worker leases, reconciliation and notification semantics approved  
 **P3.5 status:** Complete — data ownership, synchronization scope, conflict handling, deletion propagation and backup/restore semantics approved  
 **P3.6 status:** Complete — shared adapter contract, platform-specific capability surfaces, execution semantics, integration safety and conformance requirements approved  
-**P3.7 status:** Complete — agent orchestration, context governance, model gateway, structured tool requests, bounded planning, model fallback and evaluation contracts approved
+**P3.7 status:** Complete — agent orchestration, context governance, model gateway, structured tool requests, bounded planning, model fallback and evaluation contracts approved  
 **P3.8 status:** Complete — architecture review, candidate comparison, reference technology baseline, explicit deferrals and implementation proof gates approved  
 **Purpose:** Transform the approved product and quality requirements into a coherent, secure, distributed architecture with explicit component responsibilities, data ownership, communication contracts and platform execution boundaries.
 
@@ -5336,7 +5338,7 @@ P3.8 approves a reference implementation baseline and records the reasons for ea
 
 A deferral is not an unowned TODO. Each item above has an owner phase or evidence gate in Sections 19.90–19.92. No deferred option may be introduced into the production baseline by convenience or transitive dependency.
 
-**P3.1 closure:** Architecture drivers, distributed system context, logical responsibility boundaries, multi-device execution model, secure remote-access principles, durable campaign/task model and reference YouTube workflow are approved. P3 remains active; deployment, detailed contracts, data architecture and technology evaluation remain open.
+**P3.1 closure at the time:** Architecture drivers, distributed system context, logical responsibility boundaries, multi-device execution model, secure remote-access principles, durable campaign/task model and reference YouTube workflow were approved. P3 remained active at that checkpoint; subsequent workstreams P3.2–P3.8 have since completed, as recorded in the current working state and P3.8 closure.
 
 ## 19.15 Deployment topology alternatives and decision
 
@@ -5755,7 +5757,7 @@ The relay may carry a command but cannot create, broaden, re-sign or approve its
 - A stable operation ID allows executor and coordinator to reconcile repeated dispatch with the original attempt.
 - Sequence gaps, stale timestamps, expired envelopes, invalid signatures, mismatched targets or consumed one-time authorization are rejected or sent to reconciliation.
 - If an action may already have occurred, the executor checks actual state before retry. Network timeout is not proof of failure.
-- Wire schema, serialization, signature algorithms and exact replay-window mechanics are P3.8 implementation decisions; semantic fields and enforcement points are architecture requirements now.
+- gRPC/Protobuf is the selected typed control-plane protocol (ADR-135). Exact service schemas, serialization compatibility rules, signature algorithms, credential formats and replay-window mechanics are P4 implementation/conformance decisions; semantic fields and enforcement points remain architecture requirements.
 
 ## 19.27 Secure relay and remote-session boundaries
 
@@ -5779,7 +5781,7 @@ The session broker/relay provides reachability and routing. It is not an authori
 - It cannot bypass the local executor's final authorization and freshness checks.
 - It cannot make an offline device available or guarantee successful delivery.
 
-Authenticated command envelopes retain issuer integrity across relay forwarding so a compromised relay can at most observe permitted routing metadata, delay, drop or replay data within detectable limits; it cannot forge a valid operation authorization. Sensitive remote viewing/control data receives authenticated encryption in transit, with endpoint-to-endpoint protection where the data path and product semantics permit it. Exact termination and visibility for remote media is a P3.8 decision and must be disclosed before that mode is enabled.
+Authenticated command envelopes retain issuer integrity across relay forwarding so a compromised relay can at most observe permitted routing metadata, delay, drop or replay data within detectable limits; it cannot forge a valid operation authorization. Sensitive remote viewing/control data receives authenticated encryption in transit, with endpoint-to-endpoint protection where the data path and product semantics permit it. Remote-media termination, visibility and relay behavior remain a P6 decision and must be disclosed before that mode is enabled.
 
 ### Remote-access capability separation
 
@@ -5881,13 +5883,13 @@ P3.3 closes the architecture contract only when the following scenarios are repr
 | Coordinator/identity service outage | Devices fail closed for new remote sessions and higher-risk actions; eligible local operation follows only bounded lease | AC-041, AC-042 |
 | Home gateway or service worker attempts lateral access | Its own identity and grants restrict it to explicitly delegated resources and tasks | AC-045 |
 
-These cases must eventually be exercised with valid, invalid, expired, revoked, replayed, altered and out-of-order credentials/messages. Security testing includes account isolation, credential-store inspection, logging/telemetry inspection, device loss, key rotation, backup/restore and coordinator/relay failure. P3.8 will choose concrete test tooling and cryptographic/interoperability profiles.
+These cases must eventually be exercised with valid, invalid, expired, revoked, replayed, altered and out-of-order credentials/messages. Security testing includes account isolation, credential-store inspection, logging/telemetry inspection, device loss, key rotation, backup/restore and coordinator/relay failure. P3.8 has selected the gRPC/Protobuf control-plane baseline and OIDC account-authentication protocol. Exact cryptographic algorithms, key/certificate profiles, credential/token formats, test tooling and production hardening are P4 proof items.
 
 ## 19.31 P3.3 closure
 
 **P3.3 status:** Complete — device/principal identity, pairing, credential separation and rotation, authenticated session establishment, command-envelope enforcement, relay trust boundaries, revocation and bounded offline authorization are defined.
 
-The governing decisions are recorded as ADR-074–ADR-080 in the main decision register. Exact transport, cryptographic algorithms/library, credential/token formats, wire schemas and implementation technology remain deferred to P3.8.
+The governing decisions are recorded as ADR-074–ADR-080 and remain the identity/security authority baseline. P3.8 subsequently selected gRPC/Protobuf for control-plane communication and OIDC for account authentication (ADR-135 and ADR-141). Exact cipher suites, cryptographic libraries, key/certificate lifecycle details, credential formats and concrete wire schemas are finalized and tested in P4.
 
 ## 19.32 Workflow and event architecture principles
 
@@ -5908,7 +5910,7 @@ The coordinator is the authoritative owner of workflow state. Workers perform as
 9. **User-visible control:** Campaigns, runs, steps, blockers, approvals, assigned workers, retries and verified outcomes remain inspectable, pausable and cancellable.
 10. **Independent notification delivery:** Notification failure never changes workflow truth, and notification receipt is never an execution approval.
 
-P3.4 does not select a database, event broker, workflow engine, queue product, scheduler library or programming language. It defines semantic contracts that candidate implementations must preserve.
+At P3.4 closure, database, event broker, workflow engine, queue product, scheduler library and programming language selection was deliberately deferred. P3.8 subsequently selected Temporal, PostgreSQL 16, NATS JetStream, TypeScript/Node.js 24 and the associated reference profile; the P3.4 semantic contracts remain authoritative.
 
 ## 19.33 Event, command and notification model
 
@@ -6507,7 +6509,7 @@ The implementation shall measure durable event acceptance latency, queue age, ev
 
 **P3.4 status:** Complete — durable event semantics, workflow object identities and state machines, schedule/occurrence rules, worker assignment and fencing leases, bounded retries, side-effect reconciliation, approval/control semantics and notification delivery are defined.
 
-The governing decisions are recorded as ADR-081–ADR-090 in the main decision register. No database, broker, queue, workflow engine, scheduler, transport or implementation language has been selected.
+The governing decisions are recorded as ADR-081–ADR-090. Those decisions were technology-neutral when P3.4 closed; P3.8 later selected Temporal, NATS JetStream, PostgreSQL 16, gRPC/Protobuf and the TypeScript/Node.js 24 coordinator baseline while preserving the P3.4 delivery and reconciliation semantics.
 
 ## 19.44 Data architecture principles and authority boundaries
 
@@ -6526,7 +6528,7 @@ The governing model is **domain-owned data with one canonical authority per reco
 7. **No blind last-write-wins:** Conflict resolution is semantic and domain-specific. A newer wall-clock timestamp alone cannot overwrite a concurrent user correction, deletion or authoritative workflow transition.
 8. **Deletion is a distributed lifecycle operation:** Deletion intent immediately restricts access and creates a durable tombstone; propagation continues across replicas, indexes, derived records, workers and backup restoration paths.
 9. **Backup is not synchronization:** A backup is a point-in-time recovery copy, not a live peer and not permission to restore stale grants, deleted records or revoked device credentials.
-10. **Physical placement remains deployment-configurable:** Managed-hosted and user-controlled deployments use the same logical ownership and access contracts. Physical memory placement, storage products and cryptographic implementation are selected in P3.8.
+10. **Physical placement remains deployment-configurable:** Managed-hosted and user-controlled deployments use the same logical ownership and access contracts. P3.8 selected PostgreSQL/pgvector and SQLite WAL as reference stores, while the physical location of Memory Authority, hosted storage vendor and key-management implementation remain deployment-specific.
 
 P3.5 preserves P2.5's distinction between memory, permission authority, task scheduling and execution. It also preserves P3.2's coordinator/worker separation and P3.3's independent device identities.
 
@@ -6869,6 +6871,8 @@ Implementation evidence shall include sync convergence tests, conflict-resolutio
 
 ## 19.54 Technology-selection sequence and readiness gate
 
+**Status update:** This section records the planned sequence before P3.8. The selection gate has now been completed; approved reference decisions are in Sections 19.86–19.94 and ADR-126–ADR-145. Remaining provider/vendor choices and proof gates are listed in Section 19.14.
+
 The architecture phases define when technology decisions become evidence-based. Technology selection is not postponed indefinitely, and it is not one arbitrary choice made before subsystem contracts exist.
 
 | Technology area | Contract/readiness input | Selection checkpoint |
@@ -6968,7 +6972,7 @@ Memory, workflow history, event journals, notifications, artifacts, caches, work
 
 Candidates may be shortlisted and tested as each P3 workstream stabilizes its contracts. Formal technology selection is completed at P3.8 after P3.5 data, P3.6 platform/integration and P3.7 agent/model-runtime requirements are available. P4 finalizes concrete integration contracts; P5 begins the first vertical-slice product implementation.
 
-**P3.5 closure:** Canonical data ownership, data-domain boundaries, sensitivity and synchronization scope, replica authority, consistency classes, offline sync, semantic conflict resolution, deletion/tombstone propagation, backup/restore, retention and operational observability are defined. Physical data-store, sync-engine, backup, index and key-management technologies remain unselected. P3.6 contracts are defined in Sections 19.56–19.70 and ADR-101–ADR-111.
+**P3.5 closure at the time:** Canonical data ownership, data-domain boundaries, sensitivity and synchronization scope, replica authority, consistency classes, offline sync, semantic conflict resolution, deletion/tombstone propagation, backup/restore, retention and operational observability were defined before selecting products. P3.8 subsequently selected PostgreSQL 16/pgvector and SQLite WAL for the reference stores. Specific hosted storage, backup vendor, synchronization implementation and key-management vendor remain deferred. P3.6 contracts are defined in Sections 19.56–19.70 and ADR-101–ADR-111.
 
 
 
@@ -6979,7 +6983,7 @@ Candidates may be shortlisted and tested as each P3 workstream stabilizes its co
 
 P3.6 defines how the shared LIA architecture discovers, describes, authorizes, invokes, observes and verifies operations exposed by heterogeneous platforms and external systems. It covers Linux and Windows desktop nodes, Android and iOS companion capabilities, connected-home/device gateways and external service connectors.
 
-P3.6 defines logical contracts and trust boundaries. It does not select a language, UI framework, window-management library, accessibility API wrapper, mobile framework, home automation platform, connector SDK, protocol implementation or provider. Those candidates are evaluated through the P3.8 technology-selection gate after P3.7 establishes the agent/tool/model-runtime requirements.
+P3.6 defines logical contracts and trust boundaries; at that workstream's closure it did not select implementation products. P3.8 later selected Rust/Tokio, gRPC/Protobuf, native mobile UI stacks and the first Hyprland reference profile. Specific IPC, Windows UIA bindings, home hardware coverage and provider implementations remain subject to P4–P6 proof gates.
 
 The key design rule is **common semantics, explicit capability differences**. A shared operation envelope, evidence model and lifecycle make adapters composable. They do not make every operating system or provider capable of every operation. A capability is advertised only when the current adapter, platform version, user session, permissions and resource support it.
 
@@ -7351,7 +7355,7 @@ State transitions are auditable. Revocation invalidates sessions/capability cach
 
 Adapter protocol, manifest schema, capability schema and operation schema have explicit version identifiers. Compatibility is negotiated before execution. Unknown required fields, unsupported major versions, unrecognized effect semantics or missing verification rules fail closed. Additive optional metadata may be tolerated only when the contract version explicitly defines that behavior.
 
-A downgrade or rollback cannot reactivate revoked permissions, stale manifests, expired grants or deleted data. Adapter updates are signed/authenticated under the chosen supply-chain model, staged, health-checked and reversible where safe. The concrete signing/update technology remains a P3.8 decision.
+A downgrade or rollback cannot reactivate revoked permissions, stale manifests, expired grants or deleted data. Adapter updates are signed/authenticated under the chosen supply-chain model, staged, health-checked and reversible where safe. The concrete signing/update technology remains a P4 supply-chain and platform-packaging proof item; P3.8 did not select a signing vendor or updater.
 
 ### Health and availability
 
@@ -7672,7 +7676,7 @@ The first vertical slice remains deliberately narrow: text and push-to-talk conv
 | Memory formation pipeline | Creates governed memory candidates from permitted experiences and outcomes | Candidate extraction and provenance links before canonical acceptance | Direct unreviewed writes to canonical memory |
 | Speech pipeline | Coordinates audio capture, recognition, turn detection, synthesis and interruption | Transient speech-stage state and timestamps | Independent microphone permission or permanent raw-audio archive |
 
-These are logical responsibilities, not mandatory process boundaries. P3.8/P4 determine packaging and concrete interfaces while preserving the authority boundaries.
+These are logical responsibilities, not mandatory process boundaries. P3.8 establishes the reference packaging/runtime profiles; P4 defines concrete interfaces and deployment contracts while preserving the authority boundaries.
 
 ### Authority hierarchy
 
@@ -7919,7 +7923,7 @@ The default is one orchestrating agent role with deterministic retrieval, workfl
 
 A specialist receives a delegated work item with parent reference, objective, exact output schema, minimum context references, allowed source/data scope, permitted tool subset, deadline, resource budget, maximum turns/depth and return format. It cannot change the parent objective/policy, create grants, approve operations, mutate canonical workflow/memory, invoke undelegated tools or recursively delegate beyond an explicit budget.
 
-Specialist output is evidence/proposal, not ground truth. The parent validates and decides whether to adopt it. P3.8 must justify a multi-agent framework or topology through comparative evidence.
+Specialist output is evidence/proposal, not ground truth. The parent validates and decides whether to adopt it. P3.8 reviewed multi-agent alternatives and selected the thin LIA-owned orchestrator as the baseline. A future specialist framework requires a new ADR and evidence of measurable benefit, isolation and bounded authority.
 
 ## 19.80 Governed learning and speech pipeline
 
@@ -8142,11 +8146,11 @@ sequenceDiagram
 
 P3.7 intentionally selects no model provider, model family, inference server, agent framework, orchestration library, prompt-management product, tool-calling protocol, MCP implementation, vector/embedding model, speech recognition provider or text-to-speech provider.
 
-P3.8 shall compare candidates against task-class correctness/grounding/tool-use evaluations; structured-output reliability; context limits and multimodal support; cancellation/streaming semantics; provider retention/training/region/locality; hosted/local inference performance and resource use; speech quality/interruption; orchestration security/isolation/auditability; license, maintenance, cost, quotas and migration/exit path.
+P3.8 compared model-runtime candidates at the architectural level and explicitly deferred model/speech vendor selection. The pre-production evaluation gate shall measure task-class correctness/grounding/tool-use; structured-output reliability; context and multimodal limits; cancellation/streaming; retention/training/region/locality; hosted/local performance; speech quality/interruption; orchestration security; license, maintenance, cost and migration/exit path.
 
 MCP or a provider-specific tool-call format may be evaluated as an interoperability option. Neither becomes the LIA authorization, risk or execution authority. LIA's typed capability and operation contracts remain authoritative regardless of transport.
 
-Technical spikes may compare a direct model API loop with an orchestration framework, local inference with hosted models, tool-call schema handling, retrieval/context assembly and speech pipelines. Spikes are evidence for P3.8, not a product implementation baseline.
+P4/P5 technical spikes may compare a direct model API loop with an orchestration framework, local inference with hosted models, tool-call schema handling, retrieval/context assembly and speech pipelines. These are implementation proof obligations after P3.8, not a product implementation baseline.
 
 ### Informative references
 
@@ -8158,7 +8162,7 @@ These public references inform architecture and risk analysis. They are not sele
 - [OpenAI Structured Outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs) — an example of schema-constrained output; schema conformance does not establish truth or authorization.
 - [Model Context Protocol specification](https://modelcontextprotocol.io/specification/2025-11-25) and [authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) — an interoperability option with transport-level authorization semantics; LIA still requires its own operation/resource grants and local enforcement.
 
-The threat model and provider controls must be rechecked at P3.8 against selected versions and deployment profile.
+P4/P5 must recheck the threat model, exact dependency versions, provider controls and deployment profile before real user data or consequential tools are enabled.
 
 ### P3.7 architecture decision records
 
@@ -8246,7 +8250,7 @@ Model/provider versions, routing rules, instruction bundles, tool schemas, conte
 
 The default is one orchestrating agent role with deterministic services and narrowly scoped specialists where justified. Specialists receive bounded context/capabilities, have no peer authority and cannot grant permissions or mutate shared workflow/memory state. Parallel/recursive delegation requires explicit limits, isolation, provenance and evaluation.
 
-**P3.7 closure:** Conversation/task orchestration, governed context assembly, instruction trust boundaries, model capability catalog/routing, normalized invocation/results, capability-filtered tool proposals, deterministic tool dispatch, plan validation, bounded specialist delegation, governed memory formation, cancellable speech pipeline, provider fallback, evaluation, observability and model/prompt/tool lifecycle controls are defined. Model providers, agent frameworks, tool protocols, inference runtimes and speech vendors remain unselected. P3.8 is next: architecture validation, threat/quality review, candidate comparison and technology selection.
+**P3.7 closure at the time:** Conversation/task orchestration, governed context assembly, instruction trust boundaries, model capability catalog/routing, normalized invocation/results, capability-filtered tool proposals, deterministic tool dispatch, plan validation, bounded specialist delegation, governed memory formation, cancellable speech pipeline, provider fallback, evaluation, observability and model/prompt/tool lifecycle controls were defined. Model/speech vendors remained unselected at that checkpoint; ADR-143 records their post-P3.8 evaluation gate. P3.8 has since completed in Sections 19.86–19.94.
 
 
 ## 19.86 P3.8 — Architecture validation and technology selection
