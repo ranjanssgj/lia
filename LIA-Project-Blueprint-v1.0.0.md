@@ -8775,7 +8775,7 @@ P4.1 is a design and contract milestone, not an implementation milestone. No ser
 
 | Area | Artifact | Contract boundary |
 |---|---|---|
-| Protobuf RPC | [control_plane.proto](docs/p4/proto/lia/v1/control_plane.proto) | Device sessions, control stream, capability manifests, command envelopes, operation acknowledgement and evidence |
+| Protobuf RPC | [control_plane.proto](docs/p4/proto/lia/v1/control_plane.proto) | Device sessions, control stream, capability manifests, signed command/offline-lease envelopes, operation acknowledgement and evidence |
 | User API | [lia-v1.yaml](docs/p4/openapi/lia-v1.yaml) | Device management, objectives, run inspection/cancellation, grant metadata/revocation and exact operation approvals |
 | Security | [security-profile-v1.md](docs/p4/security/security-profile-v1.md) | OIDC user authentication, device mTLS identity, command signature profile, local peer identity and offline lease rules |
 | Godot/Rust IPC | [presentation-agent-v1.md](docs/p4/ipc/presentation-agent-v1.md) | Local-only presentation state and user-interaction messages; Godot has no OS/tool authority |
@@ -8794,7 +8794,7 @@ P4.1 is a design and contract milestone, not an implementation milestone. No ser
 
 1. User authentication, device identity, service identity and connector identity remain separate.
 2. OIDC/API scopes and device mTLS prove identity/authentication; neither creates an operation grant.
-3. Command envelopes are bound to exact target, credential generation, operation, capability, resource generation, arguments digest, grant/policy version, risk, confirmation, expiry and replay identity.
+3. Command envelopes and offline authorization leases are bound to exact issuer/audience, target, credential generation, operation, capability, resource generation, arguments digest, grant/policy/revocation versions, risk, expiry and replay identity. Offline leases are single-use and limited to the P3.3 five-minute R0/R1 local-operation ceiling.
 4. A command ID is unique to a dispatch attempt; the operation ID remains stable across retries and reconciliation.
 5. The resource-owning Rust/device/provider adapter performs final permission, capability and resource checks immediately before an effect.
 6. Acknowledgement or transport delivery is not operation success. Verified success requires resource-appropriate evidence.

@@ -201,6 +201,48 @@ message SignedCommandEnvelope {
   CommandSignature signature = 2;
 }
 
+message OfflineAuthorizationLease {
+  string lease_id = 1;
+  string issuer_id = 2;
+  string audience = 3;
+  string account_id = 4;
+  string target_device_id = 5;
+  uint64 target_credential_generation = 6;
+  string capability_id = 7;
+  uint32 capability_schema_version = 8;
+  string operation_id = 9;
+  ResourceReference resource = 10;
+  string arguments_schema_uri = 11;
+  bytes arguments_sha256 = 12;
+  string purpose = 13;
+  string originating_task_id = 14;
+  string grant_id = 15;
+  uint64 policy_version = 16;
+  uint64 revocation_epoch = 17;
+  // Executor accepts only R0/R1; higher risk tiers fail closed.
+  RiskTier risk_tier = 18;
+  google.protobuf.Timestamp issued_at = 19;
+  google.protobuf.Timestamp not_before = 20;
+  google.protobuf.Timestamp expires_at = 21;
+  string nonce = 22;
+  uint64 signing_key_generation = 23;
+  // One lease authorizes one matching operation once; the consumed lease ID is journaled locally.
+}
+
+message SignedOfflineAuthorizationLease {
+  OfflineAuthorizationLease lease = 1;
+  // Signature profile must be lia-offline-lease-ed25519-jcs-v1, not the command profile.
+  CommandSignature signature = 2;
+}
+
+message OfflineLeaseReceipt {
+  string lease_id = 1;
+  string device_id = 2;
+  bool durably_stored = 3;
+  string reason_code = 4;
+  google.protobuf.Timestamp recorded_at = 5;
+}
+
 message DeviceHeartbeat {
   string device_id = 1;
   string session_id = 2;
@@ -288,6 +330,7 @@ message DeviceToCoordinator {
     DeviceEvent event = 14;
     CapabilityManifest capability_manifest = 15;
     SessionClose session_close = 16;
+    OfflineLeaseReceipt offline_lease_receipt = 17;
   }
 }
 
@@ -334,6 +377,7 @@ message CoordinatorToDevice {
     SessionDirective session_directive = 12;
     ManifestRefreshRequest manifest_refresh = 13;
     CoordinatorPing ping = 14;
+    SignedOfflineAuthorizationLease offline_lease = 15;
   }
 }
 
