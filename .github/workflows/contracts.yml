@@ -1,0 +1,64 @@
+name: Contract hygiene
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contracts-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-hygiene:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16.16@sha256:2d5c77ae9b0e0944ffb92f8d8fc2fa2edb215cb0976da8bac34df917af417e87
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: lia_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d lia_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26.13.1
+          package-manager-cache: false
+      - name: Install locked validation tools
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: OpenAPI 3.1 bundle and reference validation
+        run: npm run check:openapi
+      - name: Protobuf compiler validation
+        run: npm run check:proto
+      - name: JSON Schema and fixture validation
+        run: npm run check:json
+      - name: Strict TypeScript check
+        run: npm run check:types
+      - name: SQLite migration chain
+        run: npm run check:sqlite
+      - name: PostgreSQL migration chain
+        env:
+          DATABASE_URL: postgres://postgres@localhost:5432/lia_ci
+        run: npm run check:postgres
+      - name: Record toolchain summary
+        if: always()
+        run: |
+          {
+            echo '### Contract hygiene toolchain'
+            echo '```text'
+            node --version
+            npm --version
+            echo 'See step logs for protoc and database runtime versions.'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

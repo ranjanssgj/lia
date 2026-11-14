@@ -12,25 +12,28 @@ coverage/
 # Godot generated/imported state
 .godot/
 export.cfg
-export_presets.cfg
 
 # Local environment and credentials
 .env
 .env.*
 !.env.example
-*.pem
-*.key
 *.p12
 *.pfx
-secrets/
+/.local-data/
+/secrets/
+*.private.pem
+*_private.pem
+*.secret.key
+*_secret.key
 
-# Local databases and runtime output
-*.db
-*.db-wal
-*.db-shm
-*.sqlite
-*.sqlite3
+# Local runtime output; database fixtures remain trackable.
+/runtime-data/
+/.toolchain/
 *.log
 
 # Local evidence may contain sensitive data; commit only reviewed, redacted evidence.
 evidence-local/
+
+# Explicitly retain synthetic fixtures and reviewed evidence, including public keys.
+!testdata/**
+!evidence/**

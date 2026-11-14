@@ -6,4 +6,4 @@ LIA is being developed as a local-first desktop companion with an authority-sepa
 
 P4 integration contracts are merged into `main`. Their implementation and conformance gates remain **Not Run**. P5 is the approved Linux-first, single-display vertical slice; see the [P5 plan](docs/p5/README.md) for milestone order, acceptance-condition mapping, evidence rules and open owner decisions.
 
-This repository does not yet have implementation workspaces, pinned toolchains or runnable build/test scripts. Do not treat the draft P4 contracts as verified interfaces.
+The initial M0 contract-validation toolchain and workflow are present; the first CI run and its results are pending. Rust/Godot implementation workspaces have not been created. Do not treat the draft P4 contracts or a green hygiene check as verified interfaces.

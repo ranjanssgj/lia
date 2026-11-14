@@ -18,17 +18,19 @@
 
 ## Work layout and commands
 
-This repository currently contains the blueprint and P4 contract package; implementation workspaces and build commands have not yet been established. Follow the milestone-specific layout and commands in [`docs/p5/README.md`](docs/p5/README.md). Do not invent a second layout or report a build command as available until its toolchain and script are checked in.
+This repository currently contains the blueprint, P4 contract package and initial contract-validation tooling; Rust/Godot implementation workspaces have not yet been established. Follow the milestone-specific layout and commands in [`docs/p5/README.md`](docs/p5/README.md). Do not invent a second layout or report an implementation build command as available until its toolchain and script are checked in.
+
+For the pinned Linux validation environment, run `bash toolchain/bootstrap.sh`, then use the corresponding `npm run check:*` command. The CI workflow runs OpenAPI bundling, Protobuf compilation, schema/fixture validation, strict TypeScript checking and clean PostgreSQL/SQLite migration chains. These checks do not mark P4 conformance gates Passed.
 
 Planned areas are:
 
 - `crates/`: Rust device agent, persistence and platform adapters.
 - `apps/`: Godot presentation and any explicitly approved local application layer.
-- `toolchain/`: exact tool versions, dependency policy and bootstrap checks.
-- `testdata/`: synthetic fixtures and versioned security/digest vectors.
+- `toolchain/`: pinned validation/runtime tools, dependency policy and bootstrap scripts.
+- `testdata/`: standards-derived public vectors and synthetic fixtures.
 - `evidence/`: redacted, reproducible gate evidence; never secrets or private content.
 
-These are planned paths, not a claim that those workspaces already exist.
+Only the implementation workspaces under `crates/` and `apps/` remain planned; the documentation/tooling paths above already exist.
 
 ## Definition of done
 
