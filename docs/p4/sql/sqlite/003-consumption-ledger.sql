@@ -1,8 +1,24 @@
 -- LIA P4 draft SQLite migration 003: single-use offline leases and replay ledgers.
 -- Apply after 001/002. The ledger is device-local and persists across app restart/rollback.
--- Verify signature/trust/time/resource first; then in one BEGIN IMMEDIATE transaction insert the
--- nonce, mark the operation as possibly effected, advance the lease to consumed, and commit BEFORE
--- the adapter performs any effect.
+-- Verify signature, trust/key generation, local policy, time confidence, resource generation,
+-- and argument digest before execution.
+--
+-- Signed CommandEnvelope path (it carries session_sequence):
+--   BEGIN IMMEDIATE;
+--   1. Compare-and-swap local_session_sequence so incoming sequence > stored sequence.
+--   2. Insert the command nonce into local_consumed_nonce.
+--   3. Mark the operation running + side_effect_may_have_occurred=1.
+--   COMMIT. Only after COMMIT may the adapter effect begin.
+--
+-- OfflineAuthorizationLease path (it has a lease nonce but no session_sequence field):
+--   BEGIN IMMEDIATE;
+--   1. Insert the offline-lease nonce/reference into local_consumed_nonce.
+--   2. Mark the operation running + side_effect_may_have_occurred=1.
+--   3. Transition the exact stored lease to consumed.
+--   COMMIT. Only after COMMIT may the adapter effect begin.
+--
+-- A failed check/UNIQUE violation aborts and fails closed. An uncertain crash after commit
+-- enters reconciliation; it never replays the consumed command/lease.
 
 ALTER TABLE local_operation_journal
     ADD COLUMN revocation_epoch INTEGER NOT NULL DEFAULT 0 CHECK (revocation_epoch >= 0);
@@ -178,12 +194,15 @@ BEGIN
     SELECT RAISE(ABORT, 'operation must be durably marked as possibly effected before lease consumption');
 END;
 
--- Highest accepted CommandEnvelope.session_sequence per control session. Update it with a
--- compare-and-swap predicate (incoming sequence > last_session_sequence) in the same transaction.
+-- Highest accepted CommandEnvelope.session_sequence per authenticated control session.
+-- Insert this row at 0 when OpenSession succeeds. Set retain_until to session expiry plus the
+-- configured maximum accepted clock skew. A new authenticated session gets a new session_id.
 CREATE TABLE local_session_sequence (
     session_id TEXT PRIMARY KEY,
     last_session_sequence INTEGER NOT NULL CHECK (last_session_sequence >= 0),
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    retain_until TEXT NOT NULL
+        CHECK (julianday(retain_until) IS NOT NULL AND julianday(retain_until) > julianday(updated_at))
 );
 
 -- One BEGIN IMMEDIATE transaction inserts nonce, marks the operation as possibly effected,
@@ -206,7 +225,16 @@ END;
 CREATE TRIGGER local_session_sequence_monotonic
 BEFORE UPDATE ON local_session_sequence
 WHEN NEW.session_id IS NOT OLD.session_id
-  OR NEW.last_session_sequence < OLD.last_session_sequence
+  OR NEW.last_session_sequence <= OLD.last_session_sequence
+  OR NEW.retain_until IS NOT OLD.retain_until
 BEGIN
-    SELECT RAISE(ABORT, 'session sequence cannot change identity or move backwards');
+    SELECT RAISE(ABORT, 'session sequence must strictly increase; identity and retention deadline are immutable');
+END;
+
+CREATE TRIGGER local_session_sequence_retention
+BEFORE DELETE ON local_session_sequence
+WHEN julianday(OLD.retain_until) IS NULL
+  OR julianday(OLD.retain_until) > julianday('now')
+BEGIN
+    SELECT RAISE(ABORT, 'session sequence watermark cannot be deleted before expiry plus clock-skew retention');
 END;

@@ -14,6 +14,8 @@ Reconciles cross-contract fields and closes draft persistence gaps identified du
 - Adds rebuildable objective, run, grant-metadata and request-status projections plus bounded API idempotency records without moving canonical ownership from Temporal or Permission Authority.
 - Documents cross-contract mappings and distinguishes P4 gates from MOBILE-01/HOME-01, which remain P6 work.
 
+- Separates offline-lease nonce consumption from CommandEnvelope session-sequence replay protection; the lease has no session-sequence field. Command sequence is strictly increasing, and its watermark is retained through session expiry plus configured clock skew.
+
 ### Review verification
 
 Independent checks executed in this review: SQLite migrations 001–004 on SQLite 3.46.1; exact lease-to-operation binding tests (target, resource revision, observation timestamp, owning device and argument digest), rejection of R2 leases, nonce replay rejection, consume-before-effect ordering and operation-claim immutability; JSON Schema Draft 2020-12 meta-validation and all four fixture validations; YAML parsing plus structural assertions for OpenAPI 3.1, the request-status route and HTTP 429 on all 11 operations; strict TypeScript checking of the provider interface file; relative-link checks for the P4 README and blueprint. These checks are not full conformance gates. After the final replay-hardening edit, the additional SQLite nonce immutability, pre-deadline deletion guard and monotonic session-sequence triggers were separately exercised against SQLite 3.46.1 in an isolated trigger fixture; the full updated migration was not rerun after that last trigger-only edit.
