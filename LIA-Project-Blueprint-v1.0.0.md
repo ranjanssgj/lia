@@ -5796,28 +5796,28 @@ LIA does not promise exactly-once message delivery or exactly-once side effects.
 
 ### Event delivery sequence
 
-~~~mermaid
-sequenceDiagram
-    participant C as Authenticated command handler
-    participant W as Workflow state authority
-    participant O as Durable outbox
-    participant D as Event dispatcher
-    participant R as Event consumer
-    participant I as Consumer inbox
+```mermaid
 
+sequenceDiagram
+    participant C as "Command handler"
+    participant W as "Workflow state authority"
+    participant O as "Durable outbox"
+    participant D as "Event dispatcher"
+    participant R as "Event consumer"
+    participant I as "Consumer inbox"
     C->>W: Submit command with aggregate version
     W->>W: Validate principal, grant and state transition
     W->>O: Commit aggregate state, event and outbox atomically
     W-->>C: Acknowledge durable acceptance
     D->>O: Read pending event
-    D->>R: Deliver event (at least once)
+    D->>R: Deliver event at least once
     R->>I: Deduplicate and record receipt
-    I-->>R: New event or duplicate
+    I-->>R: Return new event or duplicate status
     R->>R: Apply legal transition once
     R-->>D: Acknowledge consumer processing
     D->>O: Mark delivery progress
-    Note over D,R: A crash may cause redelivery; stable IDs make it safe
-~~~
+    Note over D,R: A crash can cause redelivery. Stable IDs make it safe.
+```
 
 ## 19.35 Durable workflow object model and authority
 
@@ -7238,34 +7238,35 @@ flowchart TB
 
 ### Adapter invocation and verification sequence
 
-~~~mermaid
+```mermaid
+
 sequenceDiagram
-    participant W as Workflow authority
-    participant P as Permission/risk authority
-    participant R as Router
-    participant X as Resource-owning executor
-    participant A as Platform/service adapter
-    participant S as Resource/provider
+    participant W as "Workflow authority"
+    participant P as "Permission authority"
+    participant R as "Router"
+    participant X as "Resource-owning executor"
+    participant A as "Platform adapter"
+    participant S as "Target resource"
     W->>R: Assign operation ID and exact target/capability
-    R->>X: P3.3 authenticated command envelope
+    R->>X: Send authenticated target-bound command
     X->>X: Validate issuer, target, expiry and replay
     X->>A: Resolve manifest, resource generation and schema
-    A-->>X: Current capability and preflight state
+    A-->>X: Return current capability and preflight state
     X->>P: Validate current grant, scope, risk and approval
     P-->>X: Allow exact operation or deny
     X->>A: Execute typed request after local validation
     A->>S: Perform supported side effect
-    S-->>A: Acknowledgement / state transition
-    A->>S: Read or receive independent outcome evidence
-    S-->>A: Resulting state / provider record
-    A-->>X: Typed result, evidence and limitation
-    X-->>W: Operation result and correlated evidence
+    S-->>A: Return acknowledgement or state transition
+    A->>S: Read independent outcome evidence
+    S-->>A: Return resulting state or provider record
+    A-->>X: Return typed result, evidence and limitations
+    X-->>W: Report operation result with correlated evidence
     alt Outcome verified
         W->>W: Commit successful step transition
     else Outcome uncertain
-        W->>W: Enter reconciliation; prohibit blind retry
+        W->>W: Enter reconciliation and prohibit blind retry
     end
-~~~
+```
 
 ### Capability discovery and negotiation
 
