@@ -5090,38 +5090,10 @@ flowchart TB
     ID --> AUDIT
 ~~~
 
-## 19.21 P3.2 architecture decision records
+## 19.21 P3.2 closure
 
-### ADR-069 — Coordinator-led hybrid deployment with a hosted default
+**P3.2 status:** Complete — deployment alternatives, hosted-default/self-hosted-target topology, runtime placement, coordination-versus-worker boundaries, data-locality constraints, partition behavior and initial managed availability/recovery targets are defined.
 
-**Status:** Approved
-
-The initial reference deployment uses an always-on managed coordinator independent of the user's primary PC. A user-controlled/self-hosted coordinator remains a first-class architectural deployment target using the same logical contracts. Peer-to-peer communication may optimize selected paths but is not the sole authority or durable coordination mechanism. Specific providers, hosting regions and packaging remain deferred.
-
-### ADR-070 — Separate coordination authority from worker execution
-
-**Status:** Approved
-
-The coordinator owns authoritative device registry, policy/grant references, workflow state, scheduling and notification state. Device agents and service workers execute only assigned, authorized steps and report evidence. The initial deployment may package logical control-plane modules together, but worker execution remains isolated from coordinator authority and model output cannot directly mutate authoritative task state.
-
-### ADR-071 — Bounded offline execution under an explicit lease
-
-**Status:** Approved
-
-When disconnected from the coordinator, a device may execute only explicitly offline-eligible R0/R1 operations covered by a short-lived, device- and task-bound offline lease. R2–R4 operations are blocked pending current authorization; recurring external publication and other consequential external actions do not continue through a coordinator partition. Exact lease format, lifetime and cryptographic enforcement are P3.3 work.
-
-### ADR-072 — Data locality is a worker-routing constraint
-
-**Status:** Approved
-
-Worker selection must account for data ownership, sensitivity, scope, destination and permitted processing location. Hosted workers receive only task-specific data that the user-authorized policy permits. Raw microphone, camera and screen observations are not synchronized to the coordinator by default. Memory access remains governed by P2.5, independently of device enrollment.
-
-### ADR-073 — Initial managed-coordinator availability and recovery targets
-
-**Status:** Approved as initial engineering targets; not yet validated
-
-The initial managed profile targets 99.5% monthly coordination availability, an RTO of 60 minutes or less after a declared major outage, and RPO 0 for acknowledged critical workflow, operation-journal, grant/revocation and campaign-state records. These targets require implementation evidence and cost/reliability validation before they may be represented as a service guarantee. Self-hosted deployments publish their own configured recovery posture.
-
-**P3.2 closure:** Deployment alternatives, hosted-default/self-hosted-target topology, runtime placement, coordination-versus-worker boundaries, data-locality constraints, partition behavior and initial managed availability/recovery targets are defined. No cloud vendor, database, event broker, workflow engine, transport protocol, programming language or model provider has been selected. P3.3 will define device identity, credential lifecycle, authenticated session establishment, relay boundaries, revocation and offline-lease enforcement.
+The governing decisions are recorded as ADR-069–ADR-073 in the main decision register. No cloud vendor, database, event broker, workflow engine, transport protocol, programming language or model provider has been selected. P3.3 will define device identity, credential lifecycle, authenticated session establishment, relay boundaries, revocation and offline-lease enforcement.
 
 
