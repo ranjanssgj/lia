@@ -4,10 +4,10 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.11.0\
+> **Version:** 1.12.0\
 > **Last updated:** 14 November 2026\
 > **Current phase:** P3 --- System Architecture\
-> **Current workstream:** P3.6 --- Platform and Integration Adapter Contracts\
+> **Current workstream:** P3.7 --- Agent Intelligence and Model Runtime\
 > **Document status:** Active; Phase 2 requirements baseline approved; Phase 3 architecture in progress
 
 ------------------------------------------------------------------------
@@ -302,7 +302,7 @@ through controlled change; they do not invalidate earlier requirements.
   P0      Concept and vision                 Complete
   P1      Product definition                 Complete
   P2      Requirements engineering           Complete — baseline approved
-  P3      System architecture                Active — P3.1–P3.6 complete; P3.7 next
+  P3      System architecture                Active — P3.1–P3.7 complete; P3.8 next
   P4      Integration contracts              Pending
   P5      First vertical slice               Pending
   P6      Companion integration              Pending
@@ -2271,6 +2271,91 @@ Each external account/connector has independent identity, credentials, scopes, q
 Adapters have explicit enrollment, discovery, health, compatibility, suspension, revocation, update and removal states. Incompatible contracts fail closed. Cancellation is a request to stop at a safe boundary, not proof of rollback; any possible side effect is verified or reconciled before retry or reassignment.
 
 
+### ADR-112 — Intelligence proposes; deterministic authorities decide and execute
+
+**Status:** Approved
+
+Model and agent components may interpret, retrieve, reason, propose objectives/plans, prepare typed tool requests and explain results. They do not own permissions, canonical workflow state, device/provider execution, memory authority or verified completion. Side effects pass through P3.4 workflow authority, P2.6 permission/risk policy and P3.6 resource-owning adapters.
+
+### ADR-113 — Governed context assembly is the only model-context ingress
+
+**Status:** Approved
+
+Conversation and task models receive context only through a governed assembly boundary that enforces purpose, sensitivity, provenance, freshness, scope, locality and retention policy. Context preserves the distinction between trusted instructions, user requests, memory evidence and untrusted external content.
+
+### ADR-114 — Retrieved and tool-supplied content remains untrusted data
+
+**Status:** Approved
+
+Webpages, files, messages, memory excerpts, application content, provider events, tool results and adapter descriptions cannot override trusted instructions, change grants or authorize actions. Trust labels and provenance remain attached through extraction, summarization and context compaction. Prompt separation is defense in depth, not the security boundary.
+
+### ADR-115 — Model outputs are typed proposals and fail closed on invalid structure
+
+**Status:** Approved
+
+The runtime requests schema-constrained output for machine-consumed decisions where supported, then independently validates schema, semantics, bounds, provenance and policy. Parseable JSON or schema conformance does not prove truth, correctness, permission or safety. Invalid, incomplete or unsupported outputs are rejected or treated as non-actionable.
+
+### ADR-116 — Tool availability is computed from current capability and policy state
+
+**Status:** Approved
+
+The tool broker derives the model-visible tool set from current adapter manifests, target/resource state, user/task scope, data locality and permission policy. This filtered set is an affordance list, not an authorization grant. The resource-owning executor revalidates the exact operation immediately before any side effect.
+
+### ADR-117 — Tool dispatch is mediated by a separate broker and local executor
+
+**Status:** Approved
+
+A model tool call is an untrusted request. A deterministic broker validates tool identity, schema, resource, target, arguments, purpose, risk and approval requirements before routing through the P3.3 command envelope to the P3.6 owning adapter. Models cannot invoke arbitrary shell commands, APIs, files or devices outside declared capabilities.
+
+### ADR-118 — Workflow authority validates and adopts proposed plans
+
+**Status:** Approved
+
+The planner emits a versioned plan proposal with typed steps, dependencies, capability requirements, risks and success/verification criteria. The deterministic workflow authority validates bounds, DAG structure, permissions, deadlines, campaign policy, data locality and resource budgets before adoption. A model cannot mark its own plan steps successful or mutate durable workflow state directly.
+
+### ADR-119 — Agent turns, delegation and tool loops are bounded
+
+**Status:** Approved
+
+Every inference/task cycle has explicit limits for model turns, tool calls, plan steps, parallelism, wall time, token/resource use, retries and delegation depth. Replanning is event- or state-change-driven and uses P3.4 bounded iteration rules. Unbounded self-prompting, recursive agent delegation and high-frequency model polling are prohibited.
+
+### ADR-120 — Model routing follows task capability and data-processing policy
+
+**Status:** Approved
+
+The model gateway routes by task class, required modalities/output capabilities, quality evidence, latency/resource constraints, sensitivity, data locality, provider retention/processing terms, region and user policy. A fallback provider is eligible only if it satisfies the same or stricter data-handling and authority constraints.
+
+### ADR-121 — Provider sessions are disposable execution state, not LIA authority
+
+**Status:** Approved
+
+LIA owns canonical conversation/task identifiers, workflow state, memory, instruction versions and evidence lineage. Provider-side conversation IDs, caches, prompt prefixes and session state are transient implementation aids. Cross-provider continuation is reconstructed from authorized context, not assumed to preserve hidden state.
+
+### ADR-122 — Memory formation is a governed proposal and commit pipeline
+
+**Status:** Approved
+
+Models may suggest memory candidates or summaries, but the P2.5 Memory Authority evaluates provenance, sensitivity, source scope, confidence, temporal validity, contradiction, retention and user correction before persistence. Ordinary model text or inferred persona traits are not silently promoted to permanent memory.
+
+### ADR-123 — Speech is a cancellable modality pipeline with text fallback
+
+**Status:** Approved
+
+Audio capture, speech recognition, turn detection, response generation and synthesis are separate stages with independent permission, latency, failure and retention semantics. Raw audio remains transient by default. User interruption stops synthesis promptly and preserves task state. Text remains a complete fallback when speech services are unavailable.
+
+### ADR-124 — Model, prompt, tool and policy changes require versioned evaluation
+
+**Status:** Approved
+
+Model/provider versions, routing rules, system instruction bundles, tool schemas, context policies and safety validators are versioned and traceable. Changes are evaluated against representative task-quality, safety, privacy, tool-use, latency and cost suites before promotion. Canary/rollback and explicit degraded states are required.
+
+### ADR-125 — Multi-agent specialization is optional and subordinate
+
+**Status:** Approved
+
+The default architecture is one orchestrating agent role with deterministic services and narrowly scoped specialist calls where justified. Specialists receive bounded task-specific context and capabilities, have no implicit peer authority and cannot grant permissions or directly mutate shared workflow/memory state. Parallel or recursive delegation requires explicit limits, isolation, provenance and evaluation.
+
+
 # 9. Change log
 
   ------------------------------------------------------------------------
@@ -2361,6 +2446,8 @@ Adapters have explicit enrollment, discovery, health, compatibility, suspension,
 
 **1.11.0 — 14 Nov 2026:** Completed P3.6 platform and integration adapter architecture. Defined the shared adapter lifecycle, capability manifest, resource identity and freshness model, target-bound execution and verification contract, typed failure and cancellation semantics, Linux Wayland/X11 distinctions, Windows desktop automation boundary, Android/iOS companion constraints, per-resource home automation permissions and safety tiers, external connector identity/scope/rate-limit/event contracts, adapter isolation and version compatibility. Added platform and integration architecture diagrams, conformance scenarios, informative platform references and ADR-101–ADR-111. No language, desktop framework, automation library, home platform, connector framework or provider was selected.
 
+**1.12.0 — 14 Nov 2026:** Completed P3.7 agent intelligence and model runtime architecture. Defined interaction/task orchestration, governed context assembly, instruction trust boundaries, model capability catalog and routing, normalized model invocation/results, typed tool proposals and brokered dispatch, deterministic plan validation, bounded orchestration/specialist delegation, governed memory formation, cancellable speech stages, provider fallback, evaluation, observability and lifecycle governance. Added five intelligence/runtime diagrams, conformance scenarios, informative security/API references and ADR-112–ADR-125. No model provider, agent framework, tool protocol, prompt platform, inference runtime or speech provider was selected.
+
 
 # 10. Current working state
 
@@ -2374,7 +2461,8 @@ Adapters have explicit enrollment, discovery, health, compatibility, suspension,
 **P3.5 status:** Complete — canonical data ownership, scoped synchronization, conflict resolution, deletion propagation and backup/restore semantics approved  
 **Overall status:** P3 is active. No programming language, framework, database, model provider, cloud vendor, transport protocol, cryptographic library or production infrastructure product has been selected.  
 **P3.6 status:** Complete — shared adapter contract, platform-specific capability surfaces, execution semantics, integration safety and conformance requirements approved  
-**Next action:** Define the agent intelligence, model gateway, tool-request and context-governance contracts in P3.7.
+**P3.7 status:** Complete — agent orchestration, context governance, model gateway, structured tool requests, bounded planning, model fallback and evaluation contracts approved
+**Next action:** Validate architecture quality attributes, threat scenarios, interoperability and technology candidates in P3.8.
 
 
 ## Phase 2 exit criteria
@@ -4618,6 +4706,7 @@ P3 shall not silently relax P2 targets or introduce a tool/provider whose behavi
 **P3.4 status:** Complete — durable event delivery, workflow state machines, scheduling, worker leases, reconciliation and notification semantics approved  
 **P3.5 status:** Complete — data ownership, synchronization scope, conflict handling, deletion propagation and backup/restore semantics approved  
 **P3.6 status:** Complete — shared adapter contract, platform-specific capability surfaces, execution semantics, integration safety and conformance requirements approved  
+**P3.7 status:** Complete — agent orchestration, context governance, model gateway, structured tool requests, bounded planning, model fallback and evaluation contracts approved
 **Purpose:** Transform the approved product and quality requirements into a coherent, secure, distributed architecture with explicit component responsibilities, data ownership, communication contracts and platform execution boundaries.
 
 P3 shall preserve the Phase 2 requirements baseline and the approved multi-device scope extension. Architecture choices must be justified against requirements and quality attributes; technologies are selected only after responsibilities, trust boundaries and contracts are sufficiently clear.
@@ -5105,7 +5194,7 @@ flowchart TB
 | P3.4 — Workflow and event architecture | Durable task state, event model, scheduler, campaign runs, leases, retry/reconciliation and notification events | Complete |
 | P3.5 — Data ownership and synchronization | Memory authority, task/event records, device caches, conflict resolution, retention and deletion propagation | Complete |
 | P3.6 — Platform and integration adapter contracts | Linux/Windows desktop nodes, mobile capabilities, home automation and external service connectors | Complete |
-| P3.7 — Agent intelligence and model runtime | Conversation orchestration, planning, model gateway, tool/action request schema and context boundaries | Pending |
+| P3.7 — Agent intelligence and model runtime | Conversation orchestration, planning, model gateway, tool/action request schema and context boundaries | Complete |
 | P3.8 — Architecture validation and technology selection | ADR review, quality scenarios, threat analysis, component trade-offs and justified stack selection | Pending |
 
 ## 19.14 Decisions intentionally deferred
@@ -7426,7 +7515,613 @@ Each external account/connector has independent identity, credentials, scopes, q
 
 Adapters have explicit enrollment, discovery, health, compatibility, suspension, revocation, update and removal states. Incompatible contracts fail closed. Cancellation is a request to stop at a safe boundary, not proof of rollback; any possible side effect is verified or reconciled before retry or reassignment.
 
-**P3.6 closure:** Shared adapter contracts, dynamic capability manifests, resource identity/freshness, target-bound execution, typed results/errors, verification and cancellation semantics, Linux Wayland/X11 boundaries, Windows desktop/UIA separation, Android/iOS lifecycle constraints, per-resource home automation safety, isolated provider connectors, adapter lifecycle/versioning and conformance scenarios are defined. Platform and integration technologies remain unselected. P3.7 is next: agent intelligence, model/runtime and tool-request contracts.
+**P3.6 closure:** Shared adapter contracts, dynamic capability manifests, resource identity/freshness, target-bound execution, typed results/errors, verification and cancellation semantics, Linux Wayland/X11 boundaries, Windows desktop/UIA separation, Android/iOS lifecycle constraints, per-resource home automation safety, isolated provider connectors, adapter lifecycle/versioning and conformance scenarios are defined. Platform and integration technologies remain unselected. P3.7 is complete. P3.8 will validate the integrated architecture, review threat and quality scenarios, compare technology candidates and record final stack decisions.
 
 
 
+
+
+## 19.71 P3.7 — Agent intelligence and model runtime
+
+### Purpose and completion boundary
+
+P3.7 defines how LIA turns a conversation, user objective, authorized event or bounded proactive opportunity into context-aware reasoning, a useful response, a proposed plan or a typed request for a tool. It defines the shared agent runtime, model gateway/provider abstraction, context assembly contract, instruction trust model, tool brokerage, plan validation boundary, model routing, speech-stage integration, fallback behavior and evaluation requirements.
+
+The central principle is **reasoning is not authority**. A model can decide that a tool may be useful and emit a structured request. It cannot grant itself a capability, execute a side effect, alter workflow state, persist arbitrary memory or certify its own work. P3.3, P3.4, P3.5 and P3.6 remain the authoritative identity, workflow, data and execution boundaries.
+
+P3.7 defines provider-neutral logical contracts and selection criteria. It does not choose a model vendor, model family, inference server, agent framework, prompt-management system, speech recognition/synthesis provider, embedding model, tool-call protocol or model hosting vendor. Candidate evaluation and formal approval occur at P3.8.
+
+The first vertical slice remains deliberately narrow: text and push-to-talk conversation, the supported Linux desktop operation, and one permitted low-sensitivity memory operation. Completion of P3.7 does not imply full autonomous multi-day campaign execution.
+
+## 19.72 Intelligence runtime components and responsibility boundaries
+
+| Component | Responsibility | Owns | Must not own |
+|---|---|---|---|
+| Conversation orchestrator | Classifies interaction, manages turn lifecycle, interruption and response delivery | Conversation/turn correlation and transient orchestration state | Canonical memory, grants, durable task status or device effects |
+| Context broker/assembler | Resolves information needs, queries governed retrieval and assembles context | Context manifest, evidence references, budget and provenance trace for one invocation | Memory authority or permission creation |
+| Instruction registry | Versions trusted behavior instructions, task templates and output schemas | Instruction bundle identity, review and rollout metadata | Runtime authorization or secret storage |
+| Agent reasoning/planning service | Interprets request, asks clarification, generates a response or proposes a bounded plan | Ephemeral reasoning output and proposal artifacts | Workflow transition authority, scheduling or final verification |
+| Model gateway | Applies routing policy, invokes providers, enforces timeouts and normalizes results | Invocation lifecycle, provider selection and usage state | User data authority, grants or arbitrary business actions |
+| Model/provider adapter | Translates normalized requests/results into provider-specific APIs | Provider protocol/session details and provider health | LIA canonical state or permission decisions |
+| Tool/capability broker | Builds scoped tool list and validates/dispatches model-proposed requests | Tool catalog projection, schema validation and dispatch audit | Grant creation or resource-level authorization bypass |
+| Policy/approval integration | Queries authoritative permission/risk service and approval state | References to authoritative decisions | Independent policy state or grant creation |
+| Deterministic workflow authority | Validates plan proposals and owns durable task execution | Objective/campaign/run/step state and transitions | Model reasoning or provider session state |
+| Outcome/evidence evaluator | Checks grounding, source coverage and operation evidence required by a task | Evaluation results and evidence references | Self-certification by the model that generated the output |
+| Memory formation pipeline | Creates governed memory candidates from permitted experiences and outcomes | Candidate extraction and provenance links before canonical acceptance | Direct unreviewed writes to canonical memory |
+| Speech pipeline | Coordinates audio capture, recognition, turn detection, synthesis and interruption | Transient speech-stage state and timestamps | Independent microphone permission or permanent raw-audio archive |
+
+These are logical responsibilities, not mandatory process boundaries. P3.8/P4 determine packaging and concrete interfaces while preserving the authority boundaries.
+
+### Authority hierarchy
+
+1. User identity, trusted application policy and current explicit grants establish authority.
+2. Permission/risk service evaluates whether the exact operation is permitted and whether confirmation is required.
+3. Workflow authority owns accepted plan snapshots, schedules, dependencies, leases, retries and completion.
+4. Resource-owning device/service adapter validates and executes the exact capability locally.
+5. The model produces reasoning, user-facing text and structured proposals only.
+
+A model is not promoted to a higher authority because it has a system prompt, a tool in its context, a long conversation, a memory, a high confidence score or a successful prior action.
+
+## 19.73 Interaction classes, turn lifecycle and continuity
+
+### Interaction classes
+
+Every model invocation is assigned a purpose-specific task class before context assembly and routing:
+
+| Task class | Typical input | Permitted output | Default authority |
+|---|---|---|---|
+| Conversation | User text or recognized speech | Natural-language response, clarification, refusal or handoff | No side effect |
+| Retrieval answer | Question plus authorized source evidence | Grounded answer with source/uncertainty references | Read only |
+| Contextual interpretation | Authorized environmental/event facts | Typed interpretation or explanation | No side effect |
+| Plan proposal | User objective or authorized task trigger | Objective interpretation and bounded plan proposal | Proposal only |
+| Tool selection/request | Accepted task step plus available tool definitions | Typed tool-call proposals | Proposal only |
+| Tool-result interpretation | Typed tool result and evidence | Summary, next-step proposal or clarification | No side effect |
+| Memory candidate extraction | Permitted source/experience references | Candidate records with provenance | Candidate only |
+| Proactive suggestion | Eligible goal, deadline or permitted signal | Suggested action or question | No execution authority |
+| Speech recognition/synthesis | Audio input or approved text output | Transcript or audio stream | Modality only |
+| Evaluation/critique | Output and evidence under test | Scores, findings and failure labels | No execution authority |
+
+Task class is selected by deterministic routing from interaction and workflow state, not solely by a model's self-description. Switching from conversation to an action proposal is an explicit transition.
+
+### Turn lifecycle
+
+A conversation turn is correlated by conversation ID and turn ID. The runtime records origin, modality, start time, user interruption/cancellation, context manifest revision, model invocation(s), tool proposal(s), output delivery status and completion reason.
+
+The logical lifecycle is Received, Interpreting, Contextualizing, Generating, Awaiting tool, Resuming, Responding, Interrupted, Completed, or Failed/Degraded. A completed conversational turn does not imply that a workflow or side effect completed.
+
+A turn may be interrupted while an independent durable task continues. Stopping speech, ending a conversation and cancelling a workflow are separate operations. The UI must make each state clear.
+
+### Provider-independent continuity
+
+LIA owns canonical conversation/task references and permitted continuity data. A conversation can resume after application restart or provider change only to the extent allowed by retention and memory policy. Provider response IDs, conversation IDs, cached prompt state or hidden reasoning state are optimization artifacts, not canonical history.
+
+Transient conversation content may be retained for the active session under the user's selected mode. Permanent retention and memory extraction follow P2.5; a conversation is not automatically a long-term memory archive.
+
+## 19.74 Governed context assembly contract
+
+### Context broker as the only model-context ingress
+
+The context broker is the only component that assembles information for model invocation. The orchestrator submits an information need, purpose, task/conversation scope and modality requirements. The broker retrieves only from authorized sources and returns a context package with provenance, source references, trust labels, sensitivity, temporal validity and a bounded size.
+
+The broker applies:
+- P2.5 discover/read/use/derive/share permissions and S0–S3 classification;
+- P3.5 canonical ownership, synchronization scope, locality, deletion tombstones and derived-record restrictions;
+- source authority, freshness, valid-time and recorded-time;
+- explicit versus inferred memory status and conflicts/corrections;
+- user/session/project/task/device scope and retention mode;
+- destination model/provider processing location, retention/training terms and approved data classes;
+- current context/token/resource budget and minimum-necessary selection.
+
+A model request is denied or reduced when the destination cannot process a data class or location under current policy. Sensitive context is not silently routed to a hosted model merely because local inference is unavailable.
+
+### Context package
+
+Each invocation context package contains:
+
+| Field | Meaning |
+|---|---|
+| Context ID and revision | Unique immutable identity for the assembled package |
+| Invocation purpose | Conversation, retrieval, plan, tool interpretation, extraction or other approved task class |
+| Principal and scope | User/account, project, conversation, task/run, device and origin |
+| Instruction bundle references | Exact trusted instruction and task-template versions |
+| User request | Original request or policy-approved representation with modality/provenance |
+| Memory evidence | Scoped references, source lineage, explicit/inferred status and temporal validity |
+| Live observations | Adapter/provider/device observations with freshness and source identity |
+| External/tool material | Untrusted content with origin and retrieval time |
+| Evidence map | Sources supporting claims or plan elements |
+| Sensitivity and locality | Highest included sensitivity, allowed processing locations and egress decision |
+| Exclusion trace | Categories or sources omitted and machine-readable reason without disclosing contents |
+| Budget | Token/content budget and compaction metadata |
+| Expiry | Maximum validity for reuse; permission or source changes may invalidate it sooner |
+
+The package is immutable for the invocation. A material change to user input, selected resource, plan, source revision, scope or processing destination creates a new package revision and requires a new invocation/approval digest where relevant.
+
+### Retrieval, compaction and provenance
+
+FR-210–FR-221 define retrieval behavior and remain authoritative. P3.7 maps the eight-stage pipeline into the agent runtime: understand need, create retrieval plan, query permitted sources, merge/deduplicate, bounded graph expansion, rerank/validate, open original sources when needed, and assemble bounded context.
+
+Context is bounded by task class and model capability. The broker may remove low-relevance material, summarize permitted history, retrieve a focused excerpt or split work into bounded subtasks. Compaction preserves source references, dates, temporal status, explicit/inferred state, contradictory evidence, trust labels, user corrections, active constraints and uncertainty. A summary does not become more authoritative than its source.
+
+Compaction cannot turn untrusted content into trusted instructions, remove an authorization caveat or promote an inference into an explicit user fact. The context trace records what was omitted, summarized or opened.
+
+## 19.75 Instruction hierarchy, prompt security and untrusted content
+
+### Instruction and data classes
+
+| Class | Examples | Authority |
+|---|---|---|
+| Trusted application policy | Safety boundaries, privacy rules, tool-use constraints and role behavior | Controlled by LIA software release and policy owners |
+| Trusted task instructions | Versioned task template, permitted work procedure and output contract | Controlled by LIA configuration and workflow policy |
+| Current user instruction | Current request and authenticated clarifications | User authority within policy and grants |
+| User-provided content | Pasted text, files, screenshots, code or quoted messages | Data to analyze, not policy unless explicitly adopted by the user and permitted |
+| Retrieved memory/evidence | Profile, episodes, project notes and source excerpts | Evidence with provenance and scope; not permission |
+| External content | Webpages, emails, documents, application content and trend signals | Untrusted data |
+| Tool and adapter output | Search results, API responses, desktop metadata and operation results | Untrusted observations/results with source identity and schema validation |
+| Model-generated content | Summaries, plans, arguments and responses | Untrusted proposals/output requiring validation before use |
+
+Trusted instruction bundles are versioned and reviewed. User data and external content are supplied in explicit data fields or clearly separated context segments where supported. Formatting and delimiters reduce ambiguity but do not provide a security guarantee.
+
+### Prompt injection and indirect instruction attacks
+
+Retrieved documents, messages, webpages, source code, tool descriptions and image/audio transcriptions may contain instructions addressed to the model. Those instructions remain data and cannot alter tool permissions, scope, user identity, system policy, task objective or approval requirements.
+
+The agent should identify and report conflicts when untrusted content requests credential disclosure, policy override, external transmission, tool expansion, persistent memory mutation or unrelated actions. The broker and executor enforce security independently of whether the model recognizes the attack.
+
+Defenses are layered: minimize content, preserve source/trust labels, separate data from instructions, limit tools and context, validate output and enforce policy at the execution boundary. No prompt wording, classifier or model refusal behavior substitutes for permission enforcement.
+
+### Output safety
+
+Generated text is untrusted at downstream boundaries. UI rendering, Markdown/HTML, file generation, shell-like content, URL navigation, JSON parsing and tool arguments receive context-appropriate validation/escaping. A response containing an instruction or code block does not make it executable.
+
+The model cannot obtain secrets or private keys simply by requesting them. The system may disclose user-inspectable permission rationale and relevant policy summaries without exposing secrets or implementation-sensitive artifacts.
+
+## 19.76 Model capability catalog and gateway routing
+
+### Model capability profiles
+
+The gateway maintains a catalog of configured models/runtimes and provider capabilities. A profile is capability-based and time-bounded, not a generic quality ranking.
+
+| Capability dimension | Required metadata |
+|---|---|
+| Task fitness | Supported task classes and validated benchmark profile |
+| Input modalities | Text, image, audio, video or other supported inputs |
+| Output modalities | Text, structured output, audio or other supported outputs |
+| Tool interaction | Typed tool calling, multiple/parallel proposals, schema mode and continuation behavior |
+| Context limits | Effective input/output limits and provider truncation behavior |
+| Quality profile | Evaluated task performance, uncertainty/refusal behavior and known limitations |
+| Data policy | Provider, endpoint/region, processing location, retention, training use and approved sensitivity classes |
+| Runtime profile | Local/hosted, CPU/GPU/RAM/VRAM, warm/cold characteristics and concurrency |
+| Reliability | Availability, rate limits, timeout, error taxonomy and service health |
+| Cost/quota | Token/audio/image pricing or local resource budget, quota and task cost ceiling |
+| Versioning | Model identifier/version/snapshot, adapter version, deprecation and behavior-change notices |
+
+Declared capabilities are recorded separately from measured quality. A provider claim does not establish performance. A model is eligible only when required capabilities and validation evidence are available.
+
+### Routing decision
+
+The gateway receives a task class, required capability set, context sensitivity/locality, latency target, quality threshold, budget, user preference and fallback policy. It filters ineligible models first, then ranks eligible candidates against measured task quality, latency, resource use, cost and availability.
+
+Routing must be auditable: record the eligible candidate set, exclusion reasons, selected profile, policy version and fallback decisions. A change in provider/model can alter behavior; the runtime must not silently substitute a model with weaker tool/schema support or different data-processing terms.
+
+### Hosted and local processing
+
+Hosted models may be used only for data classes, regions, purposes and retention conditions allowed by current policy and provider terms. Local inference is valid where compatible with hardware, quality and maintenance constraints, but local processing does not automatically make an operation safe or correct.
+
+If local inference is unavailable, the gateway checks whether a hosted candidate is authorized for the exact context. Otherwise it degrades to a lower-data answer, asks the user to change processing policy, or reports unavailable. It does not silently export context to recover quality or latency.
+
+### Fallback classes
+
+A fallback may be another eligible provider/model, a lower-capability model still valid for the task, deterministic non-model processing, a read-only/reduced-context response, deferred execution or explicit user clarification. Fallback never bypasses approval, relaxes a grant, uses an unauthorized provider or upgrades a read-only task to an action.
+
+## 19.77 Model invocation and response contract
+
+### Invocation request
+
+Every model call uses a normalized invocation envelope:
+
+| Field | Meaning |
+|---|---|
+| Invocation ID | Stable unique ID for one provider inference attempt |
+| Conversation/turn/task references | Originating interaction and optional workflow/run/step/attempt |
+| Principal and purpose | Authenticated user/system principal and task class |
+| Context package | Immutable context ID/revision and digest |
+| Instruction bundle | Trusted instruction and task-template version |
+| Model requirement | Required capabilities, modalities, output schema and quality threshold |
+| Routing policy | Allowed provider/runtime set, region, locality and fallback constraints |
+| Data policy | Sensitivity, retention, training-use constraints and explicit egress decision |
+| Budget | Input/output tokens, tool-turn budget, wall time, cost/resource ceiling and deadline |
+| Response contract | Expected text/structured schema, evidence requirements and refusal/error handling |
+| Correlation | Parent invocation, tool cycle, trace ID and causation reference |
+
+The provider adapter maps this envelope into provider-specific request shapes. The core does not expose provider response objects as canonical project data. Provider-specific extensions are namespaced and optional.
+
+### Response envelope
+
+The gateway normalizes provider responses into invocation ID, model/provider/version, completion status, natural-language and/or validated structured payload, typed tool-call proposals, usage/resource metrics, timing, finish reason, provider diagnostic IDs, context/instruction revisions, citations/evidence references and validation results.
+
+Completion status distinguishes completed, incomplete, refused, timed out, rate limited, unavailable, cancelled and invalid. Raw provider reasoning traces or hidden internal states are not required. User-facing explanations must be supported by visible sources, observable decisions and traceable operation records.
+
+### Streaming and cancellation
+
+Streaming partial text is a presentation state, not a completed answer. A stream can be interrupted by the user, policy transition, turn supersession or provider failure. The orchestrator cancels generation where supported, stops audio output and records partial delivery.
+
+A model stream cannot execute tools directly as tokens arrive. A tool call is first received as a completed structured proposal, validated and dispatched through the broker. Partial or malformed arguments are never executed. An interrupt stops new model/tool steps; any started side effect follows P3.4/P3.6 safe-boundary reconciliation.
+
+## 19.78 Tool registry, capability filtering and dispatch
+
+### Tool definition
+
+A tool definition is a user- and model-understandable projection of a P3.6 adapter capability. It includes stable tool/capability ID and schema version, purpose and usage constraints, typed input/output schema, target resource types, platform/adapter compatibility, required permission class, minimum risk floor, side-effect/idempotency and verification behavior, data sensitivity/locality, confirmation and cancellation semantics.
+
+Descriptions and schemas are versioned. A manifest or tool description from an untrusted provider is not trusted merely because it appears in a catalog. LIA verifies connector identity, adapter integrity, publisher trust and schema compatibility before exposure.
+
+### Capability filtering before model dispatch
+
+Before tools are placed in a model request, the broker filters them by task relevance, enrolled/trusted/compatible adapter, exact target/resource, live capability state, scope/purpose, current grant/revocation state, risk and approval path, data locality, runtime limits, provider quota and task budget.
+
+This reduces unusable or unauthorized proposals. It is not the final permission check. Grants or resources may change while the model is reasoning.
+
+### Model tool-call proposal
+
+A tool-call proposal contains invocation ID, tool-call ID, exact tool/capability identity and version, typed arguments, referenced resource/target, rationale and parent plan step where applicable. The model does not supply its own authorization decision, grant token, execution receipt or verified-success status.
+
+The broker parses strict structured arguments where supported and validates them independently. Unknown fields, unexpected types, malformed values, unbounded inputs, ambiguous resources and out-of-scope arguments are rejected. The broker resolves resource handles rather than trusting a model-generated display name or arbitrary identifier.
+
+### Dispatch
+
+An accepted proposal is converted into the P3.4 operation model and P3.3 command envelope. P2.6 permission authority decides current authorization and confirmation requirements. P3.6 owner executor performs final validation immediately before the side effect. Tool outputs return with stable call/operation correlation and untrusted-data labels.
+
+Parallel dispatch is permitted only when workflow authority determines operations are independent, grants permit concurrency and no dependency or ordering constraint is violated. All calls remain subject to per-turn and per-task budgets.
+
+The first vertical slice exposes only the capabilities required for conversation, permitted memory retrieval/write and the supported same-display window move. Screen capture, arbitrary application interaction, shell, broad file access, home control and autonomous campaigns remain outside that slice.
+
+## 19.79 Planning, validation and specialist delegation
+
+### Plan proposal structure
+
+A plan proposal contains objective interpretation and success condition, assumptions and unresolved questions, bounded steps with proposal-local IDs, dependencies and conditional branches, required capabilities/resources, data inputs/outputs and sensitivity/locality, risk/confirmation estimate, deadlines/concurrency/resource estimates, retry/reconciliation/cancellation considerations, verification criteria and evidence references.
+
+The planner may propose alternatives, a partial plan or no plan. Missing critical information is returned for clarification or retained as an unresolved parameter; it is not invented.
+
+### Deterministic plan validation
+
+Before adoption, workflow authority validates objective/principal, DAG acyclicity and bounded iteration, maximum steps/parallelism/depth/deadlines/budget, capability compatibility, permissions and approval requirements, campaign delegation, data locality/sensitivity/destination, dependency and schema compatibility, idempotency/reconciliation, evidence requirements, current stop/pause state and revocation.
+
+The authority may reject the proposal, request replanning, require clarification, remove an ineligible branch or accept a constrained versioned plan snapshot. Only the accepted snapshot is eligible for scheduling. The model is not told that an invalid plan is approved.
+
+Replanning creates a new proposal revision linked to prior history. It cannot erase completed steps, operation history, approvals or unknown side effects. Changed operation parameters invalidate exact-action approval.
+
+### Specialist roles and multi-agent delegation
+
+The default is one orchestrating agent role with deterministic retrieval, workflow and tool services. Specialist calls may be used for bounded subtasks such as source research, extraction, classification, critique or content transformation when evaluation shows a measurable benefit.
+
+A specialist receives a delegated work item with parent reference, objective, exact output schema, minimum context references, allowed source/data scope, permitted tool subset, deadline, resource budget, maximum turns/depth and return format. It cannot change the parent objective/policy, create grants, approve operations, mutate canonical workflow/memory, invoke undelegated tools or recursively delegate beyond an explicit budget.
+
+Specialist output is evidence/proposal, not ground truth. The parent validates and decides whether to adopt it. P3.8 must justify a multi-agent framework or topology through comparative evidence.
+
+## 19.80 Governed learning and speech pipeline
+
+### Memory formation
+
+The memory pipeline may inspect only conversations, task outcomes and observations permitted for the applicable purpose. It creates candidate memories rather than writing directly to the Memory Authority.
+
+A candidate includes source references, explicit/inferred status, candidate type, confidence/uncertainty, temporal validity, sensitivity, scope, retention suggestion and links to affected memories. The Memory Authority applies P2.5/P3.5 provenance, sensitivity S0–S3, user correction, explicit/inferred precedence, source/destination scope, retention and deletion rules.
+
+A model's repeated inference does not become explicit evidence through repetition or retrieval frequency. Learning means governed extraction, consolidation and retrieval improvement, not silent fine-tuning on private conversations or automatic policy/autonomy changes.
+
+### Speech and multimodal pipeline
+
+Audio capture, voice activity/turn detection, speech recognition, transcript confidence/correction, response generation and synthesis are separate stages with separate permission, latency, failure and retention behavior. Raw audio is transient by default. A low-confidence or ambiguous transcript is clarified before consequential interpretation.
+
+TTS may be local or hosted only under the data policy. The renderer can interrupt audio independently of the model turn. When synthesis fails, text remains available and the interface reports degraded modality. User interruption preserves underlying task state.
+
+Image, screen, video and camera inputs are separate capabilities with source, scope, consent, freshness, sensitivity and locality. Model modality support does not make capture permissible. Interpretation yields observations with provenance and confidence, not permission to act.
+
+## 19.81 Resilience, fallback and resource budgets
+
+Each interaction/task class declares configurable bounds for inference attempts, model turns, total tool-call cycles, plan steps, branches, parallelism, specialist depth, context/output size, wall time, deadline, token/audio usage, monetary/resource ceilings, retry count and backoff. P3.4 workflow iteration limits remain authoritative for durable tasks. P3.7 inference budgets apply within each step. Neither model nor provider can increase them at runtime.
+
+The gateway distinguishes invalid schema, refusal, incomplete generation, context overflow, timeout, provider outage, rate limit/quota, network failure, unsupported capability, invalid tool proposal, stale context, policy denial, approval required, budget exhausted, cancellation and uncertain side-effect outcome.
+
+A deterministic pre-effect failure may receive bounded retry under current authority. A timeout after a possible tool effect is reconciled under P3.4 before repeat. Provider health/circuit-breaking may remove failing candidates, but cannot bypass locality or select a less trusted destination.
+
+When all eligible models are unavailable, LIA may use deterministic local functions, present previously verified information with timestamp, ask the user to retry, defer planning or report a degraded state. She must not fabricate a response or claim a tool completed.
+
+Inference resource use is reported separately from the local companion budgets in P2.2. Local models must yield to interactive responsiveness and power policy. Hosted models incur separate network, latency, cost and data-egress constraints.
+
+## 19.82 Evaluation, observability and lifecycle governance
+
+### Evaluation dimensions
+
+Candidates are evaluated by task class, not one generic benchmark. Required dimensions include correctness/completeness and calibrated uncertainty; retrieval grounding, temporal correctness and evidence coverage; tool selection and argument validity; plan feasibility and boundedness; resistance to prompt injection and untrusted tool output; sensitive-data minimization; respect for grants, approvals, autonomy and stop/cancel; hallucination and false-success rates; latency/resource/cost/availability; and speech recognition/interruption/fallback where applicable.
+
+Fixtures include benign, ambiguous, adversarial, contradictory, stale and incomplete inputs. Results distinguish model behavior from deterministic guard behavior. Passing model-quality evaluation does not replace authorization or adapter-conformance tests.
+
+### Version and promotion policy
+
+Every eligible invocation is traceable to model/provider version, routing policy, instruction bundle, context schema, tool catalog/schema, validator version and workflow template. Model aliases that may change without notice are resolved to a dated or otherwise traceable version where supported.
+
+Model, prompt, tool schema, routing, context policy or validator changes require regression evaluation. Promotion uses staged rollout/canary with monitored rollback thresholds. A model upgrade is not presumed behaviorally equivalent and cannot silently change personality, tool affordances or data processing.
+
+### Observability and user transparency
+
+Trace events may include invocation/turn IDs, model/provider version, task class, context ID and sensitivity class, token/latency/cost metrics, tool proposal/operation IDs, decision categories, refusal/degraded status and evidence references.
+
+Ordinary telemetry excludes full private prompts, raw screen/audio/camera content, secrets, hidden provider reasoning and unnecessary tool payloads. Authorized diagnostics may retain bounded redacted samples under explicit purpose and retention. Logs must not create a second uncontrolled memory archive.
+
+The user can inspect processing mode, local/hosted status, eligible external providers, what data classes may leave the device and why a capability is unavailable. Consequential proposals expose the target, intended effect, risk, approval requirement and verification plan before confirmation.
+
+## 19.83 P3.7 architecture validation scenarios and traceability
+
+These scenarios define future implementation verification. They do not claim that the agent runtime, model gateway, context broker or tools have been implemented or evaluated.
+
+| Scenario | Required result | Trace |
+|---|---|---|
+| Model proposes a tool absent from the current capability manifest | Broker rejects the proposal and records unsupported capability | FR-228, ADR-102/116, P3.6 |
+| Capability is listed but grant is revoked while model reasons | Current permission check rejects before effect | SEC-039–057, ADR-112/116/117 |
+| Model output is malformed or fails schema | Proposal is discarded or safely regenerated within budget; no partial dispatch | NFR-033, ADR-115 |
+| Tool arguments contain an unexpected field or unbounded value | Schema/semantic validation rejects before adapter invocation | SEC-050–052, ADR-115/117 |
+| Retrieved webpage instructs LIA to disclose memory or expand privileges | Content remains untrusted and cannot override instructions or grants | SEC-052, ADR-114, OWASP LLM01/LLM06 |
+| Untrusted connector description requests credential access | Description is rejected/quarantined; credentials remain in secret boundary | SEC-053/068, ADR-114/117 |
+| Context package includes S2 memory without applicable use/egress grant | Context broker excludes or blocks it and records a non-disclosing reason | P2.5, SEC-039–058, ADR-113/120 |
+| Hosted provider is unavailable for local-only context | No automatic hosted fallback; LIA asks, defers or gives a reduced response | P3.5 locality, ADR-120 |
+| Model provider changes alias target | Version/policy change is evaluated before promotion | NFR-033, ADR-124 |
+| Plan proposal contains a cycle or unbounded loop | Workflow authority rejects or requests a bounded revision | ADR-085/118/119 |
+| Plan includes R3 operation without exact approval | Plan may await approval but dispatch is blocked | SEC-045/046, ADR-065/118 |
+| Parallel proposal contains dependent operations or shared mutable target | Workflow authority serializes or rejects unsafe parallelism | ADR-083/086/119 |
+| Specialist returns unsupported facts or untrusted instructions | Parent validates evidence and treats output as proposal, not authority | ADR-114/125 |
+| Specialist delegates beyond allowed depth | Delegation broker rejects and records budget exhaustion | ADR-119/125 |
+| User interrupts speech while task awaits tool | Audio stops promptly; task retains authoritative workflow state | NFR-003, FR-024/025, ADR-123 |
+| Speech confidence is low for a target/action | LIA requests clarification and does not execute an ambiguous operation | FR-029, SEC-043, ADR-123 |
+| Memory extractor infers durable preference from one casual utterance | Candidate is not silently persisted as explicit permanent memory | P2.5, ADR-122 |
+| Model returns confident but unsupported claims | Evaluator flags insufficient evidence or uncertainty; response is corrected/qualified | FR-215/217/220, ADR-124 |
+| Tool provider times out after possible side effect | Workflow enters reconciliation before retry | ADR-087/117/119 |
+| Inference budget is exhausted | LIA stops bounded model/tool activity and reports partial/deferred status | NFR-022/034, ADR-119 |
+| User invokes global stop during agent loop | No new model/tool steps start; active operation reaches safe cancellation/reconciliation boundary | SEC-056, ADR-112/119 |
+| Fallback candidate has disallowed region or broader retention | Candidate is ineligible regardless of latency or quality | P2.5/P3.5, ADR-120 |
+| Prompt/tool schema change degrades safety regression fixture | Promotion is blocked or rolled back | NFR-033, ADR-124 |
+| Model claims action success without adapter evidence | UI/workflow do not represent action as executed or verified | FR-029, ADR-112/117/118 |
+
+Implementation evidence shall include versioned evaluation reports, tool-schema fuzzing, context-scope/egress tests, prompt-injection fixtures, model/provider outage tests, plan validation tests, tool-call replay/duplicate tests, budget exhaustion and cancellation tests, privacy/log inspection, speech interruption tests and canary rollback drills. Thresholds require approval against representative tasks and risk classes before release.
+
+## 19.84 P3.7 architecture diagrams
+
+### Intelligence runtime and authority boundaries
+
+```mermaid
+flowchart TB
+    USER["User input or authorized event"]
+    ORCH["Conversation and task orchestrator"]
+    CONTEXT["Governed context broker"]
+    MEMORY["P2.5 Memory Authority"]
+    POLICY["P2.6 Permission and risk authority"]
+    PROMPT["Versioned trusted instruction registry"]
+    GATEWAY["Model gateway and router"]
+    MODEL["Selected model runtime"]
+    TOOL["Tool and capability broker"]
+    WORKFLOW["P3.4 Workflow authority"]
+    ADAPTER["P3.6 Resource-owning adapter"]
+    EVIDENCE["Verified result and evidence"]
+    USER --> ORCH
+    ORCH --> CONTEXT
+    MEMORY --> CONTEXT
+    PROMPT --> GATEWAY
+    CONTEXT --> GATEWAY
+    GATEWAY --> MODEL
+    MODEL --> GATEWAY
+    GATEWAY --> TOOL
+    TOOL --> POLICY
+    TOOL --> WORKFLOW
+    WORKFLOW --> ADAPTER
+    ADAPTER --> EVIDENCE
+    EVIDENCE --> WORKFLOW
+    WORKFLOW --> ORCH
+    ORCH --> USER
+```
+
+### Context assembly and trust separation
+
+```mermaid
+flowchart TD
+    A["Interaction or accepted task step"]
+    B["Resolve purpose and information need"]
+    C["Query authorized memory and source owners"]
+    D["Filter scope, sensitivity, freshness and locality"]
+    E["Attach source lineage and trust labels"]
+    F["Preserve explicit facts, inference and conflicts"]
+    G["Compact under task and model budgets"]
+    H["Create immutable context package and digest"]
+    I["Model gateway egress decision"]
+    J{"Destination permitted?"}
+    K["Dispatch to eligible model"]
+    L["Exclude data, reduce answer or ask user"]
+    A --> B --> C --> D --> E --> F --> G --> H --> I --> J
+    J -->|Yes| K
+    J -->|No| L
+```
+
+### Tool proposal validation and dispatch
+
+```mermaid
+flowchart TD
+    A["Model emits typed tool proposal"]
+    B["Parse and validate schema"]
+    C{"Known capability and version?"}
+    D["Reject and record unsupported request"]
+    E["Resolve exact target and resource generation"]
+    F["Check current grant, purpose and risk"]
+    G{"Confirmation required?"}
+    H["Await exact operation approval"]
+    I["Build P3.3 target-bound command"]
+    J["Owning adapter validates and preflights"]
+    K["Execute authorized capability"]
+    L["Verify outcome and return evidence"]
+    M["Reconcile unknown side effect"]
+    A --> B --> C
+    C -->|No| D
+    C -->|Yes| E --> F --> G
+    G -->|Yes| H --> I
+    G -->|No| I
+    H --> J
+    I --> J --> K --> L
+    L -->|Uncertain| M
+```
+
+### Model routing and safe fallback
+
+```mermaid
+flowchart TD
+    A["Task class and governed context"]
+    B["Resolve capability and quality requirements"]
+    C["Filter by locality, sensitivity, region and provider policy"]
+    D["Filter by modality, schema support and task evaluation"]
+    E["Rank eligible models by quality, latency, resources and cost"]
+    F{"Eligible candidate available?"}
+    G["Invoke selected model"]
+    H{"Invocation succeeded?"}
+    I["Try eligible fallback within same data policy"]
+    J["Use deterministic or reduced-context path"]
+    K["Report degraded or unavailable state"]
+    A --> B --> C --> D --> E --> F
+    F -->|Yes| G --> H
+    F -->|No| J
+    H -->|Yes| K
+    H -->|No| I
+    I -->|Available| G
+    I -->|None| J
+    J --> K
+```
+
+### Plan proposal and workflow acceptance
+
+```mermaid
+sequenceDiagram
+    participant U as "User"
+    participant O as "Agent orchestrator"
+    participant M as "Model planner"
+    participant V as "Plan validator"
+    participant P as "Permission authority"
+    participant W as "Workflow authority"
+    U->>O: Submit objective
+    O->>M: Provide governed context and plan schema
+    M-->>O: Return versioned plan proposal
+    O->>V: Submit proposal for structural and policy validation
+    V->>P: Check capability and risk requirements
+    P-->>V: Return current grant and approval requirements
+    V->>W: Submit valid bounded proposal
+    W->>W: Commit accepted plan snapshot
+    W-->>O: Return accepted plan reference
+    O-->>U: Present plan and outstanding approvals
+```
+
+## 19.85 P3.7 technology boundary, references and closure
+
+### Technology boundary
+
+P3.7 intentionally selects no model provider, model family, inference server, agent framework, orchestration library, prompt-management product, tool-calling protocol, MCP implementation, vector/embedding model, speech recognition provider or text-to-speech provider.
+
+P3.8 shall compare candidates against task-class correctness/grounding/tool-use evaluations; structured-output reliability; context limits and multimodal support; cancellation/streaming semantics; provider retention/training/region/locality; hosted/local inference performance and resource use; speech quality/interruption; orchestration security/isolation/auditability; license, maintenance, cost, quotas and migration/exit path.
+
+MCP or a provider-specific tool-call format may be evaluated as an interoperability option. Neither becomes the LIA authorization, risk or execution authority. LIA's typed capability and operation contracts remain authoritative regardless of transport.
+
+Technical spikes may compare a direct model API loop with an orchestration framework, local inference with hosted models, tool-call schema handling, retrieval/context assembly and speech pipelines. Spikes are evidence for P3.8, not a product implementation baseline.
+
+### Informative references
+
+These public references inform architecture and risk analysis. They are not selected dependencies:
+
+- [OWASP Top 10 for Large Language Model Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/) — prompt injection, insecure output handling, sensitive information disclosure, insecure tool/plugin design, excessive agency and overreliance.
+- [OWASP LLM06:2025 Excessive Agency](https://genai.owasp.org/llmrisk/llm062025-excessive-agency/) — risks from granting model-driven agents unchecked authority through tools and extensions.
+- [OpenAI Function Calling guide](https://developers.openai.com/api/docs/guides/function-calling) — an example of a model proposing typed tool calls while the application executes them and returns tool outputs in a multi-step interaction loop.
+- [OpenAI Structured Outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs) — an example of schema-constrained output; schema conformance does not establish truth or authorization.
+- [Model Context Protocol specification](https://modelcontextprotocol.io/specification/2025-11-25) and [authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) — an interoperability option with transport-level authorization semantics; LIA still requires its own operation/resource grants and local enforcement.
+
+The threat model and provider controls must be rechecked at P3.8 against selected versions and deployment profile.
+
+### P3.7 architecture decision records
+
+#### ADR-112 — Intelligence proposes; deterministic authorities decide and execute
+
+**Status:** Approved
+
+Model and agent components may interpret, retrieve, reason, propose objectives/plans, prepare typed tool requests and explain results. They do not own permissions, canonical workflow state, device/provider execution, memory authority or verified completion. Side effects pass through P3.4 workflow authority, P2.6 permission/risk policy and P3.6 resource-owning adapters.
+
+#### ADR-113 — Governed context assembly is the only model-context ingress
+
+**Status:** Approved
+
+Conversation and task models receive context only through a governed assembly boundary that enforces purpose, sensitivity, provenance, freshness, scope, locality and retention policy. Context preserves trusted instruction, user request, memory evidence and untrusted-content distinctions.
+
+#### ADR-114 — Retrieved and tool-supplied content remains untrusted data
+
+**Status:** Approved
+
+Webpages, files, messages, memory excerpts, application content, provider events, tool results and adapter descriptions cannot override trusted instructions, change grants or authorize actions. Trust labels/provenance remain attached through extraction, summarization and context compaction.
+
+#### ADR-115 — Model outputs are typed proposals and fail closed on invalid structure
+
+**Status:** Approved
+
+Machine-consumed outputs are schema-constrained where supported, then independently validated for schema, semantics, bounds, provenance and policy. Parseable JSON or schema conformance does not prove truth, correctness, permission or safety.
+
+#### ADR-116 — Tool availability is computed from current capability and policy state
+
+**Status:** Approved
+
+The tool broker derives the model-visible tool set from current adapter manifests, target/resource state, user/task scope, locality and permission policy. This filtered set is an affordance list, not an authorization grant. The resource-owning executor revalidates the exact operation before a side effect.
+
+#### ADR-117 — Tool dispatch is mediated by a separate broker and local executor
+
+**Status:** Approved
+
+A model tool call is an untrusted request. A deterministic broker validates tool identity, schema, resource, target, arguments, purpose, risk and approval before routing through the P3.3 command envelope to the P3.6 owning adapter. Models cannot invoke arbitrary shell commands, APIs, files or devices outside declared capabilities.
+
+#### ADR-118 — Workflow authority validates and adopts proposed plans
+
+**Status:** Approved
+
+The planner emits a versioned plan proposal. The deterministic workflow authority validates bounds, DAG structure, permissions, deadlines, campaign policy, locality and budgets before adoption. A model cannot mark its own plan steps successful or mutate durable workflow state directly.
+
+#### ADR-119 — Agent turns, delegation and tool loops are bounded
+
+**Status:** Approved
+
+Every inference/task cycle has explicit limits for model turns, tool calls, plan steps, parallelism, wall time, token/resource use, retries and delegation depth. Replanning follows P3.4 bounded iteration rules. Unbounded self-prompting, recursive delegation and high-frequency model polling are prohibited.
+
+#### ADR-120 — Model routing follows task capability and data-processing policy
+
+**Status:** Approved
+
+The gateway routes by task class, modalities, output capabilities, measured quality, latency/resource constraints, sensitivity, locality, provider retention/processing terms, region and user policy. A fallback is eligible only if it satisfies the same or stricter data-handling and authority constraints.
+
+#### ADR-121 — Provider sessions are disposable execution state, not LIA authority
+
+**Status:** Approved
+
+LIA owns canonical conversation/task identifiers, workflow state, memory, instruction versions and evidence lineage. Provider-side conversation IDs, caches, prompt prefixes and session state are transient aids. Cross-provider continuation is reconstructed from authorized context.
+
+#### ADR-122 — Memory formation is a governed proposal and commit pipeline
+
+**Status:** Approved
+
+Models may suggest memory candidates, but the P2.5 Memory Authority evaluates provenance, sensitivity, source scope, confidence, temporal validity, contradiction, retention and user correction before persistence. Model inference is not silently promoted to permanent memory.
+
+#### ADR-123 — Speech is a cancellable modality pipeline with text fallback
+
+**Status:** Approved
+
+Audio capture, speech recognition, turn detection, response generation and synthesis have separate permission, latency, failure and retention semantics. Raw audio remains transient by default. Interruption stops synthesis promptly and preserves task state. Text remains a complete fallback.
+
+#### ADR-124 — Model, prompt, tool and policy changes require versioned evaluation
+
+**Status:** Approved
+
+Model/provider versions, routing rules, instruction bundles, tool schemas, context policies and validators are versioned and traceable. Changes require representative quality, safety, privacy, tool-use, latency and cost evaluation before promotion. Canary/rollback and degraded states are required.
+
+#### ADR-125 — Multi-agent specialization is optional and subordinate
+
+**Status:** Approved
+
+The default is one orchestrating agent role with deterministic services and narrowly scoped specialists where justified. Specialists receive bounded context/capabilities, have no peer authority and cannot grant permissions or mutate shared workflow/memory state. Parallel/recursive delegation requires explicit limits, isolation, provenance and evaluation.
+
+**P3.7 closure:** Conversation/task orchestration, governed context assembly, instruction trust boundaries, model capability catalog/routing, normalized invocation/results, capability-filtered tool proposals, deterministic tool dispatch, plan validation, bounded specialist delegation, governed memory formation, cancellable speech pipeline, provider fallback, evaluation, observability and model/prompt/tool lifecycle controls are defined. Model providers, agent frameworks, tool protocols, inference runtimes and speech vendors remain unselected. P3.8 is next: architecture validation, threat/quality review, candidate comparison and technology selection.
