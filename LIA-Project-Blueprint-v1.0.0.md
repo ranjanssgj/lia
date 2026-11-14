@@ -4,10 +4,10 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.10.0\
+> **Version:** 1.11.0\
 > **Last updated:** 14 November 2026\
 > **Current phase:** P3 --- System Architecture\
-> **Current workstream:** P3.5 --- Data Ownership and Synchronization\
+> **Current workstream:** P3.6 --- Platform and Integration Adapter Contracts\
 > **Document status:** Active; Phase 2 requirements baseline approved; Phase 3 architecture in progress
 
 ------------------------------------------------------------------------
@@ -302,7 +302,7 @@ through controlled change; they do not invalidate earlier requirements.
   P0      Concept and vision                 Complete
   P1      Product definition                 Complete
   P2      Requirements engineering           Complete — baseline approved
-  P3      System architecture                Active — P3.1–P3.5 complete; P3.6 next
+  P3      System architecture                Active — P3.1–P3.6 complete; P3.7 next
   P4      Integration contracts              Pending
   P5      First vertical slice               Pending
   P6      Companion integration              Pending
@@ -2204,6 +2204,73 @@ Memory, workflow history, event journals, notifications, artifacts, caches, work
 Candidates may be shortlisted and tested as each P3 workstream stabilizes its contracts. Formal technology selection is completed at P3.8 after P3.5 data, P3.6 platform/integration and P3.7 agent/model-runtime requirements are available. P4 finalizes concrete integration contracts; P5 begins the first vertical-slice product implementation.
 
 
+### ADR-101 — Adapters are explicit execution boundaries with local ownership
+
+**Status:** Approved
+
+Every OS, device, home gateway and external service operation is exposed through a declared adapter boundary. The adapter executes only within the resource and trust domain it owns; remote coordination routes requests but cannot bypass the owning device or provider authority.
+
+### ADR-102 — Versioned capability manifests describe support, not permission
+
+**Status:** Approved
+
+Adapters publish versioned, runtime-aware capability manifests with typed operations, resource types, prerequisites, risk floors, data classes, freshness, side-effect, verification and cancellation semantics. Discovery or declaration never grants permission. Unsupported, unavailable, degraded and permission-required capabilities remain distinct states.
+
+### ADR-103 — Resource identity and observations are scoped, revisioned and time-bounded
+
+**Status:** Approved
+
+Adapter resources use owner-bound opaque identities, resource generations/revisions, source identity, observation timestamps and explicit freshness. Provider-owned state remains authoritative at the provider; local desktop and device state remains authoritative at its originating node. A cached observation is not current state or execution evidence.
+
+### ADR-104 — Shared operation semantics do not imply platform capability parity
+
+**Status:** Approved
+
+Linux, Windows, mobile, home and service adapters implement a common invocation/result contract while exposing only capabilities their actual platform/runtime supports. LIA does not emulate unsupported operations, silently switch security models or promise parity through a lowest-common-denominator abstraction.
+
+### ADR-105 — The owning executor revalidates every operation before side effects
+
+**Status:** Approved
+
+An operation is bound to the P3.3 authenticated command envelope, target, adapter, resource, capability, typed arguments, preconditions, current grant, risk policy, expiry and stable operation identity. The owning executor rechecks trust, authorization, current state and platform support before acting.
+
+### ADR-106 — Observation, action and verification are separate capabilities
+
+**Status:** Approved
+
+Read/observe, subscribe, control, configure and verify rights are separately declared and granted. An API acknowledgement or accepted command is not proof of the resulting state. Completion requires resource-appropriate evidence; ambiguous side effects enter P3.4 reconciliation rather than blind retry.
+
+### ADR-107 — Desktop automation is compositor/window-manager and OS specific
+
+**Status:** Approved
+
+Linux Wayland and X11, and Windows desktop operations, have separate implementation and security surfaces. Capabilities are discovered for the current session and compositor/window manager/API context. LIA shall report unsupported control honestly and shall not claim universal window-management, focus, input or accessibility coverage.
+
+### ADR-108 — Mobile is a constrained companion node, not an always-on executor
+
+**Status:** Approved
+
+Android and iOS capabilities are bounded by their app lifecycle, background-execution policy, user-granted permissions and supported system APIs. Always-on coordination and durable task execution remain independent of the phone. Mobile background availability is best-effort unless the OS explicitly guarantees the relevant event/task path.
+
+### ADR-109 — Home automation authorization is per resource and physical action
+
+**Status:** Approved
+
+Home integrations model devices, endpoints, properties, observations, events and actions independently. Read and control grants are separate; risk is assessed per operation. Locks, garage doors, security systems and safety-critical controls retain the R4 per-operation confirmation boundary. A generic home-integration grant authorizes no blanket control.
+
+### ADR-110 — External connectors isolate provider identity, scopes and side effects
+
+**Status:** Approved
+
+Each external account/connector has independent identity, credentials, scopes, quotas, provider version and event trust. Secrets are retrieved just in time through the P2.5/P3.5 data boundary. Provider state is authoritative; writes require idempotency/reconciliation and evidence. Connector availability or webhook delivery never grants permission.
+
+### ADR-111 — Adapter lifecycle, compatibility and cancellation are explicit
+
+**Status:** Approved
+
+Adapters have explicit enrollment, discovery, health, compatibility, suspension, revocation, update and removal states. Incompatible contracts fail closed. Cancellation is a request to stop at a safe boundary, not proof of rollback; any possible side effect is verified or reconciled before retry or reassignment.
+
+
 # 9. Change log
 
   ------------------------------------------------------------------------
@@ -2292,6 +2359,8 @@ Candidates may be shortlisted and tested as each P3 workstream stabilizes its co
 
 **1.10.0 — 14 Nov 2026:** Completed P3.5 data ownership and synchronization architecture. Defined canonical data-domain owners, separation of governed memory from workflow/control storage, S0–S3 placement and scoped synchronization rules, domain-specific consistency and conflict handling, offline sync, deletion/tombstone propagation, backup/restore safeguards, data lifecycle/observability and P3.8 technology-selection timing. Added four data lifecycle/synchronization diagrams, validation scenarios and ADR-091–ADR-100. Concrete storage, sync, backup and key-management products remain deferred.
 
+**1.11.0 — 14 Nov 2026:** Completed P3.6 platform and integration adapter architecture. Defined the shared adapter lifecycle, capability manifest, resource identity and freshness model, target-bound execution and verification contract, typed failure and cancellation semantics, Linux Wayland/X11 distinctions, Windows desktop automation boundary, Android/iOS companion constraints, per-resource home automation permissions and safety tiers, external connector identity/scope/rate-limit/event contracts, adapter isolation and version compatibility. Added platform and integration architecture diagrams, conformance scenarios, informative platform references and ADR-101–ADR-111. No language, desktop framework, automation library, home platform, connector framework or provider was selected.
+
 
 # 10. Current working state
 
@@ -2304,8 +2373,8 @@ Candidates may be shortlisted and tested as each P3 workstream stabilizes its co
 **P3.4 status:** Complete — durable events, workflow state machines, schedule/occurrence semantics, worker leases, retry/reconciliation, approvals, cancellation and notification delivery approved  
 **P3.5 status:** Complete — canonical data ownership, scoped synchronization, conflict resolution, deletion propagation and backup/restore semantics approved  
 **Overall status:** P3 is active. No programming language, framework, database, model provider, cloud vendor, transport protocol, cryptographic library or production infrastructure product has been selected.  
-**P3.6 status:** Pending — platform and integration adapter contracts  
-**Next action:** Define platform and integration adapter contracts for Linux/Windows desktop nodes, mobile capabilities, home automation and external service connectors in P3.6.
+**P3.6 status:** Complete — shared adapter contract, platform-specific capability surfaces, execution semantics, integration safety and conformance requirements approved  
+**Next action:** Define the agent intelligence, model gateway, tool-request and context-governance contracts in P3.7.
 
 
 ## Phase 2 exit criteria
@@ -4548,7 +4617,7 @@ P3 shall not silently relax P2 targets or introduce a tool/provider whose behavi
 **P3.3 status:** Complete — device identity, pairing, credentials, authenticated sessions, command envelopes, relay boundaries, revocation and offline authorization approved  
 **P3.4 status:** Complete — durable event delivery, workflow state machines, scheduling, worker leases, reconciliation and notification semantics approved  
 **P3.5 status:** Complete — data ownership, synchronization scope, conflict handling, deletion propagation and backup/restore semantics approved  
-**P3.6 status:** Pending — platform and integration adapter contracts  
+**P3.6 status:** Complete — shared adapter contract, platform-specific capability surfaces, execution semantics, integration safety and conformance requirements approved  
 **Purpose:** Transform the approved product and quality requirements into a coherent, secure, distributed architecture with explicit component responsibilities, data ownership, communication contracts and platform execution boundaries.
 
 P3 shall preserve the Phase 2 requirements baseline and the approved multi-device scope extension. Architecture choices must be justified against requirements and quality attributes; technologies are selected only after responsibilities, trust boundaries and contracts are sufficiently clear.
@@ -5035,7 +5104,7 @@ flowchart TB
 | P3.3 — Device identity and secure communication | Enrollment, device keys, sessions, relay, remote desktop transport and revocation | Complete |
 | P3.4 — Workflow and event architecture | Durable task state, event model, scheduler, campaign runs, leases, retry/reconciliation and notification events | Complete |
 | P3.5 — Data ownership and synchronization | Memory authority, task/event records, device caches, conflict resolution, retention and deletion propagation | Complete |
-| P3.6 — Platform and integration adapter contracts | Linux/Windows desktop nodes, mobile capabilities, home automation and external service connectors | Pending |
+| P3.6 — Platform and integration adapter contracts | Linux/Windows desktop nodes, mobile capabilities, home automation and external service connectors | Complete |
 | P3.7 — Agent intelligence and model runtime | Conversation orchestration, planning, model gateway, tool/action request schema and context boundaries | Pending |
 | P3.8 — Architecture validation and technology selection | ADR review, quality scenarios, threat analysis, component trade-offs and justified stack selection | Pending |
 
@@ -6687,10 +6756,676 @@ Memory, workflow history, event journals, notifications, artifacts, caches, work
 
 Candidates may be shortlisted and tested as each P3 workstream stabilizes its contracts. Formal technology selection is completed at P3.8 after P3.5 data, P3.6 platform/integration and P3.7 agent/model-runtime requirements are available. P4 finalizes concrete integration contracts; P5 begins the first vertical-slice product implementation.
 
-**P3.5 closure:** Canonical data ownership, data-domain boundaries, sensitivity and synchronization scope, replica authority, consistency classes, offline sync, semantic conflict resolution, deletion/tombstone propagation, backup/restore, retention and operational observability are defined. Physical data-store, sync-engine, backup, index and key-management technologies remain unselected. P3.6 will define platform and integration adapter contracts for Linux/Windows desktop nodes, mobile capabilities, connected-home devices and external services.
+**P3.5 closure:** Canonical data ownership, data-domain boundaries, sensitivity and synchronization scope, replica authority, consistency classes, offline sync, semantic conflict resolution, deletion/tombstone propagation, backup/restore, retention and operational observability are defined. Physical data-store, sync-engine, backup, index and key-management technologies remain unselected. P3.6 contracts are defined in Sections 19.56–19.70 and ADR-101–ADR-111.
 
 
 
-The governing decisions are recorded as ADR-069–ADR-073 in the main decision register. No cloud vendor, database, event broker, workflow engine, transport protocol, programming language or model provider has been selected. P3.3 will define device identity, credential lifecycle, authenticated session establishment, relay boundaries, revocation and offline-lease enforcement.
+
+## 19.56 P3.6 — Platform and integration adapter contracts
+
+### Purpose and completion boundary
+
+P3.6 defines how the shared LIA architecture discovers, describes, authorizes, invokes, observes and verifies operations exposed by heterogeneous platforms and external systems. It covers Linux and Windows desktop nodes, Android and iOS companion capabilities, connected-home/device gateways and external service connectors.
+
+P3.6 defines logical contracts and trust boundaries. It does not select a language, UI framework, window-management library, accessibility API wrapper, mobile framework, home automation platform, connector SDK, protocol implementation or provider. Those candidates are evaluated through the P3.8 technology-selection gate after P3.7 establishes the agent/tool/model-runtime requirements.
+
+The key design rule is **common semantics, explicit capability differences**. A shared operation envelope, evidence model and lifecycle make adapters composable. They do not make every operating system or provider capable of every operation. A capability is advertised only when the current adapter, platform version, user session, permissions and resource support it.
+
+P3.6 shall preserve:
+- P3.3 device identity, authenticated sessions, target-bound command envelopes, revocation and bounded offline authority.
+- P3.4 durable operation identity, at-least-once delivery, idempotency, safe retry, reconciliation and workflow state ownership.
+- P3.5 canonical data ownership, data locality, sensitivity, scoped synchronization, retention and deletion.
+- P2.5 permission separation, memory governance, data provenance and user control.
+- P2.6 risk classification, default deny, confirmation and revocation. Adapter declarations cannot reduce a policy-defined risk floor.
+
+### Scope and non-goals
+
+In scope are adapter manifests; resource identity; capability discovery; typed operation requests and results; preconditions; current-state validation; evidence; freshness; events; health; compatibility; safe cancellation; isolation; and platform-specific support declarations.
+
+P3.6 does not define a universal screen-reading or UI-automation layer, unrestricted input injection, generic physical-device scripting, universal smartphone control, or guaranteed background execution. It does not authorize an adapter to read all data that its underlying API could technically expose. Permission and purpose remain operation- and resource-scoped.
+
+An adapter is an execution/integration boundary, not a source of authority. A coordinator, model, plan, notification, manifest, provider webhook or device-discovery result cannot grant an adapter permission.
+
+## 19.57 Adapter architecture and ownership
+
+### Adapter classes
+
+| Adapter class | Owning runtime | Resource authority | Typical responsibility | Hard boundary |
+|---|---|---|---|---|
+| Desktop OS adapter | Local Linux or Windows device agent | The originating desktop session, window manager/compositor and OS | Display/window metadata, supported window operations, session state and separately granted accessibility/UI capabilities | Requires a reachable, valid OS session; platform capability is not assumed from another OS |
+| Application/UI adapter | Local device agent or explicitly isolated app connector | The target application or its supported accessibility/integration interface | Semantic application operations when a supported, scoped integration exists | Does not imply general screen capture, browser control or access to arbitrary app data |
+| Mobile OS adapter | Installed Android/iOS companion | The phone OS and the companion app's own sandbox | Conversation, approval, notifications, task/device dashboard and supported user-mediated/native actions | Mobile OS background and inter-app restrictions remain authoritative |
+| Home/device gateway adapter | Enrolled local gateway or approved integration runtime | The gateway/provider and each enrolled physical resource | Device discovery, state observation, event intake and individually authorized actions | Gateway enrollment is not blanket home authorization; physical safety policy remains above adapters |
+| External service connector | Isolated connector runtime | The external service/account | Provider API reads, events, drafts, uploads, publication and supported account operations | Provider credentials/scopes and provider state are separately governed; connector cannot grant its own authority |
+| Local utility adapter | Local device agent or sandboxed worker | Its declared local resource boundary | Narrow deterministic functions such as permitted file or process operations in later scopes | Not a generic shell or arbitrary-code capability; capability-specific scope and risk apply |
+
+The same physical integration may contain several logical adapters. For example, a home gateway can expose a gateway-health adapter and multiple device-resource adapters. LIA must keep their identities, resources and grants distinct even if one transport carries the requests.
+
+### Execution locality
+
+The resource-owning boundary performs the final authorization and support check. Desktop actions execute on the relevant desktop node; phone-native actions execute through the enrolled phone; home operations pass through the enrolled gateway/device integration; and provider actions pass through the isolated connector associated with the external account.
+
+The coordinator may route, schedule and supervise. It may not convert a remote request into direct authority over a resource. A service worker can execute only capabilities explicitly assigned to it under its own identity, task scope, data locality and grant. An adapter cannot forward an operation to another adapter to escape a denied scope or higher-risk confirmation requirement.
+
+## 19.58 Capability manifests and discovery contract
+
+### Manifest purpose
+
+Every adapter publishes a versioned capability manifest describing what it can currently do, under which runtime conditions and with which operation semantics. The manifest has both a stable adapter-level identity and a dynamic capability/resource inventory. The manifest is a machine-readable declaration for planning, routing, permission review and compatibility checks; it is not itself a grant.
+
+A capability is defined at the granularity of a meaningful operation, not only a broad product category. For example, desktop.window.observe_geometry, desktop.window.move, home.light.read_state and home.lock.unlock are different capabilities with different risk, scope and confirmation requirements. These identifiers are illustrative contract labels, not a selected API namespace.
+
+### Required manifest fields
+
+| Manifest area | Required content |
+|---|---|
+| Identity | Adapter ID, installation/connector identity, publisher/owner, adapter version and stable contract family |
+| Compatibility | Supported contract versions, host OS/runtime version range, compositor/window-manager/provider profile and required features |
+| Execution context | Device ID, session/gateway/account binding, local/remote execution mode, trust state and execution locality |
+| Resources | Resource type, opaque resource reference, owner, resource generation/revision and declared resource attributes |
+| Capabilities | Stable capability ID/version, operation type, input/output schema, resource types, read/write/subscribe distinction and supported scopes |
+| Risk and authority | Minimum risk class, physical/consequential effect flags, confirmation requirement, grant dimensions and any policy restrictions |
+| Preconditions | Required session state, foreground/background status, connectivity, resource state, user presence, hardware support and freshness |
+| Data governance | Data classes/sensitivity, source provenance, locality, retention implications and whether content leaves the node |
+| Operation semantics | Side-effect boundary, idempotency class, timeout, retry classification, reconciliation method, verification method and safe cancellation points |
+| Events | Supported event types, event source identity, sequence/revision semantics, delivery guarantees, subscription limits and freshness |
+| Operational constraints | Rate limits, quotas, concurrency, resource cost, availability, health and known degraded/unsupported conditions |
+| Lifecycle | Manifest revision, capability revision, creation/update time, expiry/refresh policy and compatibility/deprecation status |
+
+The manifest shall distinguish at least these availability states:
+
+| State | Meaning |
+|---|---|
+| Supported | Adapter can perform the declared operation under its stated prerequisites |
+| Permission required | The operation is technically supported but a required OS/provider/user grant is absent |
+| Unsupported | The platform, API, resource or adapter does not implement the operation |
+| Unavailable | The capability exists but its owning node/resource is offline, disconnected or not currently addressable |
+| Degraded | The capability is present but a declared dependency or quality property is impaired |
+| Restricted | The operation is currently blocked by policy, session state, risk or a platform restriction |
+| Unknown | Capability support cannot currently be established; planner must not assume it |
+
+A missing capability is not permission to emulate it. Unknown support is treated as unavailable for planning. A stale manifest may assist display or diagnostics but cannot authorize execution.
+
+### Dynamic capability evaluation
+
+Capabilities are evaluated against the current node, user session, OS/runtime version, connected resource, user consent, provider account and adapter health. A static product-level feature list is insufficient. The manifest must be refreshed after adapter update, OS/compositor change, re-pairing, permission change, provider-scope change or detected resource reconfiguration.
+
+The permission authority computes the effective risk and grant requirement. The adapter may declare a higher risk floor or narrower constraint; it cannot downgrade a centrally defined risk category. A new adapter version cannot inherit broader privileges without explicit policy review and, where required, re-consent.
+
+## 19.59 Resource identity, state and observation contract
+
+### Resource identity
+
+Every exposed resource is represented by an opaque, owner-bound reference. The reference is stable only within its declared authority and lifecycle; it is not assumed globally portable. It includes or resolves to:
+- owning device, gateway, app or provider account;
+- adapter identity and resource type;
+- resource ID plus generation/instance identity;
+- current revision/ETag/sequence where the source supports it;
+- discovery provenance and scope;
+- current capability bindings.
+
+A window handle, application process, phone app instance, home entity or provider object may be recreated. When the underlying object is destroyed/replaced, the adapter increments or changes its resource generation so stale references fail rather than retarget an unrelated resource.
+
+Resource display names are labels, not security identifiers. Matching a window or device by title/name alone is not sufficient for a consequential operation. Where identity is ambiguous, the operation requires a user selection or is blocked.
+
+### Observation record
+
+An observation is a typed, source-attributed record with:
+- resource reference and resource revision/generation;
+- source adapter, device/provider identity and observation method;
+- observed value or minimum necessary property set;
+- event/source sequence where supported;
+- observed-at and recorded-at timestamps;
+- freshness deadline or staleness class;
+- sensitivity/data classification and permitted purpose;
+- integrity/evidence metadata and correlation to any operation that produced it.
+
+An observation is a statement about the resource at a time, not a timeless fact. The consumer must check freshness before using it for planning or execution. A current state may be re-read at preflight. An event payload cannot silently overwrite canonical provider state without the adapter's source-specific reconciliation rules.
+
+### Observation, subscription and action separation
+
+Discovery, read/observe, event subscription, control/action, configuration, and verification are separate capabilities. A read-only grant does not authorize an action. A subscription grant does not authorize access to the full event history. A control response does not prove resulting state. A verification operation cannot be inferred from a command's successful transport response.
+
+For privacy, adapters return the smallest useful property set. They do not automatically return screen pixels, full accessibility trees, message bodies, device histories, camera/microphone streams or unrelated provider records merely because the underlying platform makes them accessible.
+
+## 19.60 Common operation invocation contract
+
+### Operation request
+
+Every adapter invocation is represented as a typed operation request containing:
+
+| Field | Semantics |
+|---|---|
+| Operation ID | Stable globally unique operation identity from the P3.4 workflow/operation model |
+| Idempotency key | Stable key for deduplicating a provider/device effect when that adapter supports idempotency |
+| Issuer and origin | Authenticated user, coordinator, worker or approved system principal; initiating conversation/task/campaign reference |
+| Target | Exact enrolled device, gateway, connector/account and adapter identity |
+| Resource | Opaque resource reference plus expected generation/revision |
+| Capability | Exact capability ID and contract version |
+| Arguments | Typed, schema-validated inputs; no implicit free-form command execution |
+| Preconditions | Expected resource state/revision, session status, freshness, connectivity and other operation-specific guards |
+| Authorization | Current grant/policy reference, scope, purpose and effective risk classification |
+| Approval | Exact immutable operation digest and approval expiry when P2.6 requires confirmation |
+| Lifetime | Issued-at, not-before where relevant, expiry and replay protection from P3.3 |
+| Execution constraints | Data locality, resource budget, timeout, concurrency and permitted retry/reconciliation behavior |
+| Cancellation policy | Safe cancellation points and behavior after a side effect may have started |
+| Correlation | Workflow run/step/attempt, event, causal parent and audit references |
+
+The operation request reuses the P3.3 authenticated, target-bound command envelope. The adapter does not create a parallel permission model or accept a generic "trusted agent" flag. The operation's capability, resource, purpose and arguments are bound to the validated request and approval digest.
+
+### Mandatory execution sequence
+
+1. **Authenticate:** Validate issuer, session, target binding, signature/integrity, replay protection and command expiry.
+2. **Resolve:** Confirm the exact adapter/resource identity and current resource generation; reject stale or ambiguous targets.
+3. **Negotiate:** Confirm supported adapter/operation schema versions and current capability state.
+4. **Authorize:** Check the current grant, purpose, resource scope, risk floor, user/OS/provider permission, confirmation and revocation state.
+5. **Preflight:** Re-read required resource state, freshness, preconditions, session state and current platform/provider availability.
+6. **Prepare:** Validate typed arguments and calculate the exact effect digest. No side effect occurs while an approval is still pending.
+7. **Execute:** Perform only the authorized capability and only within the declared scope. No adapter may chain undeclared operations.
+8. **Verify:** Obtain post-operation evidence appropriate to the resource; compare it with the requested outcome and expected state transition.
+9. **Report:** Emit a structured result/event and evidence references to the workflow authority. The coordinator owns canonical workflow transitions.
+10. **Reconcile when needed:** If the result is ambiguous after a possible side effect, keep the operation outcome unknown and reconcile actual resource/provider state before retry or reassignment.
+
+The owner performs the final authorization check immediately before the governed side effect. A coordinator-side check alone is insufficient because grants, sessions, resources and provider permissions can change between routing and execution.
+
+## 19.61 Result, failure, cancellation and verification semantics
+
+### Structured result
+
+An adapter result contains operation ID, target/resource/capability identity, adapter and contract version, start/end timestamps, final outcome class, resource revision before/after, typed output, evidence references, warnings, error category, retry/reconciliation guidance and any remaining user action.
+
+A successful transport response, accepted API call, queued job or adapter process exit is not by itself a verified success. The adapter must identify what it actually verified and what remains unknown.
+
+### Outcome classes
+
+| Outcome | Meaning | Workflow treatment |
+|---|---|---|
+| Rejected before effect | Authentication, policy, support, schema or precondition check failed before any side effect | Failed/blocked with reason; no effect retry unless corrected |
+| Failed before effect | Operation could not begin and the adapter can establish that no side effect occurred | May receive bounded retry under current authority |
+| Succeeded and verified | Desired state or provider result is supported by fresh evidence | Mark step successful with evidence |
+| Completed with warning | Required effect verified but a non-critical declared sub-result failed or degraded | Complete with warning; preserve incomplete items |
+| Partial effect | Some effects occurred but the requested outcome is incomplete | Reconcile remaining state; do not replay the entire operation blindly |
+| Outcome unknown | Side effect may have occurred but evidence is missing, stale or contradictory | P3.4 reconciliation required; no blind retry |
+| Cancelled before effect | Cancellation reached a safe point before the effect began | Cancelled with evidence |
+| Cancellation requested after effect | Adapter could not safely interrupt or reverse the effect | Continue verification/reconciliation; do not claim rollback |
+
+Error categories shall be typed and machine-actionable: authentication/session, grant/revocation, confirmation, unsupported capability, incompatible contract, resource missing/replaced, ambiguity, stale observation, precondition mismatch, user/OS permission, provider permission, rate limit/quota, transient transport, timeout, dependency unavailable, integrity failure, partial effect, unknown outcome and verification failure.
+
+The result must distinguish retriable-before-effect, wait-until-condition, user-action-required, permanent rejection, and reconcile-before-retry. Free-form text may explain the error but cannot replace the typed category.
+
+### Cancellation and idempotency
+
+Cancellation is a request, not proof of rollback. Adapters declare safe cancellation points, effect-start boundaries and whether an operation can be interrupted. When interruption risks corrupting a physical or external operation, the adapter stops at the next safe point and reports the actual state.
+
+Idempotency is declared per capability and provider API. It is not inferred from HTTP method, action name or model belief. For non-idempotent effects, a timeout after dispatch moves the operation into reconciliation. A retry uses the same operation identity only where the adapter contract and provider support make that safe; a new attempt cannot disguise an uncertain previous effect.
+
+### Evidence
+
+Evidence is tied to the exact operation, target, resource generation, source adapter, observation time and method. It may be a post-operation state read, provider operation record, application-level acknowledgement plus independent state, compositor/window-manager geometry observation, or gateway/device state. Evidence is content-minimized and governed under P3.5. The adapter states evidence strength and any limitation; LIA must not label inferred or stale evidence as verified.
+
+## 19.62 Linux desktop adapter contract
+
+Linux desktop support is session- and compositor-specific. The device agent shall identify the active display server/session, compositor or window manager, runtime version, outputs/displays, workspace model and available control interfaces. A general label such as "Linux supported" is not sufficient to establish any particular desktop capability.
+
+### Wayland capability surface
+
+Wayland's core model deliberately separates clients from compositor-owned global desktop state. A client does not inherently know other clients' global surface positions or have direct access to their surfaces. The compositor advertises protocol globals and extensions dynamically; support beyond the core protocol varies by compositor and desktop environment. Therefore, LIA must discover and negotiate the actual compositor-supported interfaces at runtime rather than assume a universal cross-compositor window-management API.
+
+The Wayland adapter shall:
+- distinguish core display/surface behavior from compositor-specific management extensions;
+- report whether it can enumerate foreign windows, identify the focused window, read geometry, query workspace/output, move, resize, activate/focus or observe state changes;
+- declare the exact source of each capability, the required session/portal/user approval and supported compositor/version range;
+- treat unavailable protocol globals or missing permissions as unsupported/restricted, not as a reason to silently fall back to another security model;
+- avoid general screen capture as an implied part of window metadata access;
+- invalidate resource references when the compositor or window lifecycle changes.
+
+Where the compositor exposes a supported control extension or explicit user-mediated interface, the adapter may implement that capability after security and policy review. No specific compositor, extension or portal is selected in P3.6.
+
+The first vertical slice remains Linux-first and limited to one supported display/session profile. Its window-move operation is exposed only on a compositor/runtime where the adapter can identify the exact window, validate the target display/workspace state, perform the move while preserving the requested size, and independently verify the resulting geometry and workspace. If that contract cannot be met, the capability is unavailable and the slice must report the limitation rather than simulate success.
+
+### X11 capability surface
+
+X11 and the active window manager expose a different desktop model and may permit broader window enumeration, metadata observation and window requests than a typical Wayland client. The effective behavior still depends on the X server, window manager conventions, window type, application behavior and session permissions. A request to move a window may be mediated, constrained or overridden by the window manager.
+
+The X11 adapter shall declare support separately for enumeration, active-window observation, geometry, workspace/output, move, resize, activation/focus and event subscription. It must account for window-manager-managed state, override-redirect windows, transient dialogs, process/window replacement and coordinate transformations. A successful request to the window manager is not verified geometry; the adapter must observe the resulting state.
+
+X11 support does not imply permission to capture arbitrary content, inject input or control applications. Those are independent capabilities with separate grants and policy review.
+
+### Shared Linux window resource model
+
+A desktop window resource minimally identifies the owning device and desktop session, opaque window instance/generation, application/process identity where available, window role/type, geometry, coordinate space, scale factor, display/output, workspace, mapped/minimized/maximized/fullscreen state, focus state and observation timestamp.
+
+Window geometry must state whether coordinates are logical or physical, which output/workspace they refer to, and which scale/transform applies. Move and resize are separate capabilities. Activation/focus is separate from move. Input injection and semantic application automation are separate from window management.
+
+The adapter shall not return window titles or process metadata as a stable identity or as authorization proof. Where title/process information is not available or is sensitive, it shall be omitted or minimized according to the grant.
+
+### Linux support profile and honest degradation
+
+The manifest reports each capability independently for the active session. Wayland support is not inferred from X11 support, and X11 support is not inferred from Wayland support. A compositor change, session restart, workspace reconfiguration, permission change or adapter update invalidates affected capability/resource state and triggers rediscovery.
+
+## 19.63 Windows desktop adapter contract
+
+Windows desktop integration separates top-level window management from semantic application UI automation. They have different APIs, resource models, permissions and verification requirements; enabling one does not enable the other.
+
+### Window-management capabilities
+
+The Windows adapter may expose a supported set of window discovery, owner/process attribution, geometry, display/monitor, z-order, move, resize, minimize/restore and activation capabilities. Each capability is independently declared and permission-checked. Window identity is tied to a live OS handle plus process/session/generation information; a recycled handle must not retarget an unrelated window.
+
+Geometry observations include coordinate/DPI context, display identity and current state. A window-management API may accept a position/size request, but the adapter verifies the resulting OS/window state before reporting success. The adapter must handle windows that are minimized, maximized, modal, owned, protected, non-resizable, elevated or otherwise constrained.
+
+A native window-positioning API such as SetWindowPos is an implementation candidate only; P3.6 does not select it as the implementation or promise that every application permits the requested operation.
+
+### Semantic application/UI capabilities
+
+Microsoft UI Automation provides a semantic accessibility/control tree, properties, control patterns and events for supported Windows UI elements. The adapter may expose narrowly scoped UIA capabilities where the target application/provider exposes the required elements and patterns.
+
+UIA coverage is not universal. Custom-rendered, virtualized, inaccessible, protected or dynamically changing controls may be absent, incomplete or inconsistent. The manifest must report provider/element coverage and typed unsupported results. A successful UIA invocation is verified against the target control/application state where possible.
+
+### Integrity, user session and protected desktop boundaries
+
+The adapter records the interactive user session, process identity/integrity context and required OS permission. It shall not bypass User Account Control, secure desktop, process isolation, application sandboxing or other OS security boundaries. An operation blocked by an elevation or protected-desktop boundary is reported as restricted and requires the OS-supported user flow; LIA must not attempt covert privilege escalation.
+
+Window control, UIA interaction, keyboard/mouse input, screen capture and process management are distinct capabilities. A grant for one does not imply the others. P3.6 establishes the Windows contract but does not claim feature parity with the Linux-first first vertical slice.
+
+## 19.64 Mobile companion adapter contract
+
+The mobile companion is primarily an authenticated experience and approval client. Its core capabilities are conversation, task/campaign/device dashboards, notification handling, approval/review of exact operations, device enrollment/revocation and initiation of supported remote sessions.
+
+Mobile-native operations are exposed only through documented OS APIs and explicit user-facing permission flows. An adapter may expose app-local files/documents, sharing intents, notification actions, media selection, location or other device-native capabilities only when the platform and user grant the precise capability. These are not granted by installing or enrolling the app.
+
+### Android
+
+The Android adapter publishes capabilities relative to OS release, device/ROM policy, runtime permissions, app lifecycle and current power/battery state. Background services, jobs, alarms, network activity and process survival are subject to Android background-execution, Doze, App Standby and manufacturer-specific restrictions. A foreground service is not a general mechanism to guarantee indefinite execution or to bypass user expectations and platform policy.
+
+The adapter exposes whether a task is app-foreground-only, user-initiated, OS-scheduled, event-triggered, notification-mediated or not supported in the background. If the OS defers or suppresses execution, the mobile node reports unavailable/deferred and the coordinator retains the durable task. It must not claim a phone-local task is continuously monitored when the OS may suspend the process.
+
+### iOS
+
+The iOS adapter publishes capabilities relative to the app lifecycle, entitlements, user permissions and the system-supported background modes. A backgrounded app may be suspended; background execution is available only through the applicable OS-managed modes/events and bounded execution opportunities. The adapter shall not promise arbitrary continuous background work, always-on polling or general control of other applications.
+
+Notifications can inform the user and direct them back into an authenticated app flow. Notification delivery or action does not itself provide authorization for an external or consequential operation. Approval is bound to the exact operation digest and authenticated session.
+
+### Mobile coordination rule
+
+The coordinator remains responsible for durable multi-day workflows. The phone is a worker only for capabilities that the current OS lifecycle and permission state support. It may be offline or suspended without invalidating an independently executable workflow step. Operations that specifically require the phone remain queued, deferred or blocked with a clear reason; no stale mobile action is automatically replayed after reconnect.
+
+## 19.65 Home automation and connected-device adapter contract
+
+### Normalized resource model
+
+Home integrations use a provider-neutral resource model without assuming all devices share the same control vocabulary:
+
+| Resource concept | Meaning |
+|---|---|
+| Home/site | User-owned location or logical installation bound to an enrolled gateway/account |
+| Gateway/controller | Authenticated integration boundary that discovers and routes to devices |
+| Device | Physical or virtual device with vendor/provider identity and lifecycle |
+| Endpoint/component | Independently addressable function or sub-device where supported |
+| Property/state | Observable attribute such as on/off, temperature, lock state or battery level |
+| Event | Timestamped source event or state transition |
+| Action | Typed request to change a specific resource state or invoke a declared operation |
+| Capability | Exact readable, subscribable, configurable or actionable behavior exposed for that resource |
+
+The adapter preserves the provider's native identity and resource semantics alongside the normalized LIA reference. A normalized label does not erase vendor-specific constraints, device modes, safety states or supported values.
+
+### Separate observe and control grants
+
+Device discovery, state read, event subscription, configuration, and each actionable operation are separate capabilities. A user may authorize LIA to observe temperature without authorizing thermostat control, or to control lights without authorizing locks or security systems. A home gateway grant does not authorize every discovered device.
+
+Each action carries an exact target resource, desired operation/value, preconditions, current observation revision, validity window, risk classification, confirmation requirement and verification method. Where an operation means "toggle", the adapter should prefer a typed target-state request when the provider supports it, because a replayed toggle can invert a previously successful effect.
+
+### Physical safety and risk
+
+The P2.6 risk floor remains authoritative. Door locks, garage doors, access control, alarms/security systems, safety-critical appliances and any operation that may endanger a person or property default to R4 and require per-operation confirmation. No campaign or recurring delegation may reduce an R4 action to unattended execution.
+
+Lower-risk examples such as lighting or non-critical environmental settings are classified per action and context; they are not automatically safe merely because they are home devices. A capability can carry stricter policy than the generic risk tier. A device's own interlocks and safety controls must remain intact; LIA does not replace certified controller logic, emergency handling or human supervision.
+
+If the gateway reports that a command was accepted but cannot verify the physical result, the operation remains unverified/unknown. Loss of connectivity, stale telemetry or conflicting state must never be converted into an assumed safe state. LIA shall not silently retry a potentially consequential physical action.
+
+### Events, freshness and gateway trust
+
+The gateway declares supported event types, source sequence behavior, replay/deduplication semantics, subscription availability, polling fallback and event freshness. Polling is bounded and policy-controlled where push events are unavailable. Event source authentication and gateway identity are validated; an event is an observation, not an authorization instruction.
+
+Credentials are isolated to the gateway/connector owner, accessed just in time and excluded from model context, ordinary memory, event payloads and general synchronization. A revoked gateway loses new access; offline physical-device state is reported as unknown rather than treated as unchanged.
+
+## 19.66 External service connector contract
+
+### Connector identity and account binding
+
+Each external connector has an independently enrolled connector identity, provider, account/tenant binding, credential generation, granted provider scopes, adapter/contract version, quota/rate-limit profile and trust state. Different user accounts at one provider are separate resource authorities. A provider login or broad OAuth consent does not automatically grant LIA access to every API operation; LIA's internal grants can be narrower than provider scopes.
+
+Provider credentials remain in the secret boundary established by P2.5/P3.5. The adapter receives only the credential handle and minimum scope necessary for its assigned operation. Credentials are not placed in prompts, memory records, notification text or normal event payloads.
+
+### Read, event and write operations
+
+The connector declares independent read, subscribe, draft/create, modify, publish/send, delete and administrative capabilities where the provider supports them. Each has a typed input/output schema and provider-specific precondition, scope, quota, idempotency and verification contract.
+
+External provider state is authoritative at the provider. LIA's local record is a timestamped projection with provenance and freshness, not the canonical record. A webhook or provider event is authenticated and deduplicated before it can update a local observation. If the provider lacks reliable event delivery, the connector uses bounded polling with cursor/watermark and rate-limit compliance.
+
+The connector handles pagination, cursor expiry, partial responses, provider version changes, rate limiting, quotas, maintenance windows and deprecation as explicit conditions. Retries respect provider retry guidance and P3.4 operation identity. If a provider may have accepted a write before a timeout, the connector queries/reconciles provider state before attempting another write.
+
+### Consequential actions and campaign use
+
+Publishing, sending messages, deleting content, purchasing, changing account/security settings and other consequential actions retain their P2.6 risk and confirmation requirements. For the bounded recurring campaign delegation already defined in ADR-065, a connector may perform only actions within the exact active campaign envelope, account/channel, content rules, quota, quality gates and expiry. A connector's API scope is necessary but not sufficient authority.
+
+For a YouTube-style content campaign, separate capabilities may include researching public metadata, saving a draft, uploading an unlisted/private asset, publishing, editing metadata and reading authorized performance metrics. These must not be collapsed into one generic youtube.manage permission. Publication remains a separately governed consequential operation with exact campaign authorization and verification of provider-side status.
+
+### Provider events and trust
+
+Webhook/event intake requires provider-supported authenticity validation, delivery deduplication, timestamp/sequence checks where available, replay bounds and schema validation. Event payload fields are untrusted content, not instructions. They cannot alter LIA's grants, identity, adapter manifest, policy or workflow authority. Malformed or unverifiable events are quarantined and surfaced as connector-health/security conditions.
+
+## 19.67 Adapter lifecycle, versioning, health and isolation
+
+### Lifecycle states
+
+Adapters move through explicit lifecycle states:
+
+| State | Meaning |
+|---|---|
+| Unenrolled | Adapter or connector is not bound to an authorized LIA device/account |
+| Pairing/consent pending | Proof-of-possession, account binding or user/OS/provider permission is incomplete |
+| Enrolled, not ready | Identity exists but discovery, compatibility or health checks are incomplete |
+| Ready | Identity, contract, capability discovery and required dependencies are valid |
+| Degraded | Some capabilities work; one or more declared dependencies/quality conditions are impaired |
+| Suspended | Adapter is intentionally paused or policy-blocked; no new actions execute |
+| Revoked | Trust or authority is withdrawn; no new operation may proceed |
+| Updating | Adapter version changes under a controlled update process; actions are quiesced or constrained |
+| Incompatible | Contract, host or provider version cannot safely interoperate |
+| Removed | Enrollment is closed and locally/provider-held credentials are revoked or scheduled for verified cleanup |
+
+State transitions are auditable. Revocation invalidates sessions/capability caches and blocks new effects according to P3.3 propagation limits. Existing running operations are reconciled under P3.4; removal does not imply that an external side effect was undone.
+
+### Version and schema compatibility
+
+Adapter protocol, manifest schema, capability schema and operation schema have explicit version identifiers. Compatibility is negotiated before execution. Unknown required fields, unsupported major versions, unrecognized effect semantics or missing verification rules fail closed. Additive optional metadata may be tolerated only when the contract version explicitly defines that behavior.
+
+A downgrade or rollback cannot reactivate revoked permissions, stale manifests, expired grants or deleted data. Adapter updates are signed/authenticated under the chosen supply-chain model, staged, health-checked and reversible where safe. The concrete signing/update technology remains a P3.8 decision.
+
+### Health and availability
+
+Health status is distinct from capability availability and authorization. A healthy adapter can still lack permission; a granted capability can still be unavailable due to network, OS session, provider quota or hardware state.
+
+Health reports include adapter/version, owning node, last heartbeat/observation, dependency state, supported/degraded capability set, error category, retry-after where valid, quota pressure and event-stream freshness. Health telemetry is content-minimized and governed under P3.5. It must not include raw screen/audio/camera data, secret values or unnecessary provider payloads.
+
+### Isolation and least privilege
+
+Adapters are isolated by resource class and trust domain. A desktop adapter does not inherit connector secrets; a home connector does not inherit desktop session access; a provider connector does not inherit memory write authority. The executor passes only the operation's minimum data and credential handles. Model output, web content, app content, provider events and adapter diagnostic text are untrusted input.
+
+Adapter code cannot directly mutate coordinator workflow state, policy grants, canonical memory or unrelated device resources. It returns typed observations/results through the defined contracts. The workflow engine and permission authority remain the only owners of their respective state transitions.
+
+## 19.68 P3.6 architecture validation scenarios and traceability
+
+These scenarios define future implementation verification. They do not claim that any adapter has been implemented, integrated, benchmarked or tested.
+
+| Scenario | Required result | Trace |
+|---|---|---|
+| Adapter advertises a capability but user grant is absent | Manifest may show permission required; invocation is denied before effect | SEC-001–SEC-074, ADR-102/105 |
+| Capability is supported on one compositor but not another | Runtime manifest reports the distinction; planner does not infer parity | FR-010–FR-019, ADR-104/107 |
+| Wayland session lacks foreign-window management support | Window enumeration/move is unsupported or unavailable; no silent X11-style fallback is claimed | P3.6 Linux contract, ADR-107 |
+| X11 window-manager request is accepted but geometry does not change | Operation is not verified; adapter reports mismatch or unknown outcome | AC-001–AC-046, ADR-106 |
+| Window handle/resource is destroyed and reused | Generation/reference validation rejects the stale operation | P3.6 resource identity, ADR-103 |
+| Windows UI Automation provider omits a control | Capability returns typed unsupported/partial coverage; no fabricated element/action | P3.6 Windows contract, ADR-104 |
+| Windows operation crosses an elevation/protected-desktop boundary | Adapter reports restricted; no privilege/security bypass is attempted | SEC-001–SEC-074, ADR-107 |
+| Android app is suspended or device enters Doze | Coordinator retains task; phone capability reports deferred/unavailable; no false continuous-worker claim | FR-225–FR-248, NFR-036–044, ADR-108 |
+| iOS does not grant an applicable background mode/event | Background capability is absent/restricted; durable work remains at coordinator | FR-225–FR-248, ADR-108 |
+| Home gateway discovers a new lock | Discovery does not grant read/control; lock action remains R4 and per-operation confirmed | ADR-066/109, SEC-001–074 |
+| Physical-device command acknowledgement arrives without state feedback | Outcome remains unverified/unknown and is reconciled; no blind retry | ADR-087/106/109 |
+| Device telemetry is stale or event source is unauthenticated | Observation is rejected/expired; it cannot authorize or direct an action | ADR-103/109/110 |
+| Provider webhook is duplicated or replayed | Event deduplication/authenticity/replay checks prevent duplicate state transitions | ADR-083/110 |
+| Provider write times out after possible acceptance | Connector reconciles provider state before retry | ADR-087/110 |
+| Provider credential is revoked | New calls stop, capability becomes permission-required/restricted, affected workflows pause or fail safely | SEC-053/068, ADR-110 |
+| Adapter upgrades to incompatible operation schema | Invocation fails closed; no silent coercion or unknown-field loss | NFR-033, ADR-111 |
+| Adapter health is degraded but some capabilities remain usable | Manifest/health distinguish individual capabilities; router selects only valid supported operations | P3.2/P3.4/P3.6, ADR-102/111 |
+| Cancellation arrives after a non-idempotent external action begins | Adapter reports cancellation boundary and reconciles actual provider outcome | ADR-087/111 |
+| Notification contains a command-like provider payload | Content remains untrusted; no permission/workflow/manifest mutation occurs | SEC-068–074, ADR-110 |
+| A worker tries to invoke an undeclared adapter capability | Local executor rejects the request and records the authority mismatch | ADR-070/105/111 |
+
+Implementation evidence should include capability-manifest conformance fixtures, adapter contract compatibility tests, permission-denial tests, resource-generation/staleness tests, operation deduplication and reconciliation tests, compositor/WM matrix testing, Windows integrity/provider coverage tests, mobile background/power-state tests, home-device safety cases, connector webhook/rate-limit/revocation tests, adapter upgrade/rollback tests and end-to-end evidence lineage. Passing one reference platform does not establish support for all platforms in its family.
+
+## 19.69 P3.6 architecture diagrams
+
+### Adapter and execution boundary topology
+
+~~~mermaid
+flowchart TB
+    PLAN["Planner / agent proposes typed operation"]
+    WF["Durable workflow authority"]
+    POLICY["Permission and risk authority"]
+    ROUTER["Capability-aware worker/router"]
+    ENVELOPE["P3.3 authenticated target-bound command"]
+    subgraph NODES["Resource-owning execution boundaries"]
+        LINUX["Linux device agent"]
+        WINDOWS["Windows device agent"]
+        MOBILE["Mobile companion agent"]
+        HOME["Home gateway/device adapter"]
+        CONNECTOR["Isolated external connector"]
+    end
+    subgraph ADAPTERS["Adapter-specific capability surfaces"]
+        WAYLAND["Wayland compositor adapter"]
+        X11["X11 window-manager adapter"]
+        WINAPI["Windows window-management adapter"]
+        UIA["Windows UI Automation adapter"]
+        MOBILEOS["Android/iOS OS adapter"]
+        DEVICES["Per-device home resource adapters"]
+        PROVIDER["Per-provider/account connector"]
+    end
+    EVIDENCE["Typed results, observations and evidence"]
+    WF --> ROUTER
+    PLAN --> WF
+    POLICY --> WF
+    ROUTER --> ENVELOPE
+    ENVELOPE --> LINUX
+    ENVELOPE --> WINDOWS
+    ENVELOPE --> MOBILE
+    ENVELOPE --> HOME
+    ENVELOPE --> CONNECTOR
+    LINUX --> WAYLAND
+    LINUX --> X11
+    WINDOWS --> WINAPI
+    WINDOWS --> UIA
+    MOBILE --> MOBILEOS
+    HOME --> DEVICES
+    CONNECTOR --> PROVIDER
+    WAYLAND --> EVIDENCE
+    X11 --> EVIDENCE
+    WINAPI --> EVIDENCE
+    UIA --> EVIDENCE
+    MOBILEOS --> EVIDENCE
+    DEVICES --> EVIDENCE
+    PROVIDER --> EVIDENCE
+    EVIDENCE --> WF
+~~~
+
+### Adapter invocation and verification sequence
+
+~~~mermaid
+sequenceDiagram
+    participant W as Workflow authority
+    participant P as Permission/risk authority
+    participant R as Router
+    participant X as Resource-owning executor
+    participant A as Platform/service adapter
+    participant S as Resource/provider
+    W->>R: Assign operation ID and exact target/capability
+    R->>X: P3.3 authenticated command envelope
+    X->>X: Validate issuer, target, expiry and replay
+    X->>A: Resolve manifest, resource generation and schema
+    A-->>X: Current capability and preflight state
+    X->>P: Validate current grant, scope, risk and approval
+    P-->>X: Allow exact operation or deny
+    X->>A: Execute typed request after local validation
+    A->>S: Perform supported side effect
+    S-->>A: Acknowledgement / state transition
+    A->>S: Read or receive independent outcome evidence
+    S-->>A: Resulting state / provider record
+    A-->>X: Typed result, evidence and limitation
+    X-->>W: Operation result and correlated evidence
+    alt Outcome verified
+        W->>W: Commit successful step transition
+    else Outcome uncertain
+        W->>W: Enter reconciliation; prohibit blind retry
+    end
+~~~
+
+### Capability discovery and negotiation
+
+~~~mermaid
+flowchart TD
+    A["Enroll or reconnect adapter"]
+    B["Authenticate adapter identity and owning node/account"]
+    C["Read contract and manifest versions"]
+    D{"Compatible contract?"}
+    E["Mark incompatible; fail closed"]
+    F["Discover live resources and capabilities"]
+    G["Apply platform/session/provider constraints"]
+    H["Publish supported / restricted / unavailable states"]
+    I["Route only to exact declared capability"]
+    J["Revalidate resource and policy at invocation"]
+    K["Invalidate and rediscover after update, permission or lifecycle change"]
+    A --> B --> C --> D
+    D -->|No| E
+    D -->|Yes| F --> G --> H --> I --> J
+    J --> K
+    K --> C
+~~~
+
+### Resource authority and normalized home/service model
+
+~~~mermaid
+flowchart TB
+    subgraph DESKTOP["Desktop authority — local OS session"]
+        DISPLAY["Display/output"]
+        WINDOW["Window instance + generation"]
+        APP["Process/application identity"]
+        DISPLAY --> WINDOW
+        APP --> WINDOW
+    end
+    subgraph HOME["Home authority — enrolled gateway"]
+        SITE["Home/site"]
+        GATEWAY["Gateway/controller"]
+        DEVICE["Physical device"]
+        ENDPOINT["Endpoint/component"]
+        PROPERTY["Property/state"]
+        ACTION["Typed action"]
+        SITE --> GATEWAY --> DEVICE --> ENDPOINT
+        ENDPOINT --> PROPERTY
+        ENDPOINT --> ACTION
+    end
+    subgraph SERVICE["External provider authority"]
+        ACCOUNT["Provider account/tenant"]
+        OBJECT["Provider resource"]
+        EVENT["Authenticated event"]
+        WRITE["Provider write/action"]
+        ACCOUNT --> OBJECT
+        OBJECT --> EVENT
+        OBJECT --> WRITE
+    end
+    SNAP["LIA timestamped observations and scoped references"]
+    DESKTOP --> SNAP
+    HOME --> SNAP
+    SERVICE --> SNAP
+    NOTE["LIA projections do not replace originating resource authority"]
+    SNAP --> NOTE
+~~~
+
+## 19.70 P3.6 technology boundary, references and closure
+
+### Technology boundary
+
+P3.6 intentionally selects no concrete adapter framework, OS API library, compositor extension, UI Automation wrapper, mobile framework, home gateway, device standard, connector SDK, webhook service or provider. The contracts are sufficiently defined to shortlist candidates, but formal approval remains at P3.8 after P3.7's agent/tool/model contracts are available.
+
+P3.8 evaluation shall compare:
+- Linux Wayland compositor coverage, X11 compatibility, Windows window/UIA coverage and actual supported session environments;
+- stability and security of resource identity, permissions, isolation, updates and adapter supply chain;
+- Android/iOS lifecycle compliance, notification reliability and battery/resource impact;
+- home-device resource coverage, physical safety semantics, gateway trust and event freshness;
+- connector authorization/scopes, webhook authenticity, quotas, idempotency, provider versioning and export/deletion behavior;
+- local resource overhead, reliability, observability, license, maintenance and operational cost.
+
+Technical spikes may test a specific compositor, window manager, Windows UIA provider, mobile OS background path, home integration or connector provider. Those are evidence for P3.8, not a product implementation baseline or a claim of broad support.
+
+### Informative platform references
+
+The following public platform documentation informed the capability constraints in this workstream. These references are informative and do not select an implementation technology:
+
+- [Wayland Protocol and Model of Operation](https://wayland.freedesktop.org/docs/book/Protocol.html) — compositor-advertised protocol globals and the distinction between client surfaces and global desktop state.
+- [Microsoft UI Automation overview](https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-uiautomationoverview) and [UI Automation specification](https://learn.microsoft.com/en-us/windows/win32/winauto/ui-automation-specification) — semantic accessibility/control providers, elements, patterns and events.
+- [Microsoft SetWindowPos reference](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowpos) — an example of a Windows top-level/child window positioning API; not a selected dependency.
+- [Android background execution limits](https://developer.android.com/about/versions/oreo/background.html), [Doze and App Standby](https://developer.android.com/training/monitoring-device-state/doze-standby) and [Android power-management resource limits](https://developer.android.com/topic/performance/power/power-details) — background execution and power constraints.
+- [Apple background execution sequence](https://developer.apple.com/documentation/uikit/about-the-background-execution-sequence), [background modes](https://developer.apple.com/documentation/xcode/configuring-background-execution-modes) and [app lifecycle](https://developer.apple.com/documentation/uikit/managing-your-app-s-life-cycle) — app suspension and the limited system-managed background execution model.
+- [Home Assistant REST API reference](https://developers.home-assistant.io/docs/api/rest/) — one example of a home integration surface that separates state access, actions and event delivery; it is not a selected home platform or required dependency.
+
+These references describe platform constraints that may change across OS releases, compositor/provider versions and device manufacturers. P3.8 must re-check the exact target versions and selected implementation candidates before a technology is approved.
+
+### P3.6 architecture decision records
+
+#### ADR-101 — Adapters are explicit execution boundaries with local ownership
+
+**Status:** Approved
+
+Every OS, device, home gateway and external service operation is exposed through a declared adapter boundary. The adapter executes only within the resource and trust domain it owns; remote coordination routes requests but cannot bypass the owning device or provider authority.
+
+#### ADR-102 — Versioned capability manifests describe support, not permission
+
+**Status:** Approved
+
+Adapters publish versioned, runtime-aware capability manifests with typed operations, resource types, prerequisites, risk floors, data classes, freshness, side-effect, verification and cancellation semantics. Discovery or declaration never grants permission. Unsupported, unavailable, degraded and permission-required capabilities remain distinct states.
+
+#### ADR-103 — Resource identity and observations are scoped, revisioned and time-bounded
+
+**Status:** Approved
+
+Adapter resources use owner-bound opaque identities, resource generations/revisions, source identity, observation timestamps and explicit freshness. Provider-owned state remains authoritative at the provider; local desktop and device state remains authoritative at its originating node. A cached observation is not current state or execution evidence.
+
+#### ADR-104 — Shared operation semantics do not imply platform capability parity
+
+**Status:** Approved
+
+Linux, Windows, mobile, home and service adapters implement a common invocation/result contract while exposing only capabilities their actual platform/runtime supports. LIA does not emulate unsupported operations, silently switch security models or promise parity through a lowest-common-denominator abstraction.
+
+#### ADR-105 — The owning executor revalidates every operation before side effects
+
+**Status:** Approved
+
+An operation is bound to the P3.3 authenticated command envelope, target, adapter, resource, capability, typed arguments, preconditions, current grant, risk policy, expiry and stable operation identity. The owning executor rechecks trust, authorization, current state and platform support before acting.
+
+#### ADR-106 — Observation, action and verification are separate capabilities
+
+**Status:** Approved
+
+Read/observe, subscribe, control, configure and verify rights are separately declared and granted. An API acknowledgement or accepted command is not proof of the resulting state. Completion requires resource-appropriate evidence; ambiguous side effects enter P3.4 reconciliation rather than blind retry.
+
+#### ADR-107 — Desktop automation is compositor/window-manager and OS specific
+
+**Status:** Approved
+
+Linux Wayland and X11, and Windows desktop operations, have separate implementation and security surfaces. Capabilities are discovered for the current session and compositor/window manager/API context. LIA shall report unsupported control honestly and shall not claim universal window-management, focus, input or accessibility coverage.
+
+#### ADR-108 — Mobile is a constrained companion node, not an always-on executor
+
+**Status:** Approved
+
+Android and iOS capabilities are bounded by their app lifecycle, background-execution policy, user-granted permissions and supported system APIs. Always-on coordination and durable task execution remain independent of the phone. Mobile background availability is best-effort unless the OS explicitly guarantees the relevant event/task path.
+
+#### ADR-109 — Home automation authorization is per resource and physical action
+
+**Status:** Approved
+
+Home integrations model devices, endpoints, properties, observations, events and actions independently. Read and control grants are separate; risk is assessed per operation. Locks, garage doors, security systems and safety-critical controls retain the R4 per-operation confirmation boundary. A generic home-integration grant authorizes no blanket control.
+
+#### ADR-110 — External connectors isolate provider identity, scopes and side effects
+
+**Status:** Approved
+
+Each external account/connector has independent identity, credentials, scopes, quotas, provider version and event trust. Secrets are retrieved just in time through the P2.5/P3.5 data boundary. Provider state is authoritative; writes require idempotency/reconciliation and evidence. Connector availability or webhook delivery never grants permission.
+
+#### ADR-111 — Adapter lifecycle, compatibility and cancellation are explicit
+
+**Status:** Approved
+
+Adapters have explicit enrollment, discovery, health, compatibility, suspension, revocation, update and removal states. Incompatible contracts fail closed. Cancellation is a request to stop at a safe boundary, not proof of rollback; any possible side effect is verified or reconciled before retry or reassignment.
+
+**P3.6 closure:** Shared adapter contracts, dynamic capability manifests, resource identity/freshness, target-bound execution, typed results/errors, verification and cancellation semantics, Linux Wayland/X11 boundaries, Windows desktop/UIA separation, Android/iOS lifecycle constraints, per-resource home automation safety, isolated provider connectors, adapter lifecycle/versioning and conformance scenarios are defined. Platform and integration technologies remain unselected. P3.7 is next: agent intelligence, model/runtime and tool-request contracts.
+
 
 
