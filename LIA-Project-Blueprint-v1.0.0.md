@@ -303,7 +303,7 @@ through controlled change; they do not invalidate earlier requirements.
   P0      Concept and vision                 Complete
   P1      Product definition                 Complete
   P2      Requirements engineering           Complete — baseline approved
-  P3      System architecture                Next
+  P3      System architecture                Active — P3.1 complete
   P4      Integration contracts              Pending
   P5      First vertical slice               Pending
   P6      Companion integration              Pending
@@ -1931,6 +1931,68 @@ Acceptance uses unit, component, contract, integration, end-to-end, platform, pe
 P2.1–P2.7 are complete as a requirements-engineering baseline. Phase 2 is closed and P3 may begin. This does not claim implementation, performance validation, security testing or execution of acceptance tests. P3 must preserve the approved requirements or document any proposed change through controlled decision revision.
 
 
+
+### ADR-059 — Distributed multi-device LIA identity
+
+**Status:** Approved
+
+LIA has one persistent user identity across independently enrolled desktop, mobile and connected-environment nodes. Device enrollment does not imply blanket access; every node has its own identity, capability manifest, trust state and revocable permissions.
+
+### ADR-060 — Local device execution with centralized coordination
+
+**Status:** Approved
+
+The coordination plane maintains tasks, device identity, schedules, events and notification routing. Local device agents execute OS/device operations on the node that owns the resource and validate the action before side effects. The coordination plane does not directly bypass local execution boundaries.
+
+### ADR-061 — Durable workflow engine owns task state
+
+**Status:** Approved
+
+Long-running tasks and recurring campaigns are durable workflows. The planner proposes plans; the workflow engine owns authoritative run/step state, checkpoints, leases, dependencies, retries, timeouts and verified completion. Task monitoring is event-driven and bounded, not an unrestricted continuous LLM loop.
+
+### ADR-062 — Secure remote device sessions
+
+**Status:** Approved
+
+Remote PC access uses authenticated device sessions, with outbound-established protected connectivity as the default and no unauthenticated public inbound control port. Remote viewing and control are separate capabilities. Device offline/lock limitations are respected; stale GUI commands are never blindly replayed.
+
+### ADR-063 — Scoped multi-device memory synchronization
+
+**Status:** Approved
+
+Cross-device memory synchronization follows P2.5 ownership, scope, sensitivity, provenance, retention and deletion semantics. Devices receive only the context and local cache necessary for the current authorized task. Enrollment is not a grant to the full memory archive.
+
+### ADR-064 — Notification channels are not authorization channels
+
+**Status:** Approved
+
+Notifications are routed through user-selected, explicitly connected channels. Notification delivery and replies do not grant permission. Consequential actions initiated from a notification require an authenticated client and the existing permission/confirmation policy.
+
+### ADR-065 — Bounded recurring campaign delegation
+
+**Status:** Approved
+
+A recurring campaign may receive a narrowly scoped, time-bounded delegation for repetitive R3 actions such as publishing within an approved channel/content envelope. New campaigns default to draft/review. Auto-execution requires explicit campaign-specific authorization, quality gates, expiry, audit and revocation. R4 actions are never included.
+
+### ADR-066 — Home automation capability and physical-safety boundary
+
+**Status:** Approved
+
+Home/device integrations expose capabilities per device and action, with separate observation and control grants. Door locks, garage doors, security systems and safety-critical appliances default to R4 and require per-operation authorization/confirmation. A generic "home automation" grant does not authorize all devices.
+
+### ADR-067 — Always-on coordination capability
+
+**Status:** Approved
+
+Recurring workflows, task supervision and notifications require an always-on coordination capability independent of the primary PC. It may be hosted or user-controlled; the deployment model is deferred to P3.2/P3.3. PC-specific actions still require the corresponding PC node to be reachable.
+
+### ADR-068 — Reconciliation instead of blind retry
+
+**Status:** Approved
+
+Distributed command delivery may be duplicated, delayed or interrupted. Each operation has an identity and execution history; the system reconciles actual state before retry/reassignment. Unknown side-effect outcomes remain explicit and are not treated as failure or success without evidence.
+
+
 # 9. Change log
 
   ------------------------------------------------------------------------
@@ -2009,20 +2071,18 @@ P2.1–P2.7 are complete as a requirements-engineering baseline. Phase 2 is clos
 
 **1.5.0 — 13 Nov 2026:** Completed the remaining Phase 2 requirements baseline. Added P2.2 workload profiles, hardware tiers, latency/resource/reliability/durability/compatibility targets and measurement protocol; P2.3 perception-source matrix, capture cadence, freshness and privacy boundaries; P2.4 conversation, interruption, proactive timing and embodiment defaults; P2.6 scoped authorization, risk tiers, confirmation, revocation and security policy; P2.7 acceptance groups, verification methods and release gates; ADR-053–ADR-058; and Phase 2 closure/handoff constraints for P3.
 
+**1.6.0 — 14 Nov 2026:** Opened P3 and completed P3.1 architecture drivers and logical decomposition. Extended the product baseline for multi-device identity, smartphones, connected-home integrations, secure remote PC access, durable multi-day workflows, continuous task supervision and user-routed notifications (FR-225–FR-248). Added distributed-runtime quality requirements (NFR-036–NFR-044), device/security and bounded campaign-delegation controls (SEC-061–SEC-074), acceptance groups (AC-040–AC-046), ADR-059–ADR-068, the system-context and component diagrams, remote-session sequence, recurring-task and YouTube campaign workflow, and P3.2–P3.8 workstream plan.
+
 
 # 10. Current working state
 
-**Current phase:** P2 — Requirements Engineering  
-**Phase 2 status:** Complete — approved requirements baseline across P2.1–P2.7  
-**P2.1 status:** Complete — functional requirements and first vertical-slice scope approved  
-**P2.2 status:** Complete — non-functional targets and measurement rules approved  
-**P2.3 status:** Complete — context and perception boundaries approved  
-**P2.4 status:** Complete — interaction and embodiment behavior approved  
-**P2.5 status:** Complete — memory requirements and governance baseline approved  
-**P2.6 status:** Complete — autonomy, security and permission defaults approved  
-**P2.7 status:** Complete — acceptance criteria and verification strategy specified  
-**Overall status:** Requirements baseline is ready to inform P3. No implementation, performance benchmark or runtime acceptance result is implied by Phase 2 closure.  
-**Next action:** Begin P3 — System Architecture. Translate the approved requirements into architecture alternatives, component boundaries, trust boundaries, data flows, platform adapters and contracts. Preserve the explicit deferrals and validation gates in Sections 13–17.
+**Current phase:** P3 — System Architecture  
+**Phase 2 status:** Complete — original requirements baseline approved, with the multi-device/campaign scope extension recorded as a controlled amendment  
+**P2.1–P2.7 status:** Complete as requirements baselines; runtime implementation and verification remain future engineering work  
+**P3.1 status:** Complete — architecture drivers, system context and logical decomposition approved  
+**P3.2 status:** Active — distributed runtime/deployment topology and communication model  
+**Overall status:** P3 is active. No programming language, framework, database, model provider, cloud vendor or production deployment topology has been selected.  
+**Next action:** Define the always-on coordination deployment, device-node runtime placement, secure communication topology, availability/recovery objectives and hosted versus user-controlled deployment trade-offs in P3.2. Then define device identity/session contracts and event/workflow delivery semantics.
 
 
 ## Phase 2 exit criteria
@@ -4108,7 +4168,7 @@ Security events shall be auditable without copying unnecessary sensitive content
 
 ## 16.8 P2.6 closure
 
-**P2.6 status:** Complete — permission model, default-deny policy, scoped grants, one-time delegation, risk classes, mandatory confirmations, revocation, emergency stop and threat-handling rules approved. Concrete APIs and enforcement components remain P3 work.
+**P2.6 status:** Complete — permission model, default-deny policy, scoped grants, device enrollment/revocation, risk classes, mandatory confirmations, bounded recurring R3 campaign delegation, R4 per-operation confirmation, emergency stop and threat-handling rules approved. Concrete APIs and enforcement components remain P3 work.
 
 ---
 
@@ -4255,3 +4315,516 @@ P3 may select implementation technologies only after demonstrating how the propo
 P3 shall not silently relax P2 targets or introduce a tool/provider whose behavior violates the approved privacy, security or user-control baseline.
 
 **Next phase:** P3 — System Architecture.
+
+
+# 19. P3 — System Architecture
+
+**Phase status:** Active  
+**P3.1 status:** Complete — architecture drivers, system context and logical decomposition approved  
+**P3.2 status:** Active — distributed runtime/deployment topology and communication model  
+**Purpose:** Transform the approved product and quality requirements into a coherent, secure, distributed architecture with explicit component responsibilities, data ownership, communication contracts and platform execution boundaries.
+
+P3 shall preserve the Phase 2 requirements baseline and the approved multi-device scope extension. Architecture choices must be justified against requirements and quality attributes; technologies are selected only after responsibilities, trust boundaries and contracts are sufficiently clear.
+
+## 19.1 P3 scope and architecture drivers
+
+P3 must support:
+
+1. One persistent LIA identity across Linux and Windows desktop nodes, smartphones and authorized connected-home/device integrations.
+2. Local execution of desktop and device operations by the corresponding enrolled device agent.
+3. Secure remote reachability to a PC without requiring public exposure of inbound desktop-control ports by default.
+4. An always-on coordination capability that can maintain schedules, workflow state, events and notifications independently of the user's primary PC.
+5. Durable multi-step and recurring workflows that span devices, external services and multiple days.
+6. Agent reasoning and planning that can adapt to new conditions while remaining subordinate to deterministic workflow state, permission checks and user-defined campaign constraints.
+7. A shared memory and context model with explicit cross-device synchronization, provenance, sensitivity and compartment boundaries.
+8. User-selected notification delivery with priority, batching, delivery tracking and authenticated action paths.
+9. Home-automation integrations that expose granular device/action capabilities and account for physical safety.
+10. Graceful operation when individual devices, networks, model providers or integrations are offline or unavailable.
+
+### Scope amendment to the completed Phase 2 baseline
+
+The multi-device and campaign requirements FR-225–FR-248 and their NFR/SEC/AC addenda are accepted product-scope changes introduced during P3 discovery. They are appended to stable registers rather than renumbering prior requirements. This is a controlled baseline extension, not a retroactive claim that the original P2.1–P2.7 review had already covered those details.
+
+## 19.2 Architecture principles
+
+### 19.2.1 Distributed, hybrid and local-execution architecture
+
+LIA is a distributed personal agent system. One logical user-owned LIA identity coordinates multiple independently enrolled device nodes and service connectors.
+
+The architecture separates:
+
+- **Coordination:** Identity, device registry, task state, scheduling, event routing, notification routing, permission policy and cross-device synchronization.
+- **Intelligence:** Conversation, context assembly, reasoning, planning, initiative selection and model/provider routing.
+- **Execution:** Local operations performed by the authorized device agent or connector that owns the target resource.
+- **Experience:** The desktop character, mobile companion, task dashboard, controls and notification surfaces.
+
+The coordination capability must remain available when the user's primary PC is offline. It may be deployed as a hosted service or on a user-controlled always-on node; the logical architecture requires an always-on coordinator, while the precise deployment model is decided in P3.2/P3.3.
+
+A PC-specific action still requires the PC agent and relevant OS session to be available. The coordinator cannot execute a local window operation on a sleeping, powered-off or unreachable PC.
+
+### 19.2.2 Device agents own local execution
+
+Every execution endpoint is represented by a device node or integration connector. A node advertises a capability manifest and performs only the operations supported by its local environment and valid grants.
+
+The shared agent core does not directly call arbitrary platform APIs. It submits typed action requests to the appropriate executor. The local node validates device identity, command freshness, target, capability and applicable grant before a side effect.
+
+### 19.2.3 Reasoning is not workflow authority
+
+The model/agent planner may propose objectives, plans, branches and next steps. It does not own durable workflow state, retry logic, permission grants or completion status.
+
+The deterministic workflow engine owns execution state, dependencies, schedules, leases, checkpoints, retry budgets, timeout handling and verified outcomes. A proposed plan is validated against the user's objective, campaign envelope and permissions before execution.
+
+### 19.2.4 Local-first with an always-on coordination capability
+
+Device-local capabilities should continue to function where possible if the coordination service or network is unavailable. Cross-device tasks, recurring schedules and remote access require the coordination service or an explicitly designated always-on coordinator to be reachable.
+
+When no eligible worker exists, the task remains blocked/deferred with an explicit reason. The system does not pretend an offline PC has executed work.
+
+### 19.2.5 Event-driven supervision
+
+Continuous task monitoring means the workflow supervisor evaluates task state, dependencies, deadlines, health signals and authorized external events. It does not require continuous high-frequency LLM calls or continuous capture of the user's private environment.
+
+Use event subscriptions and timers as the preferred path. Bounded polling is an adapter fallback when a source does not provide events.
+
+### 19.2.6 Capability and trust are explicit
+
+A device being enrolled does not give it access to all other devices or all user memory. Device trust, resource grants, memory scope and connector authorization are independent.
+
+The system must not assume that two devices on the same LAN belong to the same user or trust domain.
+
+### 19.2.7 Exactly-once side effects are not assumed
+
+Distributed delivery can be duplicated or delayed. Workflow actions use stable IDs, idempotency where supported and post-action reconciliation. If a non-idempotent side effect may have occurred but the result is unknown, the workflow enters an explicit unknown/blocked state rather than retrying blindly.
+
+## 19.3 System context and logical topology
+
+The context diagram describes logical relationships; it does not commit to a hosting vendor, network technology or programming language.
+
+```mermaid
+flowchart TB
+    U["User"]
+    subgraph CLIENTS["Experience clients"]
+        PCUI["Desktop companion and character"]
+        MOBILE["Mobile companion"]
+        NOTIFY["User-selected notification channels"]
+    end
+    subgraph NODES["Enrolled device and execution nodes"]
+        PCNODE["Linux / Windows PC agent"]
+        PHONENODE["Mobile device capabilities"]
+        HOME["Home/device integration gateway"]
+    end
+    subgraph LIA["LIA coordination and intelligence"]
+        CONTROL["Identity, device registry and secure session broker"]
+        TASKS["Durable task orchestration and scheduler"]
+        BRAIN["Conversation, context and planning"]
+        POLICY["Permission, risk and audit authority"]
+        MEMORY["Governed cross-device memory"]
+        ROUTER["Notification and event routing"]
+    end
+    subgraph EXTERNAL["External services and integrations"]
+        MODELS["Model and speech providers"]
+        CONTENT["Authorized research, content and platform services"]
+        SMART["Connected home/device services"]
+    end
+
+    U <--> PCUI
+    U <--> MOBILE
+    U --> NOTIFY
+    PCUI <--> PCNODE
+    MOBILE <--> PHONENODE
+    PCNODE <-->|"authenticated device session"| CONTROL
+    PHONENODE <-->|"authenticated device session"| CONTROL
+    HOME <-->|"scoped connector session"| CONTROL
+    CONTROL <--> TASKS
+    BRAIN <--> TASKS
+    BRAIN <--> MEMORY
+    POLICY --> TASKS
+    POLICY --> CONTROL
+    TASKS --> ROUTER
+    ROUTER --> NOTIFY
+    BRAIN <--> MODELS
+    TASKS <--> CONTENT
+    HOME <--> SMART
+    PCUI <--> BRAIN
+    MOBILE <--> BRAIN
+    PCNODE <--> TASKS
+    PHONENODE <--> TASKS
+```
+
+## 19.4 Logical subsystem decomposition and ownership
+
+| Subsystem | Primary responsibility | Must not own |
+|---|---|---|
+| Desktop experience client | Character rendering, local conversation UI, user controls, local status and interaction presentation | Permission authority, durable task state or OS execution |
+| Mobile companion | Authenticated conversation, device/task dashboard, remote-access entry point and notification inbox | Implicit authority over every enrolled device |
+| Device registry and identity | User identity, device enrollment, device identity, trust, capabilities, connection status and revocation | Local OS operations |
+| Secure connectivity/session broker | Authenticated device sessions, secure routing/relay and session lifecycle | Deciding whether a requested operation is authorized |
+| Device agent runtime | Local capability manifest, event collection, local command validation, task execution and health reporting | Global reasoning or unrestricted cross-device memory |
+| Platform/application adapters | Translate typed capabilities into supported OS, app, file, browser or home-device operations | Policy exceptions or hidden privilege escalation |
+| Conversation and agent orchestrator | Dialogue, context assembly, model selection, reasoning and plan proposals | Durable workflow truth or direct unvalidated side effects |
+| Planner | Produce objective decompositions, action graphs, branch proposals and recovery proposals | Bypassing policy, scheduler or resource ownership |
+| Durable task orchestrator | Workflow/run/step state, dependency graph, checkpoints, retry budgets, leases, deadlines and verified outcomes | Creating permission grants |
+| Scheduler and worker router | Determine when and where an eligible step can run based on capability, connectivity, scope and resource requirements | Expanding an action's authority |
+| Permission and risk authority | Evaluate grants, scope, purpose, risk, confirmation, revocation and policy version | Replacing user's explicit delegation with inferred preference |
+| Memory platform | Governed archive, episodic/semantic/procedural/working memory, retrieval, provenance, deletion and cross-device sync | Executing device commands |
+| Event and integration adapters | Connect external sources/services and translate their events/data into normalized events | Treating external content as trusted instructions |
+| Notification router | User-preferred channels, urgency, digest, delivery attempts and delivery status | Acting as an authorization channel |
+| Observability and audit | Operation IDs, traces, component health, task history and content-minimized audit | Storing unnecessary raw sensitive content |
+
+These are logical responsibilities. P3.2/P3.3 may combine or split deployable processes while preserving these ownership boundaries.
+
+## 19.5 Device-node model
+
+A device node is a named, enrolled execution endpoint with:
+
+- Stable device identity and revocable credentials.
+- Owner/account and trust state.
+- Platform/device type and runtime version.
+- Declared capabilities and limitations.
+- Current connectivity and last-seen status.
+- Available resource and execution state where measurable.
+- Locally available policy/grant cache with freshness and expiry.
+- Local executor, adapters and operation verification.
+- Device-specific configuration and permitted data cache.
+
+### Initial device classes
+
+| Node class | Typical responsibilities | Capability caveats |
+|---|---|---|
+| Desktop PC node | Window/OS control, application and file operations, local rendering, desktop perception and resource-intensive local workloads | Requires the PC and the relevant OS session/capability to be available |
+| Mobile node | Conversation, notifications, device management, remote PC session initiation and supported phone-native actions | Mobile OS background and hardware permissions constrain what it can execute |
+| Home/device gateway | Read state and control individually authorized smart-home devices | Physical actions are independently risk-classified; not every device exposes safe or reliable operations |
+| Service worker node | Scheduled research, content preparation, integration workflows and other approved non-desktop tasks | Must have its own scoped service identity and authorized data access |
+
+A node advertises capability facts, not promises. For example, a mobile client may be able to receive notifications and approve a task while being unable to execute a persistent background computation.
+
+## 19.6 Remote PC access and control
+
+Remote control is a separate access path from the PC's ordinary local UI.
+
+```mermaid
+sequenceDiagram
+    participant M as Authenticated mobile client
+    participant I as Identity and device registry
+    participant R as Secure session broker/relay
+    participant P as PC device agent
+    participant A as Local permission authority
+    participant O as OS/window executor
+
+    M->>I: Request session to enrolled PC
+    I->>I: Verify user, device trust and remote-access grant
+    I->>R: Authorize short-lived session
+    P->>R: Maintain authenticated outbound session
+    R-->>M: Establish protected session route
+    M->>P: Typed remote action with target, scope, expiry and operation ID
+    P->>A: Validate current local grant and action risk
+    A-->>P: Allow, deny or require confirmation
+    P->>O: Execute authorized OS operation
+    O-->>P: Actual resulting state
+    P-->>M: Verified result and audit reference
+```
+
+Design rules:
+
+- The PC agent maintains an authenticated outbound-established session to the coordination service/relay. Direct public inbound desktop-control exposure is not the default.
+- Remote viewing/streaming, metadata observation, window control, input simulation, file access and application modification are separate capabilities.
+- The user authenticates in the mobile/remote client; device enrollment alone does not grant arbitrary remote control.
+- Commands are typed, scoped, time-bounded and bound to a device, target and operation ID.
+- The PC agent performs a local authorization and freshness check before every side effect.
+- Secure desktop, login screen, credential prompts and OS lock boundaries are not bypassed.
+- When the PC is asleep, powered off or disconnected, PC-specific steps are blocked/deferred. Optional wake capability may be evaluated later and is dependent on hardware/network support.
+- A user objective may remain queued while the PC is offline, but stale GUI commands are discarded. On reconnection, LIA refreshes state and replans or asks the user rather than replaying an old action.
+- A live user remote-control session and an autonomous LIA task are distinct origins and are visible in task/session history.
+
+## 19.7 Durable multi-device task and campaign architecture
+
+The existing hierarchy Objective → Plan → Actions is extended to represent persistent campaigns and recurring runs:
+
+```mermaid
+flowchart TD
+    C["Campaign / persistent objective"]
+    T["Workflow template and policy envelope"]
+    R1["Scheduled run 1"]
+    R2["Scheduled run 2"]
+    R3["Event-triggered run"]
+    P["Plan / dependency graph"]
+    S1["Step: research"]
+    S2["Step: produce"]
+    S3["Step: quality gate"]
+    S4["Step: publish"]
+    V["Verify outcome"]
+    N["Notify and update campaign state"]
+
+    C --> T
+    T --> R1
+    T --> R2
+    T --> R3
+    R1 --> P
+    P --> S1
+    S1 --> S2
+    S2 --> S3
+    S3 --> S4
+    S4 --> V
+    V --> N
+```
+
+The campaign definition contains the enduring objective, owner, schedule/timezone, permitted sources, target services/channels, constraints, success criteria, resource/spend ceilings, approval mode, grant reference and notification policy.
+
+Each run is a separately traceable execution instance. The run contains a plan/step graph, worker assignments, input/output references, deadlines, dependencies, permission checks, checkpoints, retries, evidence and result.
+
+### Workflow execution ownership
+
+1. **Trigger:** A user command, schedule, timer or authorized external event creates a run.
+2. **Context assembly:** LIA retrieves only the memory and source context allowed for the task.
+3. **Planning:** The planner proposes or updates a bounded plan.
+4. **Validation:** The plan is checked against the objective, campaign envelope, resource limits and current permissions.
+5. **Scheduling:** The scheduler selects an eligible worker/device for each ready step.
+6. **Execution:** The target executor validates its own identity, target state, command freshness and permission before each side effect.
+7. **Verification:** The executor or an independent verifier checks the actual result.
+8. **Checkpointing:** The workflow engine persists step result and next-ready state.
+9. **Monitoring:** Event/timer watchers detect completion, blockers, timeouts, external changes and device availability.
+10. **Notification:** Relevant milestone, blocker, approval and completion events are routed according to user preferences.
+
+The language model is not repeatedly invoked merely to poll task status. The workflow engine and event system maintain operational continuity; reasoning is invoked when planning, interpreting a meaningful event, resolving uncertainty or proposing a permitted replan.
+
+### Step and worker state
+
+A workflow run uses the existing task states at the objective level. Individual steps additionally distinguish Pending, Ready, Running, Blocked (including awaiting device, input, permission or approval), Completed/verified, Failed, Cancelled and Unknown outcome.
+
+The task engine may reassign a step only when the new worker has the required capabilities, data access and grant. Before retrying a side effect, it checks whether the original action already took effect. If the outcome cannot be established, the step remains blocked/unknown and escalates instead of blindly repeating the action.
+
+## 19.8 Reference workflow — autonomous YouTube channel operation
+
+This is an architecture use case for a user-authorized recurring campaign, not a claim that any platform connector has already been implemented.
+
+### Campaign definition
+
+The user creates a persistent campaign such as:
+
+**Objective:** Develop and operate a YouTube channel by preparing and publishing suitable trend-informed content on a recurring daily schedule.
+
+The campaign stores:
+
+- Channel/account identity and connected authorization.
+- Channel topic, audience, content brief, style and prohibited topics.
+- Permitted trend/research sources and source reliability requirements.
+- Schedule, timezone and maximum frequency.
+- Content formats, length, language and output requirements.
+- Asset rules: original, user-owned or appropriately licensed material.
+- Required factual, editorial, rights and platform-policy checks.
+- Resource and spending ceiling (zero external spend by default).
+- Approval mode: draft-only, approval for each item, or bounded auto-publish.
+- Campaign delegation expiry and revocation controls.
+- Success metrics and notification preferences.
+
+### Daily workflow
+
+```mermaid
+flowchart TD
+    A["Daily scheduler creates campaign run"]
+    B["Discover permitted trend signals"]
+    C["Check freshness, relevance and source quality"]
+    D{"Qualified topic within campaign brief?"}
+    E["Record no eligible topic; do not force publication"]
+    F["Research and verify claims"]
+    G["Check originality, rights/licensing and source attribution"]
+    H["Create script, visual/audio assets and metadata"]
+    I["Render/assemble content"]
+    J["Editorial, factual, safety and technical quality gate"]
+    K{"All required checks pass?"}
+    L["Hold output and record blocker"]
+    M{"Campaign approval mode?"}
+    N["Save draft for user review"]
+    O["Request per-item approval"]
+    P["Validate bounded auto-publish delegation"]
+    Q["Publish through authorized connector"]
+    R["Verify published item and visibility"]
+    S["Monitor permitted performance signals"]
+    T["Update campaign metrics and next run"]
+    U["Send user-preferred status/report"]
+
+    A --> B --> C --> D
+    D -->|No| E --> U
+    D -->|Yes| F --> G --> H --> I --> J --> K
+    K -->|No| L --> U
+    K -->|Yes| M
+    M -->|Draft only| N --> U
+    M -->|Approval each item| O
+    O -->|Approved| Q
+    O -->|Declined/expired| L
+    M -->|Auto-publish| P
+    P -->|Within envelope| Q
+    P -->|Out of scope/expired| O
+    Q --> R --> S --> T --> U
+```
+
+### Autonomy and publication policy
+
+After the user has explicitly enabled a bounded auto-publish campaign,
+LIA may discover, create, quality-check and publish eligible content on
+its recurring schedule without asking for a separate approval for every
+video.
+
+This is not the default for a new campaign. New external-publication
+campaigns begin in draft/review mode. The user can switch to bounded
+auto-publish by granting the campaign delegation defined in SEC-070.
+
+Initial auto-publish envelope defaults:
+
+- One explicitly selected channel/account.
+- Only the approved channel topic, content format and permitted source set.
+- One scheduled publication per run and no more than one per day unless the user explicitly changes the limit.
+- No paid promotion, purchases, subscriptions or external spending by default.
+- Only original, user-owned or appropriately licensed assets.
+- Required factual/source, rights/licensing, editorial and platform-policy gates must pass.
+- A materially changed account, content category, source policy, schedule, frequency, spend ceiling or publication action falls outside the grant and requires review.
+- The initial delegation expires after 30 days unless renewed or the user selects a longer bounded period.
+- The user can pause the campaign, disable auto-publish or revoke its grant at any time.
+- R4 operations are never included in an auto-publish envelope.
+
+If no trend meets the campaign's quality/relevance requirements, if
+source facts cannot be verified, if rights are uncertain, if a platform
+connector is unavailable or if the campaign grant has expired, LIA does
+not publish merely to satisfy the daily schedule. The run reports "no
+eligible publication" or a specific blocker and notifies the user.
+
+After a successful upload, LIA verifies the resulting platform item and
+records the external identifier/link and visibility state where the
+connector supports them. Later performance monitoring uses only
+authorized metrics and must not silently change the campaign objective
+or spend policy.
+
+## 19.9 Notification architecture
+
+Notifications are an output and communication plane, not an authorization plane.
+
+- The user explicitly connects and selects channels. Available routes may include the mobile companion, desktop, email or supported messaging integrations; no external channel is assumed to be connected by default.
+- The user configures which events use immediate delivery, a digest or no notification.
+- Immediate delivery defaults to security/privacy notices, blocked tasks requiring user input, approvals, campaign failures and verified external publication/action results.
+- Routine progress is grouped into milestones or a daily summary rather than one message per action.
+- The router records attempted, accepted, delivered where the provider reports delivery, failed and expired states.
+- Notification payloads are minimized; sensitive details may require opening the authenticated companion.
+- A notification receipt, reply or webhook payload is not itself permission. A consequential action from a notification must resolve through an authenticated client and the relevant confirmation workflow.
+- A failed notification route shall not erase task state or cause a task to be marked complete.
+
+## 19.10 Cross-device memory and data ownership
+
+The P2.5 memory design remains the governing model. Multi-device access does not collapse user, project, task, experience and procedural compartments into one unrestricted store.
+
+- The logical memory platform exposes scoped retrieval and synchronization services.
+- Device nodes keep only the local cache/context required for their current task and granted capabilities.
+- Raw microphone audio, screen frames, camera frames and sensitive local observations are not synchronized by default.
+- A memory record retains owner, scope, sensitivity, source provenance, version and deletion state as it moves between nodes.
+- Conflicts are reconciled with temporal/version semantics; material conflicts are not silently resolved by last-writer-wins.
+- Device revocation removes its future access and invalidates relevant local caches/tokens. It does not automatically erase the user's canonical memory unless the user requests a memory deletion operation.
+- Deletion markers and corrections propagate to synchronized copies and are reapplied on reconnection/backup restoration.
+
+## 19.11 Trust boundaries and security zones
+
+The logical security zones are:
+
+1. **User identity zone:** Authentication, account-level configuration and explicit grants.
+2. **Enrolled device zone:** Each PC, phone and home gateway has its own identity, local executor and resource boundary.
+3. **Coordination zone:** Routes authenticated events and commands, maintains tasks and policy references; it is not a substitute for local execution checks.
+4. **Model/provider zone:** Model input/output is treated as untrusted processing; only authorized minimum context is sent.
+5. **External connector zone:** Third-party APIs, trend sources, content platforms and home services have isolated credentials and explicit scopes.
+6. **Untrusted content zone:** Webpages, files, messages, trend signals, generated assets and incoming external content cannot grant authority or override system policy.
+
+No device is trusted merely because it belongs to the same network. A compromised connector or device must be revocable without granting it authority over other enrolled nodes.
+
+## 19.12 Architecture diagrams — component and command/data flow
+
+```mermaid
+flowchart TB
+    subgraph EXPERIENCE["Experience plane"]
+        DCLIENT["Desktop shell / renderer / chat"]
+        MCLIENT["Mobile companion / task dashboard"]
+        NCHANNEL["Notification adapters"]
+    end
+    subgraph COORDINATION["Always-on coordination plane"]
+        IDREG["Identity, pairing and device registry"]
+        SESSION["Secure session broker and event router"]
+        WF["Durable workflow orchestrator"]
+        SCHED["Scheduler, monitor and worker router"]
+        PERM["Permission/risk authority and audit"]
+        NOTIFY["Notification preference/router"]
+    end
+    subgraph INTELLIGENCE["Agent intelligence plane"]
+        DIALOG["Conversation orchestrator"]
+        CONTEXT["Context assembly"]
+        PLAN["Reasoning and plan proposal"]
+        MODEL["Model/provider gateway"]
+    end
+    subgraph MEMORY["Memory plane"]
+        ARCHIVE["Source/experience archive"]
+        STORE["Episodic, semantic, procedural and task memory"]
+        RETRIEVE["Governed retrieval and sync"]
+    end
+    subgraph DEVICE["Local device execution plane"]
+        PCAGENT["Linux/Windows device agent"]
+        MOBILEAGENT["Mobile capability agent"]
+        HOMEAGENT["Home/device connector"]
+        OSADAPTER["OS/application/file adapters"]
+        DEVICEEXEC["Local execution and verification"]
+    end
+    subgraph EXTERNAL["External services"]
+        EXT["Authorized service connectors"]
+    end
+
+    DCLIENT <--> DIALOG
+    MCLIENT <--> DIALOG
+    DCLIENT <--> PCAGENT
+    IDREG --> SESSION
+    SESSION <--> PCAGENT
+    SESSION <--> MOBILEAGENT
+    SESSION <--> HOMEAGENT
+    SESSION <--> WF
+    DIALOG <--> CONTEXT
+    CONTEXT <--> RETRIEVE
+    CONTEXT <--> PLAN
+    PLAN <--> MODEL
+    PLAN --> WF
+    WF <--> SCHED
+    PERM --> WF
+    PERM --> DEVICEEXEC
+    SCHED --> SESSION
+    PCAGENT --> OSADAPTER --> DEVICEEXEC
+    MOBILEAGENT --> DEVICEEXEC
+    HOMEAGENT --> DEVICEEXEC
+    DEVICEEXEC --> WF
+    RETRIEVE <--> ARCHIVE
+    RETRIEVE <--> STORE
+    WF --> NOTIFY --> NCHANNEL
+    NOTIFY --> MCLIENT
+    WF <--> EXT
+```
+
+## 19.13 P3 workstream plan
+
+| Workstream | Scope | Status |
+|---|---|---|
+| P3.1 — Architecture drivers and system context | Scope extension, quality drivers, system context, logical planes and responsibility boundaries | Complete |
+| P3.2 — Distributed runtime and deployment topology | Always-on coordinator deployment, local/hosted workers, process boundaries, availability and recovery | Active |
+| P3.3 — Device identity and secure communication | Enrollment, device keys, sessions, relay, remote desktop transport and revocation | Pending |
+| P3.4 — Workflow and event architecture | Durable task state, event model, scheduler, campaign runs, leases, retry/reconciliation and notification events | Pending |
+| P3.5 — Data ownership and synchronization | Memory authority, task/event records, device caches, conflict resolution, retention and deletion propagation | Pending |
+| P3.6 — Platform and integration adapter contracts | Linux/Windows desktop nodes, mobile capabilities, home automation and external service connectors | Pending |
+| P3.7 — Agent intelligence and model runtime | Conversation orchestration, planning, model gateway, tool/action request schema and context boundaries | Pending |
+| P3.8 — Architecture validation and technology selection | ADR review, quality scenarios, threat analysis, component trade-offs and justified stack selection | Pending |
+
+## 19.14 Decisions intentionally deferred
+
+P3.1 establishes logical architecture but does not select:
+
+- Cloud provider, hosting vendor, region or self-hosting product.
+- Database, event broker, workflow engine or scheduler implementation.
+- Device relay, transport protocol, remote desktop streaming or cryptographic library.
+- Desktop/mobile programming language, UI framework or rendering engine.
+- Home automation standard, gateway product or vendor-specific connector.
+- Model provider, model routing framework, speech provider or local inference runtime.
+- Exact API schemas, wire formats, service process boundaries, deployment manifests or infrastructure topology.
+
+These decisions belong to P3.2–P3.8. Each technology choice must be justified against the requirements, measured quality targets, operational cost, privacy and portability.
+
+**P3.1 closure:** Architecture drivers, distributed system context, logical responsibility boundaries, multi-device execution model, secure remote-access principles, durable campaign/task model and reference YouTube workflow are approved. P3 remains active; deployment, detailed contracts, data architecture and technology evaluation remain open.
+
