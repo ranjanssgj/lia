@@ -39,7 +39,11 @@ This is a contract design package. It does not claim that the services, adapters
 | Event subjects | [subjects.yaml](events/subjects.yaml) | lia.v1 | Domain event owner |
 | Temporal boundaries | [temporal-contracts-v1.md](workflows/temporal-contracts-v1.md) | 1 | Temporal workflow authority |
 | Provider interfaces | [provider-interfaces-v1.ts](providers/provider-interfaces-v1.ts) | 1 | LIA model gateway |
-| Conformance plan | [p4-conformance-matrix.md](conformance/p4-conformance-matrix.md) | 0.1 | Test owner for each proof gate |
+| P4 gate matrix | [p4-conformance-matrix.md](conformance/p4-conformance-matrix.md) | 0.1 | Procedure, expected evidence and status for architecture proof gates |
+| Adapter contract | [adapter-conformance-v1.md](adapters/adapter-conformance-v1.md) | 1 | Manifest semantics, resource lifecycle, execution checks and 24 common adapter conformance cases |
+| Manifest schema | [capability-manifest-v1.schema.json](adapters/capability-manifest-v1.schema.json) | 1 | Strict JSON Schema for adapter capability manifests |
+| Hyprland fixture | [hyprland-wayland-manifest.example.json](adapters/fixtures/hyprland-wayland-manifest.example.json) | Example | Synthetic first-Linux-profile manifest fixture |
+| Compatibility matrix | [compatibility-matrix.md](compatibility-matrix.md) | 0.1 | Approved stack baselines, exact-pin status and proof-gate mapping |
 
 ## Authentication and signing baseline proposed for P4 review
 

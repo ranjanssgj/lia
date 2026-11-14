@@ -8769,7 +8769,7 @@ P4.1 is a design and contract milestone, not an implementation milestone. No ser
 | P4.5 — Persistence contracts | PostgreSQL coordinator/control metadata and device-local SQLite journal/cache migrations | Draft; DB-01 and SQLITE-02 pending |
 | P4.6 — Workflow and event contracts | Temporal Workflow/Activity semantics, NATS subjects, envelope, outbox/inbox and consumer rules | Draft; TEMP-01/02 and NATS-01 pending |
 | P4.7 — Model and speech provider interfaces | Provider-neutral requests/results, capability profiles, cancellation, policy/egress constraints | Draft interfaces; MODEL-01/SPEECH-01 pending |
-| P4.8 — Conformance and compatibility | Cross-language generation, security, migrations, replay, delivery and platform test evidence | Matrix drafted; all gates Not Run |
+| P4.8 — Conformance and compatibility | Cross-language generation, adapter contracts/fixtures, security, migrations, replay, delivery and platform test evidence | Matrices, schema and Hyprland fixture drafted; all implementation gates Not Run |
 
 ## 20.3 Contract artifacts
 
@@ -8784,7 +8784,11 @@ P4.1 is a design and contract milestone, not an implementation milestone. No ser
 | NATS | [event-contract-v1.md](docs/p4/events/event-contract-v1.md), [subjects.yaml](docs/p4/events/subjects.yaml) | Account-scoped routing, versioned facts, at-least-once delivery, inbox deduplication, aggregate sequence and quarantine |
 | Temporal | [temporal-contracts-v1.md](docs/p4/workflows/temporal-contracts-v1.md) | Run/campaign/reconciliation workflows, signals, queries, Activity boundaries, replay and idempotency |
 | Providers | [provider-interfaces-v1.ts](docs/p4/providers/provider-interfaces-v1.ts) | Normalized model, speech and embedding interfaces; no provider selection or execution authority |
-| Conformance | [p4-conformance-matrix.md](docs/p4/conformance/p4-conformance-matrix.md) | Proof procedures and evidence requirements for P3.8 gates |
+| Adapter conformance | [adapter-conformance-v1.md](docs/p4/adapters/adapter-conformance-v1.md) | Manifest lifecycle, operation checks, typed outcomes and common adapter contract suite |
+| Manifest schema | [capability-manifest-v1.schema.json](docs/p4/adapters/capability-manifest-v1.schema.json) | Strict JSON Schema for capability manifests |
+| Hyprland fixture | [hyprland-wayland-manifest.example.json](docs/p4/adapters/fixtures/hyprland-wayland-manifest.example.json) | Synthetic example for the first Linux adapter profile |
+| Compatibility | [compatibility-matrix.md](docs/p4/compatibility-matrix.md) | Selected stack families, unpinned dependencies and exact-version proof rules |
+| Conformance matrix | [p4-conformance-matrix.md](docs/p4/conformance/p4-conformance-matrix.md) | Procedures and required evidence for P3.8 proof gates |
 
 ## 20.4 P4 integration invariants
 
@@ -8843,3 +8847,16 @@ P4 is complete only after:
 P4 exit does not prove the Godot migration, Hyprland window movement, complete Windows adapter coverage, provider quality at production scale, hosted availability, mobile lifecycle, or physical home-device behavior. Those retain their P5/P6 proof gates.
 
 **Current P4 state:** Contract drafts are committed for review; all implementation and conformance gates remain Not Run. P5 must not begin treating these drafts as verified interfaces until the applicable P4 exit criteria pass.
+
+
+## 20.9 Adapter contract and compatibility baseline
+
+The P4 adapter contract formalizes the P3.6 capability-manifest, resource identity, operation invocation, outcome, cancellation and evidence semantics. The strict manifest schema and synthetic Hyprland fixture are maintained with the adapter conformance specification. A manifest is a technical support declaration, never an authorization grant. Every executor independently authenticates, resolves resource generation, negotiates schema, rechecks current policy/grant, validates preconditions, executes the declared capability and verifies actual state.
+
+The common adapter suite defines 24 semantic cases, including stale manifests/resources, missing/revoked grants, incompatible schemas, duplicate commands, uncertain effects, stale worker leases, cancellation, evidence strength, account isolation, privacy/logging and the Godot presentation boundary. Adapter support is claimed only for the exact capability/OS/runtime/compositor/provider matrix that passes. Hyprland Wayland remains the first Linux profile; no general Wayland or cross-platform parity is inferred.
+
+The runtime/toolchain compatibility matrix records the P3.8 selected baselines and explicitly distinguishes known versions from exact patch-level pins still pending. Tonic 0.14.9 is the RPC-01 proof-spike candidate, not a production lock. The Node 24 + Temporal SDK + Temporal Server + PostgreSQL 16 combination, Protobuf compiler/plugins, NATS server/client, SQLite runtime, Rust toolchain/crates, TLS/crypto implementation, OTel per-signal packages and deployment image digests must be pinned and tested as a compatible set.
+
+The matrix also carries forward the P3.8 dependency and supply-chain obligation: exact direct/transitive versions, licenses/notices, SBOM, vulnerability review, generated-code provenance, asset/model/font/audio rights, build artifact digests, and update/rollback policy are required before release eligibility. None of those review or test outputs is claimed by this draft.
+
+**P4.1 extension status:** Adapter manifest schema, a synthetic Hyprland example, common adapter conformance cases and the version compatibility matrix are drafted. All adapter/runtime conformance tests remain Not Run.
