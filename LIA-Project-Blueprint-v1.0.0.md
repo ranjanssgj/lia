@@ -4,7 +4,7 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.13.2\
+> **Version:** 1.13.3\
 > **Last updated:** 14 November 2026\
 > **Current phase:** P3 --- System Architecture (Complete)\
 > **Current workstream:** P3.8 --- Architecture Validation and Technology Selection (Complete)\
@@ -2378,7 +2378,7 @@ Godot 4.7.2 stable is selected for the 2D/3D character, animation, presence and 
 
 **Status:** Approved
 
-Coordinator APIs, model gateway, context orchestration, tool broker and Temporal workers use TypeScript on Node.js 24 LTS. Node 24 is selected because the Temporal TypeScript SDK officially lists Node 20, 22 and 24 as supported runtimes. Node 26 is Active LTS but is not yet listed in that SDK support matrix. Upgrade to Node 26 requires official SDK support and repeatable conformance. Fastify 5 is selected for HTTP APIs; provider-specific model SDKs remain behind adapters.
+Coordinator APIs, model gateway, context orchestration, tool broker and Temporal workers use TypeScript on Node.js 24 Maintenance LTS. Node 24 is selected because the Temporal TypeScript SDK officially lists Node 20, 22 and 24 as supported runtimes. Node 26 entered Active LTS in October 2026 but is not yet listed in that SDK support matrix. Upgrade to Node 26 requires official SDK support and repeatable conformance before Node 24 reaches end of life. Fastify 5 is selected for HTTP APIs; provider-specific model SDKs remain behind adapters.
 
 ### ADR-130 — Temporal TypeScript SDK is the durable workflow engine
 
@@ -2440,13 +2440,13 @@ Home Assistant is the first home-gateway integration profile because its authent
 
 **Status:** Approved
 
-Coordinator, device agent, workflow, provider adapters and integration services use OpenTelemetry trace, metric and log concepts with correlation across operation, workflow, turn and device IDs. Telemetry is content-minimized under P2.5/P3.5. No observability backend/vendor is selected; exporters and collector configuration are deployment-specific.
+Coordinator, device agent, workflow, provider adapters and integration services use OpenTelemetry semantic conventions and signal APIs with correlation across operation, workflow, turn and device IDs. The JavaScript SDK 3.0 release on 5 November 2026 stabilized Logs alongside Traces and Metrics. The Rust SDK currently lists Traces as Beta and Metrics/Logs as Stable. P4 shall pin exact per-language/per-signal versions and preserve trace-context propagation; any use of pre-stable Rust tracing APIs is an explicit proof-gated choice, not an assumed stability guarantee. Telemetry is content-minimized under P2.5/P3.5. No observability backend/vendor is selected; exporters and collector configuration are deployment-specific.
 
 ### ADR-140 — OCI containers and Docker Compose are the initial deployment packaging baseline
 
 **Status:** Approved for reference/self-host deployment
 
-Coordinator API, Temporal service/workers, PostgreSQL and NATS are packaged as OCI-compatible services. Docker Compose is the initial single-host self-hosted/reference deployment and development integration environment. The same service images may be deployed to a managed hosted environment. Kubernetes and multi-node orchestration are deferred until measured scale or availability needs justify them.
+Coordinator API, Temporal service/workers, PostgreSQL and NATS are packaged as OCI-compatible services. Docker Compose is the initial single-host self-hosted/reference deployment and development integration environment. This packaging choice is not a high-availability, multi-node failover or 99.5% service-availability guarantee. The managed-hosted profile must independently meet its approved availability, RTO and RPO targets using a deployment architecture and recovery evidence appropriate to that service. The same OCI service images may be deployed to a managed hosted environment. Kubernetes and multi-node orchestration are deferred until measured scale or availability needs justify them.
 
 ### ADR-141 — OIDC and OS-native protected stores remain the identity/secret integration baseline
 
@@ -2478,6 +2478,18 @@ Task artifacts are immutable or versioned and referenced by content digest and p
 
 Godot and the Rust device agent communicate through a local-only authenticated IPC boundary. P4 compares Unix domain sockets on Linux, named pipes on Windows and a supervised child-process stream for the Godot presentation runtime. The selected implementation must authenticate the peer within the local user boundary, constrain message size/rate, version its schema and expose only presentation/status/typed request interfaces. A generic localhost port or unauthenticated command socket is not accepted by default.
 
+
+### ADR-146 — OpenTelemetry is adopted with signal-specific SDK maturity gates
+
+**Status:** Approved
+
+OpenTelemetry is the cross-component instrumentation semantic standard, but language SDKs do not have identical signal maturity. The JavaScript SDK 3.0 line stabilizes Logs alongside Traces and Metrics; Rust currently lists Traces as Beta and Metrics/Logs as Stable. P4 shall pin per-language/per-signal package versions, preserve context propagation and explicitly proof-gate any pre-stable tracing dependency. This does not change the selection of OpenTelemetry concepts or require a particular backend.
+
+### ADR-147 — Docker Compose is a single-host reference profile, not an availability guarantee
+
+**Status:** Approved
+
+Docker Compose remains the initial development and self-host/reference packaging baseline. It does not by itself satisfy multi-node availability, failover, backup or RTO/RPO requirements. The managed-hosted profile must have a separately designed and evidenced topology for NFR-036–044 and ADR-073. A single-host self-host deployment must disclose its own availability and recovery limitations.
 
 # 9. Change log
 
@@ -2576,6 +2588,8 @@ Godot and the Rust device agent communicate through a local-only authenticated I
 **1.13.1 — 14 Nov 2026:** Reconciled Phase 3 completion status across the blueprint. Updated historical P3.1–P3.7 closure notes to distinguish decisions deferred at the time from subsequent P3.8 selections; moved remaining cryptographic, signing, IPC, provider and remote-media details to their correct P4/P6 proof gates; clarified model/vendor deferrals; and updated the top-level technology-selection rule and P3 phase status. No reference-stack selection changed.
 
 **1.13.2 — 14 Nov 2026:** Performed an upstream revalidation of the P3.8 Rust gRPC choice. Clarified that the initial P4 implementation uses the released Tonic 0.14.x line, recorded the upstream Tonic-to-gRPC project transition and the preview/production-readiness boundary of the successor `grpc` crate, and added an explicit P4 migration checkpoint to RPC-01. Updated ADR-135, the candidate comparison, architecture risk register and informative references. The gRPC/Protobuf architecture decision remains unchanged; exact crate/codegen pinning and any successor migration remain proof-gated. No implementation or interoperability test is claimed.
+
+**1.13.3 — 14 Nov 2026:** Completed a focused upstream compatibility audit of the P3.8 reference stack. Corrected remaining P3.8-future wording in historical event, backup and P3.6 sections; recorded Node 24 Maintenance LTS and Node 26 SDK-compatibility status, PostgreSQL/Temporal exact-pair testing, pgvector filtered-recall behavior, SQLite WAL writer/checkpoint constraints, JetStream at-least-once delivery, OpenTelemetry per-language signal maturity and the single-host limitations of Docker Compose. Added RPC-02, SQLITE-02 and OPS-02 proof gates, ADR-146–ADR-147 and Section 19.95. No core stack selection changed. No implementation, benchmark, restore drill or conformance gate is claimed complete.
 
 
 # 10. Current working state
@@ -5987,7 +6001,7 @@ A state transition that must publish an event uses a transactional outbox or an 
 5. A consumer records receipt/deduplication in a durable inbox or equivalent mechanism before applying its state change.
 6. If delivery or consumer processing is interrupted, the message is retried; duplicate receipt is safe and detectable.
 
-This prevents a process crash between a state commit and event publication from permanently losing the event. The concrete transaction, replication and durability implementation is deferred to P3.8 and P3.5 data design.
+This prevents a process crash between a state commit and event publication from permanently losing the event. P3.8 selected PostgreSQL-backed domain/outbox/inbox records and NATS JetStream distribution (ADR-131/134). P4 defines concrete schemas, transaction boundaries, replication/availability configuration and failure-recovery tests; P3.5 data ownership and retention rules remain authoritative.
 
 ### Delivery guarantees
 
@@ -6703,7 +6717,7 @@ Backups protect recovery; they are not live synchronization and never override c
 | Temporary/session working data | Not backed up by default | Not restored into persistent memory or future tasks |
 | External-provider data | Prefer source references/provider reconciliation; snapshot only when authorized | Provider remains authoritative |
 
-Backup payloads are encrypted and access-controlled. Keys are separated from ordinary content; implementation is P3.8. Backups preserve provenance, versions, scope, sensitivity, deletion markers and derivation lineage. A snapshot is taken at a consistent logical boundary or includes journal/checkpoint information needed for recovery. Backup job success is distinct from restore-test success. Backup schedule, retention, user control, destination and cost/availability are explicit per deployment; exact intervals/products are deferred to P3.8/P5. Backups may not include S3 secrets, private device keys or raw transient capture data. Exported data is outside LIA's control after export.
+Backup payloads shall be encrypted and access-controlled. Keys are separated from ordinary content. P3.8 selected the data and artifact interfaces but intentionally left the concrete KMS/HSM and backup-service vendors deployment-specific. P4 defines the encryption envelope, key lifecycle, snapshot interfaces and restore procedure; P5 implements and verifies the local backup/recovery path. Backups preserve provenance, versions, scope, sensitivity, deletion markers and derivation lineage. A snapshot is taken at a consistent logical boundary or includes journal/checkpoint information needed for recovery. Backup job success is distinct from restore-test success. Backup schedule, retention, user control, destination and cost/availability are explicit per deployment and approved recovery profile. Backups may not include S3 secrets, private device keys or raw transient capture data. Exported data is outside LIA's control after export.
 
 ### Restore procedure
 
@@ -7552,17 +7566,9 @@ flowchart TB
 
 ### Technology boundary
 
-P3.6 intentionally selects no concrete adapter framework, OS API library, compositor extension, UI Automation wrapper, mobile framework, home gateway, device standard, connector SDK, webhook service or provider. The contracts are sufficiently defined to shortlist candidates, but formal approval remains at P3.8 after P3.7's agent/tool/model contracts are available.
+At P3.6 closure, this workstream intentionally selected no concrete adapter framework, OS API library, compositor extension, UI Automation wrapper, mobile framework, home gateway, device standard, connector SDK, webhook service or provider. P3.8 later selected Rust/Tokio for device agents, gRPC/Protobuf for control-plane communication, native Kotlin/Compose and SwiftUI companion baselines, Hyprland Wayland as the first Linux reference profile, and Home Assistant WebSocket as an optional first home connector (ADR-127, ADR-135–ADR-138). These are reference selections, not claims of universal platform or hardware support.
 
-P3.8 evaluation shall compare:
-- Linux Wayland compositor coverage, X11 compatibility, Windows window/UIA coverage and actual supported session environments;
-- stability and security of resource identity, permissions, isolation, updates and adapter supply chain;
-- Android/iOS lifecycle compliance, notification reliability and battery/resource impact;
-- home-device resource coverage, physical safety semantics, gateway trust and event freshness;
-- connector authorization/scopes, webhook authenticity, quotas, idempotency, provider versioning and export/deletion behavior;
-- local resource overhead, reliability, observability, license, maintenance and operational cost.
-
-Technical spikes may test a specific compositor, window manager, Windows UIA provider, mobile OS background path, home integration or connector provider. Those are evidence for P3.8, not a product implementation baseline or a claim of broad support.
+The P3.8 candidate comparison and rejected alternatives are recorded in Section 19.88 and ADR-126–ADR-145. Remaining work is conformance and implementation proof: compositor/window-manager coverage, Windows UIA bindings, mobile lifecycle behavior, home hardware/state verification, connector provider terms, resource overhead, supply chain and update behavior. Those proof gates belong to P4–P6, not to a future P3.8 selection.
 
 ### Informative platform references
 
@@ -7645,7 +7651,7 @@ Each external account/connector has independent identity, credentials, scopes, q
 
 Adapters have explicit enrollment, discovery, health, compatibility, suspension, revocation, update and removal states. Incompatible contracts fail closed. Cancellation is a request to stop at a safe boundary, not proof of rollback; any possible side effect is verified or reconciled before retry or reassignment.
 
-**P3.6 closure:** Shared adapter contracts, dynamic capability manifests, resource identity/freshness, target-bound execution, typed results/errors, verification and cancellation semantics, Linux Wayland/X11 boundaries, Windows desktop/UIA separation, Android/iOS lifecycle constraints, per-resource home automation safety, isolated provider connectors, adapter lifecycle/versioning and conformance scenarios are defined. Platform and integration technologies remain unselected. P3.7 is complete. P3.8 will validate the integrated architecture, review threat and quality scenarios, compare technology candidates and record final stack decisions.
+**P3.6 closure at the time:** Shared adapter contracts, dynamic capability manifests, resource identity/freshness, target-bound execution, typed results/errors, verification and cancellation semantics, Linux Wayland/X11 boundaries, Windows desktop/UIA separation, Android/iOS lifecycle constraints, per-resource home automation safety, isolated provider connectors, adapter lifecycle/versioning and conformance scenarios were defined. Those contracts were technology-neutral at closure. P3.8 subsequently selected the first reference adapter/runtime baselines in ADR-127 and ADR-135–ADR-138. Platform-specific implementation support remains gated by P4–P6 conformance evidence.
 
 
 
@@ -8322,7 +8328,7 @@ No contradiction was identified between the approved P2 authority model and P3.1
 | Area | Candidates considered | Selected baseline | Rationale and constraints |
 |---|---|---|---|
 | Local desktop/device agent | Rust, C++, Python, Node.js | Rust stable with Tokio | Strong cross-platform systems/native API fit and memory-safe ownership model. Tokio handles asynchronous I/O and concurrent sessions. CPU-heavy work uses bounded worker pools, not the async executor. Python remains acceptable for isolated ML/data workers, not the core OS executor. |
-| Coordinator/model/tool services | TypeScript/Node.js, Rust, Python, Go | TypeScript on Node.js 24 LTS | Temporal TypeScript SDK officially supports Node 20/22/24. Node 26 is Active LTS but not currently listed by the SDK; Node 24 is the compatible production baseline. Fastify 5 is the HTTP API framework. |
+| Coordinator/model/tool services | TypeScript/Node.js, Rust, Python, Go | TypeScript on Node.js 24 Maintenance LTS | Temporal TypeScript SDK officially supports Node 20/22/24. Node 26 is Active LTS but is not yet listed by the SDK; Node 24 remains the compatible production baseline. Fastify 5 is the HTTP API framework. |
 | Embodied desktop presentation | Godot, Qt, Electron/Tauri, Unity/Unreal | Godot 4.7.2 stable | Fits the existing real-time 2D/3D/VRM presentation direction. Godot is renderer/presentation only. The 4.8 beta line is excluded from the release baseline. Migration from the current project requires a controlled compatibility proof. |
 | Android companion | Flutter/React Native, native Kotlin | Kotlin and Jetpack Compose | Direct Android lifecycle, notification, permission and platform API access. Compose is Android's recommended modern native UI toolkit. |
 | iOS companion | Flutter/React Native, native Swift | Swift and SwiftUI | Native lifecycle and notification behavior remain visible rather than hidden behind a lowest-common-denominator abstraction. |
@@ -8426,11 +8432,13 @@ These are required future engineering validations. P3.8 has not executed them; n
 | HYPR-02 | Execute same-display move preserving size | Pre/post geometry, display/workspace, operation ID and independent verification | P5 |
 | IPC-01 | Compare Unix domain socket, Windows named pipe and supervised stdio bridge | Peer/ACL boundary, schema version, size/rate limit, cancellation and crash recovery | P4 |
 | RPC-01 | Generate TypeScript and Rust clients from Protobuf using the selected released Rust gRPC line | Pin Tonic 0.14.x and compatible Protobuf/codegen versions; verify unary and streaming calls, TypeScript/Rust interoperability, deadlines/cancellation, message limits, TLS/device identity metadata, error mapping and version skew. Compare the successor grpc crate only if a production-recommended client/server release and complete interoperability suite are available. | P4 |
+| RPC-02 | Validate gRPC channel behavior over supported LAN and relayed/remote paths | HTTP/2 reconnect/backpressure, deadlines, message limits, proxy compatibility, target-bound device proof-of-possession, TLS profile and version-skew evidence | P4 |
 | TEMP-01 | Worker crash/restart, timer, signal, cancellation and replay | Durable workflow recovery, deterministic replay and no duplicate external effect | P4 |
 | TEMP-02 | Timeout after an external Activity may have applied an effect | Reconciliation and durable idempotency evidence; no blind repeat | P4 |
 | DB-01 | Benchmark PG16 queries/migrations at P2.2 record volumes | Query plans, transaction/isolation tests, migration rollback and restore report | P4 |
 | MEM-01 | Compare exact vector search and pgvector HNSW with hybrid FTS | Recall@k, filtered recall by scope, latency distribution, index build/update costs | P4/P5 |
 | SQLITE-01 | Crash/restart and offline/reconnect local outbox/cache | Confirmed local writes, pending/accepted state, no stale-write resurrection, backup evidence | P5 |
+| SQLITE-02 | Exercise multiple local readers, contending writers, long-lived readers and WAL checkpoints on supported local filesystems | Bounded write-lock behavior, SQLITE_BUSY handling, checkpoint progress, WAL growth and consistent snapshot/restore evidence | P4/P5 |
 | NATS-01 | Duplicate, delay, reorder, redeliver and replay JetStream events | Durable inbox dedupe, aggregate ordering and no repeated side effect | P4 |
 | SECURITY-01 | OIDC, device PoP, key revocation, secret access and grant-revocation races | Threat trace, secret/log inspection and fail-closed evidence | P4/P5 |
 | MODEL-01 | Evaluate candidate hosted/local models against P3.7 task classes | Grounding, tool schema, prompt injection, refusal, uncertainty, latency, cost and data-policy report | Before provider selection |
@@ -8438,6 +8446,7 @@ These are required future engineering validations. P3.8 has not executed them; n
 | MOBILE-01 | Android/iOS foreground/background, notification, approval and reconnect | OS/device matrix and deferred/unavailable behavior | P6 |
 | HOME-01 | Home Assistant auth, event reconnect, state observation and test-device action | Per-entity manifest, least privilege, dedupe and physical-state evidence | P6 |
 | OPS-01 | Deploy and restore single-host Compose profile | Reproducible deployment, encrypted backup, restore drill, secret isolation and rollback evidence | P4/P6 |
+| OPS-02 | Validate managed-hosted availability and recovery independently of single-host Compose | Failure-domain map, database/event/workflow recovery, backup restore, measured RTO/RPO and evidence against NFR-036–044 and ADR-073 | P4/P6 |
 
 A gate passes only when its procedure, environment, build/version, fixture, raw results, expected/non-expected behavior and review outcome are retained in the repository. A vendor claim, source document or architecture diagram is not test evidence.
 
@@ -8622,13 +8631,13 @@ Home Assistant is optional and not core dependency. Per-entity/action risk and p
 
 **Status:** Approved
 
-Trace/metric/log instrumentation uses OpenTelemetry with content-minimized telemetry. Backend/exporter remains deployment-specific.
+OpenTelemetry semantic conventions and APIs are the instrumentation baseline. The JavaScript SDK 3.0 release stabilizes all three signals; Rust traces remain Beta while Rust Metrics/Logs are Stable. P4 pins compatible per-language/per-signal packages and explicitly proof-gates pre-stable Rust tracing use. Backend/exporter remains deployment-specific.
 
 #### ADR-140 — OCI images and Docker Compose for initial deployment
 
 **Status:** Approved for reference/self-host deployment
 
-Docker Compose is the initial single-host reference/self-host runtime. Kubernetes is deferred until measured need.
+Docker Compose is the initial single-host reference/self-host runtime and is not an HA/DR guarantee. Managed production availability and recovery require a separately evidenced deployment profile. Kubernetes is deferred until measured need.
 
 #### ADR-141 — OIDC and OS-native secret stores
 
@@ -8660,7 +8669,19 @@ Local artifacts use content-addressed files. Hosted artifacts use an S3-compatib
 
 Godot and Rust communicate via local-only authenticated IPC. P4 compares Unix domain sockets, Windows named pipes and supervised child-process streams. An unauthenticated localhost command port is not accepted.
 
-**P3.8 closure:** Cross-workstream consistency and quality/security review are recorded. The reference stack, P5 and full distributed profiles, candidate alternatives, explicit deferrals, risk register and implementation proof gates are approved. ADR-126–ADR-145 are added. These are architecture selections and documentary evaluations, not prototype, benchmark, implementation or production verification results. Phase 3 is complete. P4 is next: convert the reference baseline into concrete versioned interfaces and conformance contracts.
+#### ADR-146 — OpenTelemetry is adopted with signal-specific SDK maturity gates
+
+**Status:** Approved
+
+OpenTelemetry is the cross-component instrumentation semantic standard. JavaScript SDK 3.0 stabilizes all three signals; Rust traces remain Beta while Metrics/Logs are Stable. P4 pins per-language/per-signal packages and explicitly proof-gates pre-stable Rust tracing use.
+
+#### ADR-147 — Docker Compose is a single-host reference profile, not an availability guarantee
+
+**Status:** Approved
+
+Docker Compose is the reference/self-host packaging baseline, not an HA/DR guarantee. The managed-hosted profile must independently evidence the NFR-036–044 and ADR-073 availability and recovery objectives.
+
+**P3.8 closure:** Cross-workstream consistency and quality/security review are recorded. The reference stack, P5 and full distributed profiles, candidate alternatives, explicit deferrals, risk register and implementation proof gates are approved. ADR-126–ADR-147 are recorded. These are architecture selections and documentary evaluations, not prototype, benchmark, implementation or production verification results. Phase 3 is complete. P4 is next: convert the reference baseline into concrete versioned interfaces and conformance contracts.
 
 ### Informative references used for P3.8
 
@@ -8675,9 +8696,50 @@ Godot and Rust communicate via local-only authenticated IPC. P4 compares Unix do
 - [NATS JetStream delivery model](https://docs.nats.io/using-nats/jetstream/model_deep_dive) — acknowledgement, redelivery and bounded message deduplication.
 - [Home Assistant WebSocket API](https://developers.home-assistant.io/docs/api/websocket/) — authentication, command/result and event stream.
 - [Fastify v5 migration guide](https://fastify.dev/docs/latest/Guides/Migration-Guide-V5/) — Node.js runtime baseline.
+- [OpenTelemetry JavaScript SDK 3.0 release](https://opentelemetry.io/blog/2026/otel-js-sdk-3-0/) and [OpenTelemetry Rust status](https://opentelemetry.io/docs/languages/rust/) — language/signal maturity.
+- [Docker Compose production guidance](https://docs.docker.com/compose/how-tos/production/) — single-server and production deployment considerations.
+- [PostgreSQL versioning policy](https://www.postgresql.org/support/versioning/) and [Temporal persistence compatibility matrix](https://docs.temporal.io/temporal-service/persistence) — PostgreSQL 16 lifecycle and Temporal-tested database versions.
 - [Rust Update: gRPC Welcomes Tonic](https://grpc.io/blog/grpc-welcomes-tonic/) — Tonic stewardship transition and bug-fix maintenance statement.
 - [gRPC-Rust Preview Release](https://grpc.io/blog/grpc-rust-announcement/) and [gRPC-Rust Roadmap](https://grpc.io/blog/grpc-rust-roadmap/) — preview limitations and the server/interoperability work reported in June 2026.
 - [Tonic 0.14.9 release documentation](https://docs.rs/crate/tonic/0.14.9) — released Tonic compatibility line available at the P3.8 review date.
 - [OpenTelemetry documentation](https://opentelemetry.io/docs/) — vendor-neutral instrumentation.
 - [Android Jetpack Compose](https://developer.android.com/compose) and [Apple SwiftUI](https://developer.apple.com/swiftui/) — native companion UI foundations.
 
+
+## 19.95 P3.8 upstream compatibility audit and post-selection constraints
+
+**Audit date:** 14 November 2026  
+**Scope:** Upstream lifecycle/support statements and implementation constraints for the selected reference stack.  
+**Status:** Documentary review only. No package installation, benchmark, integration test or deployment test is claimed.
+
+The P3.8 reference stack remains unchanged. This section records current upstream facts that affect version pinning, compatibility and P4 proof gates.
+
+| Selected area | Upstream status checked on the audit date | Consequence for LIA |
+|---|---|---|
+| Node.js 24 with Temporal TypeScript SDK | Node 24 is Maintenance LTS from 20 October 2026 through 30 April 2028. Node 26 entered Active LTS on 28 October 2026 and is scheduled to enter Maintenance in October 2027. The Temporal TypeScript SDK support list currently includes Node 20, 22 and 24, not 26. | Keep Node 24 as the compatible reference runtime. P4 shall pin an SDK release and CI runtime matrix. Reassess Node 26 when the SDK officially supports it and before Node 24 exits Maintenance LTS. |
+| Godot 4.7.2 | Officially released as stable on 18 August 2026. Godot 4.8 is still Beta 3 as of 9 November 2026. | The 4.7.2 selection remains current. Retain the migration/VRM/transparent-window proof gate; do not migrate the production baseline to a beta release. |
+| PostgreSQL 16 and Temporal persistence | PostgreSQL 16 remains supported upstream through 9 November 2028. Temporal's published persistence test matrix lists PostgreSQL 16.6 among the tested versions. | Keep PostgreSQL 16 as the reference major. P4 shall pin a current 16.x minor and test that exact PostgreSQL/Temporal Server combination for migration, isolation, persistence and restore. A major-version test-matrix entry is not a substitute for testing the pinned pair. |
+| pgvector | Exact nearest-neighbor search provides the recall baseline. HNSW is approximate and filters may be applied after the index scan, reducing qualifying results under selective tenant/scope filters. | Keep exact search as the correctness baseline. HNSW remains conditional on scope-filtered recall@k, latency and isolation evidence from MEM-01. |
+| SQLite WAL | Readers can coexist with a writer, but WAL permits only one writer at a time, requires processes to share a host and cannot be used on network filesystems. Long-running readers can limit checkpoint progress. | Keep SQLite WAL local to one device. P4/P5 shall test short write transactions, writer contention, SQLITE_BUSY handling, long readers, checkpointing and consistent backup/restore (SQLITE-02). |
+| NATS JetStream | JetStream provides persisted streams and at-least-once delivery. Unacknowledged messages can be redelivered. | Keep PostgreSQL outbox/inbox and durable application deduplication authoritative. JetStream acknowledgement or duplicate-window detection is not proof of exactly-once processing or side effects. |
+| Hyprland IPC | The request socket is synchronous; an unclosed connection can block Hyprland until its timeout. A separate event socket carries live events. | Keep short-lived request connections and a separate event listener. HYPR-01/02 must test reconnect, event loss, cancellation and post-operation geometry. |
+| OpenTelemetry SDK maturity | JavaScript SDK 3.0 was released on 5 November 2026 and stabilized Logs alongside Traces and Metrics. Rust currently lists Traces as Beta and Metrics/Logs as Stable. | Use OTel as the semantic/correlation standard, but pin per-language/per-signal packages. Rust tracing integration is an explicit proof gate; do not describe it as equally stable with Rust metrics/logs. |
+| Docker Compose | Official production guidance describes deploying a Compose application on a single server. | Keep Compose as a single-host reference/self-host profile. Managed-hosted deployment must independently evidence the P3.2 availability and recovery targets (OPS-02). |
+
+### Version pinning and compatibility policy
+
+P3.8 selects product families and reference majors/minors where known; it does not freeze every transitive library version. P4 shall maintain a versioned compatibility matrix recording exact toolchain/runtime/package/database versions, support source, target OS versions, upgrade policy and proof result.
+
+A dependency is eligible for a production lockfile only when its license and dependency tree are reviewed, its supported runtime/OS matrix covers the intended targets, required APIs are not deprecated or pre-stable without an approved exception, the selected version passes reproducible build/security/conformance/rollback tests, and its upgrade/migration path is recorded.
+
+### P4/P5/P6 proof-gate clarifications
+
+- **Node/Temporal:** Pin Node 24 and a Temporal TypeScript SDK release together. Node 26 is a compatibility candidate, not an implicit upgrade.
+- **PostgreSQL/Temporal:** Pin the precise PostgreSQL 16.x minor and Temporal Server release together. Test migration, persistence, replay/recovery and restore on that exact pair.
+- **OpenTelemetry:** Pin exact Rust and JavaScript SDK packages per signal and version. Preserve trace-context propagation; explicitly evaluate Rust Beta tracing before it becomes a required production signal.
+- **SQLite:** Exercise the one-writer model and WAL checkpoint behavior under real device-agent concurrency and process/host restart conditions.
+- **Compose/managed hosting:** Keep the Compose single-host profile distinct from the managed production topology. Do not claim the P3.2 99.5% availability, RTO or RPO targets from an unreplicated single-host deployment.
+- **Cryptography and identity:** P4 must select and test concrete TLS/certificate/key profiles, OIDC client flows, device proof-of-possession and revocation propagation. gRPC/HTTP2 is the transport baseline, not the complete security protocol.
+- **Home Assistant and platform adapters:** Retain optional/proof-gated status until a real gateway/device and each claimed Hyprland/Windows capability pass conformance.
+
+**P3.8 post-selection audit closure:** The reference stack has been checked against current upstream lifecycle and compatibility documentation. No technology selection changed. Signal-maturity, version-pin, database-pair, local-WAL and deployment-availability constraints are explicit. These checks remain documentary; the stated P4/P5/P6 implementation proof gates are not marked passed.
