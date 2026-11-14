@@ -13,7 +13,7 @@ Reconciles cross-contract fields and closes draft persistence gaps identified du
 - Adds PostgreSQL migration 004 for rebuildable objective, run, grant-metadata and request-status projections plus bounded API idempotency records, with JSON-safe integer constraints. SQLite migration 004 enforces the interoperable manifest-revision bound. Canonical ownership remains with Temporal and Permission Authority.
 - Documents cross-contract mappings and distinguishes P4 gates from MOBILE-01/HOME-01, which remain P6 work.
 
-- Separates offline-lease nonce consumption from CommandEnvelope session-sequence replay protection; the lease has no session-sequence field. Command sequence is strictly increasing, and its watermark is retained through session expiry plus configured clock skew.
+- Separates offline-lease nonce consumption from CommandEnvelope session-sequence replay protection; the lease has no session-sequence field. Command sequence is strictly increasing, and its watermark is retained through session expiry plus configured clock skew. The database rejects a nonzero initial watermark.
 
 ### Review verification
 

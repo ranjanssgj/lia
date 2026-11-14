@@ -222,6 +222,13 @@ BEGIN
     SELECT RAISE(ABORT, 'consumed nonce cannot be deleted before its replay-retention deadline');
 END;
 
+CREATE TRIGGER local_session_sequence_initial_zero
+BEFORE INSERT ON local_session_sequence
+WHEN NEW.last_session_sequence <> 0
+BEGIN
+    SELECT RAISE(ABORT, 'new session sequence watermark must start at zero');
+END;
+
 CREATE TRIGGER local_session_sequence_monotonic
 BEFORE UPDATE ON local_session_sequence
 WHEN NEW.session_id IS NOT OLD.session_id
