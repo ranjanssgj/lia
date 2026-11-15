@@ -4,10 +4,10 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.14.4  
+> **Version:** 1.14.6
 > **Last updated:** 15 November 2026  
-> **Current phase:** P5 — First Vertical Slice (M0 complete; implementation not started)  
-> **Current workstream:** M1 — Device-agent core (planning)  
+> **Current phase:** P5 — First Vertical Slice (M0 complete; M1 in progress)
+> **Current workstream:** M1 — Device-agent core (in progress)
 > **Document status:** P5 M0 contract hygiene passed in PR #3; implementation/conformance gates remain Not Run
 
 ------------------------------------------------------------------------
@@ -304,7 +304,7 @@ through controlled change; they do not invalidate earlier requirements.
   P2      Requirements engineering           Complete — baseline approved
   P3      System architecture                Complete — P3.1–P3.8 architecture and reference technology baseline approved
   P4      Integration contracts              In Progress — P4.1 contract package drafted; verification pending
-  P5      First vertical slice               In Progress — M0 agent onboarding/readiness; slice implementation not started
+  P5      First vertical slice               In Progress — M0 complete; M1 device-agent core implementation in progress
   P6      Companion integration              Pending
   P7      Proactive behavior                 Pending
   P8      Expanded autonomy and perception   Pending
@@ -2578,6 +2578,10 @@ Docker Compose remains the initial development and self-host/reference packaging
 
 **1.14.1 — 14 Nov 2026:** Opened P4.1 and translated the approved P2/P3 baselines into draft integration contracts: Protobuf device control, OpenAPI 3.1 API, device IPC, PostgreSQL/SQLite persistence, Temporal workflow boundaries, NATS event delivery, provider-neutral interfaces, security profile, adapter manifests/conformance, runtime and supply-chain requirements. Added the P4 contract package and initial conformance/compatibility matrices. All implementation gates remained Not Run.
 
+**1.14.6 — 15 Nov 2026:** Began P5 M1 device-agent core implementation against P4 package 0.2.2. Added the Rust 1.99.1/rusqlite 0.41.1 pinned crate workspace, SQLite migration 005, command and offline-lease consume-before-effect paths, primitive signature/digest checks, CI and partial evidence. Recorded remaining crash/restore, protocol-interoperability and full-gate work; no conformance gate is marked Passed.
+
+**1.14.5 — 15 Nov 2026:** Clarified the owner-required zero-first command sequence rule with SQLite migration 005, preserving migrations 001–004 and requiring later sequences to increase strictly. Updated P4 package revision to 0.2.2 and the M1 evidence plan. No conformance gate is marked Passed.
+
 **1.14.4 — 15 Nov 2026:** Recorded the owner-approved P5-local gate dependency profile; updated P5 M0 status after PR #3 merged and contract-hygiene CI passed; replaced stale TBD traceability cells with architecture/contract/acceptance/proof mappings; established the ADR decision-register canonical rule and relabelled later ADR expansions as rationale; removed the duplicate Phase 2 exit heading. No P4 implementation conformance gate is marked Passed.
 
 **1.14.3 — 14 Nov 2026:** Started P5 M0 readiness. Added repository agent guidance, onboarding README and P5 milestone/AC-to-gate mapping; pinned the initial contract-validation toolchain with a seven-day dependency cool-down; added CI for OpenAPI, Protobuf, PostgreSQL/SQLite migration chains, JSON Schema fixtures and TypeScript; added initial standards-derived security/digest vectors and an evidence index; tightened ignore rules so public test keys, database fixtures and Godot export presets remain trackable; repaired malformed OpenAPI response YAML. The contract-hygiene workflow and all P4/P5 implementation conformance gates are awaiting CI/evidence review and remain Not Run.
@@ -2588,15 +2592,15 @@ Docker Compose remains the initial development and self-host/reference packaging
 
 # 10. Current working state
 
-**Current phase:** P5 — First Vertical Slice (M0 readiness; implementation not started)
+**Current phase:** P5 — First Vertical Slice (M0 complete; M1 implementation in progress)
 **Phase 2 status:** Complete — approved requirements baselines  
 **P2.1–P2.7 status:** Complete as requirements baselines; runtime implementation and verification remain engineering work  
 **P3.1–P3.8 status:** Complete — architecture and reference technology baseline approved  
-**P4.1 status:** Contract package 0.2.1 and consistency corrections are merged; contracts remain Draft
+**P4.1 status:** Contract package 0.2.2, including the SQLite sequence-zero correction, is Draft; all contract changes remain subject to owner review
 **P4 implementation status:** No P4 conformance gate is marked Passed. Contract hygiene passed; P4 implementation conformance including interoperability, security, persistence, Temporal, NATS, live adapters and end-to-end integration remains unverified
-**P5 status:** M0 contract-hygiene readiness is complete: PR #3 merged on 15 November 2026, and the contract-hygiene workflow passed on the PR head. No P5 implementation or conformance gate has passed. P5 remains Linux-first and local-first; coordinator infrastructure is outside the baseline
+**P5 status:** M0 contract-hygiene readiness is complete: PR #3 merged on 15 November 2026, and the contract-hygiene workflow passed on the PR head. M1 device-agent core implementation is in progress on `feat/p5-m1-device-agent-core`; local tests cover migration application, WAL/foreign keys, selected replay and claim-binding behavior, consume-before-effect ordering, and primitive signature/digest vectors. Crash/restore, full protocol interoperability and complete gate procedures remain outstanding. No P5 implementation conformance gate has passed. P5 remains Linux-first and local-first; coordinator infrastructure is outside the baseline
 **Overall status:** P0–P3 baselines are approved. P4 contracts remain drafts. P5 M0 provides agent instructions, initial validation pins, CI, fixtures and evidence conventions; a green hygiene check is not a passed implementation gate or production authorization.
-**Next action:** Start M1 planning against the pinned P4 contracts and approved P5-local gate profile. Choose and record exact SQLite and cryptography library pins after license/source review. Keep the exact Hyprland version and M5 hardware, language, budget and provider choices open for the owner.
+**Next action:** Complete M1 crash/restore, replay and security-vector evidence against the pinned P4 contracts and approved P5-local gate profile. Keep all gates Not Run until the complete procedures and review are finished. Keep the exact Hyprland version and M5 hardware, language, budget and provider choices open for the owner.
 
 ## Phase 2 exit criteria
 
@@ -8721,12 +8725,12 @@ A dependency is eligible for a production lockfile only when its license and dep
 
 **Phase status:** In Progress.  
 **Current workstream:** P4.1 — Contract inventory and interface drafts.  
-**Contract package revision:** 0.2.1.
+**Contract package revision:** 0.2.2.
 **Package status:** Draft; owner review and implementation proof required.
 
 The P4 package is maintained under [docs/p4/README.md](docs/p4/README.md). This section is the canonical phase summary; the linked artifacts hold the detailed schemas and operational rules. P4 turns the approved P2/P3 boundaries into implementable interfaces without changing their authority model.
 
-P4.1 is a design and contract milestone, not an implementation milestone. No service integration, generated client, SQL migration, Godot/Rust IPC, Temporal workflow, NATS consumer, provider adapter, or security test is claimed as implemented or Verified.
+P4.1 is a design and contract milestone, not an implementation milestone. P5 M1 consumes the draft SQLite migrations in a local Rust library and has partial migration/replay checks; this does not claim a P4 implementation gate is Passed. No service integration, generated client, Godot/Rust IPC, Temporal workflow, NATS consumer, provider adapter, or full security test is claimed as implemented or Verified.
 
 ## 20.2 P4 workstream breakdown
 
@@ -8825,7 +8829,7 @@ P4 is complete only after:
 - Rust and TypeScript generated clients interoperate under RPC-01/02 with pinned toolchains and documented version-skew behavior;
 - SECURITY-01 passes with reproducible credential, signature, rotation, revocation, replay and tenant-isolation evidence;
 - IPC-01 passes on the selected Linux/Windows transport profiles;
-- PostgreSQL and SQLite migrations 001–004 pass apply/upgrade/rollback, isolation, crash/recovery and restore procedures;
+- PostgreSQL migrations 001–004 and SQLite migrations 001–005 pass apply/upgrade/rollback, isolation, crash/recovery and restore procedures;
 - ART-01 verifies content-addressed artifact integrity, scope, retention, deletion and restore;
 - OTel-01 verifies trace propagation and signal-level privacy/redaction/cardinality behavior;
 - SUPPLY-01 verifies artifact-derived SBOM, licensing/asset rights, vulnerability disposition, provenance and rollback evidence;
@@ -8886,6 +8890,6 @@ Every release must produce an artifact-derived SPDX 2.3 JSON SBOM, dependency/li
 
 ## 20.13 P4.1 consistency corrections
 
-P4.1 contract package revision 0.2.1 reconciles cross-surface field types and response semantics, adds the accepted-request status endpoint, makes `RATE_LIMITED` observable through HTTP 429/`Retry-After`, aligns evidence response identifiers with operation attempts, and carries device event source identity/sensitivity into Protobuf. Manifest revisions are restricted to the exact JSON/JCS-safe integer range `1..9007199254740991`; the Protobuf wire field remains `uint64`, while ProtoJSON's string representation is explicitly mapped to bounded JSON/SQL integers.
+P4.1 contract package revision 0.2.2 reconciles cross-surface field types and response semantics and clarifies that the first command session sequence is zero exactly once, then strictly increases, adds the accepted-request status endpoint, makes `RATE_LIMITED` observable through HTTP 429/`Retry-After`, aligns evidence response identifiers with operation attempts, and carries device event source identity/sensitivity into Protobuf. Manifest revisions are restricted to the exact JSON/JCS-safe integer range `1..9007199254740991`; the Protobuf wire field remains `uint64`, while ProtoJSON's string representation is explicitly mapped to bounded JSON/SQL integers.
 
 PostgreSQL migration 003 adds account-consistent foreign keys and a coordinator offline-lease issuance ledger whose claims must match the referenced operation. SQLite migration 003 records device-side lease/nonce/session-sequence consumption before side effects in one transaction. PostgreSQL migration 004 adds rebuildable ObjectiveSummary, RunSummary, GrantSummary and RequestStatus projections; it does not create canonical run/step or grant authority. SQLite migration 004 enforces the manifest revision bound. The exact schema and mapping contract is maintained in [docs/p4/README.md](docs/p4/README.md).

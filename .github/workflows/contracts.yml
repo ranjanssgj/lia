@@ -62,3 +62,19 @@ jobs:
             echo 'See step logs for protoc and database runtime versions.'
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+  device-agent-rust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.99.1 --profile minimal --component clippy,rustfmt
+      - name: Check formatting
+        run: cargo +1.99.1 fmt --all -- --check
+      - name: Test device-agent core
+        run: cargo +1.99.1 test --locked --workspace
+      - name: Run Clippy
+        run: cargo +1.99.1 clippy --locked --workspace --all-targets -- -D warnings

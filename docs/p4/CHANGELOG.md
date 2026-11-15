@@ -1,5 +1,13 @@
 # P4 contract package changelog
 
+## 0.2.2 — 15 November 2026
+
+**Baseline:** Blueprint v1.14.5. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Adds SQLite migration 005. A new session's first CommandEnvelope sequence is zero exactly once; subsequent accepted values strictly increase. Retention and immutable session identity are preserved.
+- Updates the SQLITE-02 procedure to test zero-first, duplicate-zero, backward/equal updates and expiry-plus-skew retention.
+- This is a forward migration; migrations 001–004 are unchanged.
+
 ## 0.2.1 — 14 November 2026
 
 **Baseline:** Blueprint v1.14.2. The branch incorporates Claude's supplied `lia-fix-p4.bundle` commit and `p4-contract-consistency.patch`, after independent review and additional corrections. The patch and bundle contain the same seven-file commit (`df9a3e6`).
@@ -13,7 +21,7 @@ Reconciles cross-contract fields and closes draft persistence gaps identified du
 - Adds PostgreSQL migration 004 for rebuildable objective, run, grant-metadata and request-status projections plus bounded API idempotency records, with JSON-safe integer constraints. SQLite migration 004 enforces the interoperable manifest-revision bound. Canonical ownership remains with Temporal and Permission Authority.
 - Documents cross-contract mappings and distinguishes P4 gates from MOBILE-01/HOME-01, which remain P6 work.
 
-- Separates offline-lease nonce consumption from CommandEnvelope session-sequence replay protection; the lease has no session-sequence field. Command sequence is strictly increasing, and its watermark is retained through session expiry plus configured clock skew. The database rejects a nonzero initial watermark.
+- Separates offline-lease nonce consumption from CommandEnvelope session-sequence replay protection; the lease has no session-sequence field. The first command sequence in a new session is zero exactly once; subsequent values strictly increase. The watermark is retained through session expiry plus configured clock skew.
 
 ### Review verification
 

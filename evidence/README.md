@@ -14,3 +14,8 @@ For each gate run, add `evidence/<gate>/<run-id>/README.md` with:
 Evidence must use synthetic identities and redacted output. Do not commit credentials, private key material, real user content, window titles, screen/audio captures, or unredacted production logs. Keep public cryptographic test keys and synthetic database fixtures under `testdata/`; these must remain trackable.
 
 The contract-hygiene workflow is structural validation only. It does not complete API authorization, adapter, IPC, security, replay, restore, provider, workflow, live compositor or end-to-end conformance procedures.
+
+## P5 M1 partial implementation checks (15 November 2026)
+
+- [SQLITE-02 local implementation checks](SQLITE-02/2026-11-15-m1-core/README.md) — migrations 001–005, selected replay/claim tests, WAL and consume-before-effect behavior. The full gate remains Not Run.
+- [SECURITY-01 local primitive checks](SECURITY-01-local/2026-11-15-m1-core/README.md) — RFC 8032, command/lease domain separation, and a simple JCS/SHA-256 vector. The full gate remains Not Run.

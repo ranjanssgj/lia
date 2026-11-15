@@ -18,7 +18,7 @@
 
 ## Work layout and commands
 
-This repository currently contains the blueprint, P4 contract package and initial contract-validation tooling; Rust/Godot implementation workspaces have not yet been established. Follow the milestone-specific layout and commands in [`docs/p5/README.md`](docs/p5/README.md). Do not invent a second layout or report an implementation build command as available until its toolchain and script are checked in.
+The repository now contains the M1 Rust workspace under `crates/lia-device-agent/`, pinned by `rust-toolchain.toml` and `Cargo.lock`. Follow the milestone-specific layout and commands in [`docs/p5/README.md`](docs/p5/README.md). Godot and platform adapter workspaces remain planned until their milestone starts.
 
 For the pinned Linux validation environment, run `bash toolchain/bootstrap.sh`, then use the corresponding `npm run check:*` command. The CI workflow runs OpenAPI bundling, Protobuf compilation, schema/fixture validation, strict TypeScript checking and clean PostgreSQL/SQLite migration chains. These checks do not mark P4 conformance gates Passed.
 
@@ -30,7 +30,7 @@ Planned areas are:
 - `testdata/`: standards-derived public vectors and synthetic fixtures.
 - `evidence/`: redacted, reproducible gate evidence; never secrets or private content.
 
-Only the implementation workspaces under `crates/` and `apps/` remain planned; the documentation/tooling paths above already exist.
+`crates/lia-device-agent/` is the active M1 implementation. Other crates and `apps/` remain milestone-planned; the documentation/tooling paths above already exist.
 
 ## Definition of done
 
