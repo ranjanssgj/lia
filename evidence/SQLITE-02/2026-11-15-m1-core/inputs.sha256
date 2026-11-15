@@ -1,0 +1,12 @@
+d3214a906b2e154fc458c954938dd1fe80e4a056b653461bca2a52aa722c456b  Cargo.lock
+62376b27ed0395713a1b92c45a5f26f35bf81ee7251acf27a6eb9905d2c9b29f  crates/lia-device-agent/Cargo.toml
+f9e6340b8c795205ae795c3ce2ad46bb00873972bf7e2c5719ccf1bf19417805  crates/lia-device-agent/src/lib.rs
+ddae69181fc30c3a65d2218dc99a137657628fb200eb1b8db8261fb77a1fbb1e  crates/lia-device-agent/src/store.rs
+d298109a8739685439c1e602c1bb31c307009761f2e7fe2dcfe5985a16eba0ce  crates/lia-device-agent/src/signatures.rs
+6a7eff3b82419828d4bd86e960028dbc4d2a819f898d6b6b3281a596fdf020ff  docs/p4/sql/sqlite/001-device-agent.sql
+18ef45ecab9d6b45ceade9f24efca9b168e61b8a3c222db8b6f6e83580233ddb  docs/p4/sql/sqlite/002-retention-tombstones.sql
+5eb0bc0b8633ce761fb21ec212bb474c2d6ac8f3ae8434c2ba836f8902b153d6  docs/p4/sql/sqlite/003-consumption-ledger.sql
+6dab9a1c9ae6fe47729dda457f961903f95c0ec0422d98220a059999023a8170  docs/p4/sql/sqlite/004-manifest-revision-json-safe.sql
+2cacc05d58d652b396985ff837dd314d2eb53b11514a71551261f546a595b0f2  docs/p4/sql/sqlite/005-sequence-zero-initial-use.sql
+b22d1c74dc71510a11e0be8351d80ebddff2a9f0d4acf90218496fc873a79878  testdata/security/ed25519-rfc8032.json
+239f8ef9e0a7aefbbe81b069d1e03781942178f1ebf6bfeb3e7cbc0497d93b1f  testdata/security/jcs-sha256.json

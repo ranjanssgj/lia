@@ -1,4 +1,37 @@
+## 0.2.5 — 15 November 2026
+
+**Baseline:** Blueprint v1.14.8. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Adds SQLite migration 008 to rebuild legacy lease/session tables without floating-point `julianday()` CHECK constraints; Rust startup backfills legacy timestamps to exact integer microseconds before applying it.
+- Adds a development filesystem sidecar integrity/time anchor. It advances before protected commits, rejects SQLite-only stale restores and clock rollback, and fails closed on mismatch. Coordinated database-plus-anchor restore and production protected monotonic storage remain open.
+- Extends local evidence through migrations 001–008 and retains SQLITE-02 as Not Run pending extended workload, recovery and integration procedures.
+
 # P4 contract package changelog
+
+## 0.2.4 — 15 November 2026
+
+**Baseline:** Blueprint v1.14.7. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Adds SQLite migration 007 with integer microsecond columns and integer-valued nonce/session retention guards. Runtime command/lease admission now parses RFC 3339 to integer microseconds; complete legacy-row backfill and removal of older floating-point CHECK constraints remain open.
+- Records device-store outcome/evidence/outbox writes and explicit `synchronous=FULL`; migrations acquire `BEGIN IMMEDIATE` before checking their version.
+- Adds signed-message canonicalization profile and local RFC 8785 number/non-BMP key-order and negative signature checks. Generated-language interoperability remains Not Run.
+- Adds local process-kill windows, two-reader/writer contention, SQLITE_BUSY, checkpoint and WAL-truncation tests. No conformance gate is marked Passed; stale-restore anchor integration, extended workload measurements and full SECURITY-01 procedures remain open.
+
+## 0.2.3 — 15 November 2026
+
+**Baseline:** Blueprint v1.14.7. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Adds SQLite migration 006 for immutable outcome evidence metadata and database guards requiring evidence for verified success/failure, plus a durable possible-effect marker for unknown outcomes.
+- Defines the store boundary: not attempted is an accepted operation with no attempt; verified success/failure require matching evidence; any ambiguous possible effect is unknown and reconciled rather than replayed.
+- Clarifies that outcomes, attempt state, evidence metadata and the corresponding local outbox event commit atomically.
+
+## 0.2.2 — 15 November 2026
+
+**Baseline:** Blueprint v1.14.5. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Adds SQLite migration 005. A new session's first CommandEnvelope sequence is zero exactly once; subsequent accepted values strictly increase. Retention and immutable session identity are preserved.
+- Updates the SQLITE-02 procedure to test zero-first, duplicate-zero, backward/equal updates and expiry-plus-skew retention.
+- This is a forward migration; migrations 001–004 are unchanged.
 
 ## 0.2.1 — 14 November 2026
 
@@ -13,7 +46,7 @@ Reconciles cross-contract fields and closes draft persistence gaps identified du
 - Adds PostgreSQL migration 004 for rebuildable objective, run, grant-metadata and request-status projections plus bounded API idempotency records, with JSON-safe integer constraints. SQLite migration 004 enforces the interoperable manifest-revision bound. Canonical ownership remains with Temporal and Permission Authority.
 - Documents cross-contract mappings and distinguishes P4 gates from MOBILE-01/HOME-01, which remain P6 work.
 
-- Separates offline-lease nonce consumption from CommandEnvelope session-sequence replay protection; the lease has no session-sequence field. Command sequence is strictly increasing, and its watermark is retained through session expiry plus configured clock skew. The database rejects a nonzero initial watermark.
+- Separates offline-lease nonce consumption from CommandEnvelope session-sequence replay protection; the lease has no session-sequence field. The first command sequence in a new session is zero exactly once; subsequent values strictly increase. The watermark is retained through session expiry plus configured clock skew.
 
 ### Review verification
 

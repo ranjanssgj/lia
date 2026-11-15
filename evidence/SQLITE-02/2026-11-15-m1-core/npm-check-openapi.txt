@@ -1,0 +1,4 @@
+npm notice run lia-contract-validation@0.1.0 check:openapi
+npm notice run redocly bundle docs/p4/openapi/lia-v1.yaml --output /tmp/lia-openapi-bundle.yaml
+bundling docs/p4/openapi/lia-v1.yaml...
+📦 Created a bundle for docs/p4/openapi/lia-v1.yaml at /tmp/lia-openapi-bundle.yaml 20ms.

@@ -1,0 +1,4 @@
+npm notice run lia-contract-validation@0.1.0 check:proto
+npm notice run bash toolchain/bootstrap-protoc.sh && .toolchain/protoc/bin/protoc --proto_path=docs/p4/proto --proto_path=.toolchain/protoc/include --include_imports --descriptor_set_out=/tmp/lia-control-plane.pb docs/p4/proto/lia/v1/control_plane.proto
+replace /tmp/lia-m1/.toolchain/protoc/bin/protoc? [y]es, [n]o, [A]ll, [N]one, [r]ename:  NULL
+(EOF or read error, treating as "[N]one" ...)

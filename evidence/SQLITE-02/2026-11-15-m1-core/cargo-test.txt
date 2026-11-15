@@ -1,0 +1,22 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-f792fa0d9ac0cd75)
+
+running 10 tests
+test signatures::tests::canonicalizes_json_and_hashes_bytes ... ok
+test signatures::tests::rfc8032_test_vector_1_and_domain_separation ... ok
+test store::tests::migrations_wal_foreign_keys_and_first_zero_once ... ok
+test store::tests::file_database_uses_wal_and_applies_entire_migration_chain ... ok
+test store::tests::command_nonce_replay_is_rejected_even_in_a_new_session ... ok
+test store::tests::failed_attempt_insert_rolls_back_nonce_watermark_and_effect_marker ... ok
+test store::tests::increasing_command_consumes_nonce_and_effect_marker_atomically ... ok
+test store::tests::sequence_zero_update_then_monotonic_and_retention_immutable ... ok
+test store::tests::lease_claim_binding_and_consume_before_effect ... ok
+test store::tests::backup_restore_preserves_replay_barrier_and_restart_reconciles_effects ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+   Doc-tests lia_device_agent
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

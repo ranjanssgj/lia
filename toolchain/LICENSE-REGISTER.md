@@ -88,3 +88,55 @@ No model weight, LLM, ASR, TTS or embedding package is selected or admitted. Can
 ## Release evidence
 
 Before any distributable release, generate an artifact-derived SPDX SBOM, attach exact versions and hashes, reconcile this register with shipped notices, document exceptions, and have the owner review the license and asset-rights findings.
+
+## Locked M1 Rust dependencies
+
+`Cargo.lock` is generated for the M1 device-agent crate. The following inventory is generated from `cargo metadata --locked` on 15 November 2026; it records registry package metadata and is not a shipped-notice review. The bundled SQLite amalgamation is public domain per upstream SQLite terms; the `libsqlite3-sys` package metadata is MIT. No LIA project license is selected by this table.
+
+| Package | Version | Cargo license metadata | Review status |
+|---|---:|---|---|
+| `bitflags` | 2.13.2 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `block-buffer` | 0.12.1 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `cc` | 1.11.2 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `cfg-if` | 1.0.5 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `const-oid` | 0.10.3 | Apache-2.0 OR MIT | Cargo registry metadata; verify shipped notices before distribution |
+| `cpufeatures` | 0.3.1 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `crypto-common` | 0.2.2 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `curve25519-dalek` | 5.0.0 | BSD-3-Clause | Cargo registry metadata; verify shipped notices before distribution |
+| `curve25519-dalek-derive` | 0.1.1 | MIT/Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `digest` | 0.11.3 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `ed25519` | 3.0.0 | Apache-2.0 OR MIT | Cargo registry metadata; verify shipped notices before distribution |
+| `ed25519-dalek` | 3.0.0 | BSD-3-Clause | Cargo registry metadata; verify shipped notices before distribution |
+| `fallible-iterator` | 0.3.0 | MIT/Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `fallible-streaming-iterator` | 0.1.9 | MIT/Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `fiat-crypto` | 0.3.0 | MIT OR Apache-2.0 OR BSD-1-Clause | Cargo registry metadata; verify shipped notices before distribution |
+| `find-msvc-tools` | 0.1.15 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `hybrid-array` | 0.4.15 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `itoa` | 1.0.19 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `libc` | 0.2.191 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `libsqlite3-sys` | 0.39.1 | MIT | Cargo registry metadata; verify shipped notices before distribution |
+| `memchr` | 2.8.3 | Unlicense OR MIT | Cargo registry metadata; verify shipped notices before distribution |
+| `pkg-config` | 0.3.34 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `proc-macro2` | 1.0.107 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `quote` | 1.0.47 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `rusqlite` | 0.41.1 | MIT | Cargo registry metadata; verify shipped notices before distribution |
+| `rustc_version` | 0.4.1 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `ryu-js` | 0.2.2 | Apache-2.0 OR BSL-1.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `semver` | 1.0.28 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `serde` | 1.0.229 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `serde_core` | 1.0.229 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `serde_derive` | 1.0.229 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `serde_jcs` | 0.2.0 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `serde_json` | 1.0.154 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `sha2` | 0.11.1 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `shlex` | 2.0.1 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `signature` | 3.0.0 | Apache-2.0 OR MIT | Cargo registry metadata; verify shipped notices before distribution |
+| `smallvec` | 1.16.5 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `subtle` | 2.6.1 | BSD-3-Clause | Cargo registry metadata; verify shipped notices before distribution |
+| `syn` | 2.0.119 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `syn` | 3.0.10 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `typenum` | 1.20.1 | MIT OR Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `unicode-ident` | 1.0.27 | (MIT OR Apache-2.0) AND Unicode-3.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `vcpkg` | 0.2.15 | MIT/Apache-2.0 | Cargo registry metadata; verify shipped notices before distribution |
+| `zeroize` | 1.9.1 | Apache-2.0 OR MIT | Cargo registry metadata; verify shipped notices before distribution |
+| `zmij` | 1.0.23 | MIT | Cargo registry metadata; verify shipped notices before distribution |
