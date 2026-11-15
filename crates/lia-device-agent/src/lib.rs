@@ -8,4 +8,5 @@ mod time;
 pub use store::{
     AgentStore, AttemptCompletion, CommandClaims, EffectPermit, EvidenceRecord, LeaseClaims,
     LeaseConsumption, ObservedOutcome, OperationClaims, OperationOutcomeState, StoreError,
+    SystemTrustedClock, TrustedClock,
 };

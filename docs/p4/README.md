@@ -1,9 +1,9 @@
 # P4 — Integration Contracts
 
 **Contract package:** P4.1  
-**Revision:** 0.2.4
+**Revision:** 0.2.5
 **Status:** Draft — review and conformance evidence required  
-**Baseline:** LIA Project Blueprint v1.14.7 (P4 in progress)
+**Baseline:** LIA Project Blueprint v1.14.8 (P4 in progress)
 **Date:** 15 November 2026
 
 ## Purpose
@@ -39,8 +39,8 @@ This remains a contract design package. P5 M1 now consumes the draft SQLite migr
 | Event subjects | [subjects.yaml](events/subjects.yaml) | lia.v1 | Domain event owner |
 | Temporal boundaries | [temporal-contracts-v1.md](workflows/temporal-contracts-v1.md) | 1 | Temporal workflow authority |
 | Provider interfaces | [provider-interfaces-v1.ts](providers/provider-interfaces-v1.ts) | 1 | LIA model gateway |
-| Changelog | [CHANGELOG.md](CHANGELOG.md) | 0.2.4 | Review history and verification provenance for the P4 contract package |
-| P4 gate matrix | [p4-conformance-matrix.md](conformance/p4-conformance-matrix.md) | 0.2.4 | Procedure, expected evidence and status for architecture proof gates |
+| Changelog | [CHANGELOG.md](CHANGELOG.md) | 0.2.5 | Review history and verification provenance for the P4 contract package |
+| P4 gate matrix | [p4-conformance-matrix.md](conformance/p4-conformance-matrix.md) | 0.2.5 | Procedure, expected evidence and status for architecture proof gates |
 | Adapter contract | [adapter-conformance-v1.md](adapters/adapter-conformance-v1.md) | 1 | Manifest semantics, resource lifecycle, execution checks and 24 common adapter conformance cases |
 | Manifest schema | [capability-manifest-v1.schema.json](adapters/capability-manifest-v1.schema.json) | 1 | Strict JSON Schema for adapter capability manifests |
 | Hyprland fixture | [hyprland-wayland-manifest.example.json](adapters/fixtures/hyprland-wayland-manifest.example.json) | Example | Synthetic first-Linux-profile manifest fixture |
@@ -52,8 +52,9 @@ This remains a contract design package. P5 M1 now consumes the draft SQLite migr
 | SQLite consumption ledger | [003-consumption-ledger.sql](sql/sqlite/003-consumption-ledger.sql) | 003 | Device-local single-use lease, nonce and session-sequence replay ledgers, matched to the operation claim |
 | SQLite revision bound | [004-manifest-revision-json-safe.sql](sql/sqlite/004-manifest-revision-json-safe.sql) | 004 | Enforces the JSON/JCS-safe manifest revision range |
 | SQLite sequence-zero correction | [005-sequence-zero-initial-use.sql](sql/sqlite/005-sequence-zero-initial-use.sql) | 005 | Accepts session sequence zero exactly once, then requires strictly increasing values |
+| SQLite time-constraint rebuild | [008-integer-time-table-rebuild.sql](sql/sqlite/008-integer-time-table-rebuild.sql) | 008 | Forward rebuild of lease/session tables without floating-point time checks; integer timestamps are retained |
 | SQLite outcome/evidence records | [006-operation-outcomes-and-evidence.sql](sql/sqlite/006-operation-outcomes-and-evidence.sql) | 006 | Requires evidence for verified success/failure and defines immutable evidence metadata |
-| SQLite integer-time retention | [007-integer-time-and-integrity-anchor.sql](sql/sqlite/007-integer-time-and-integrity-anchor.sql) | 007 | Adds integer microsecond columns and fail-closed trusted-time retention triggers; legacy CHECK cleanup/backfill and external anchor integration remain open |
+| SQLite integer-time retention | [007-integer-time-and-integrity-anchor.sql](sql/sqlite/007-integer-time-and-integrity-anchor.sql), [008-integer-time-table-rebuild.sql](sql/sqlite/008-integer-time-table-rebuild.sql) | 007–008 | Adds integer microsecond columns, integer retention guards, exact legacy timestamp backfill and rebuilds affected tables to remove floating-point `julianday()` checks; crate prototype uses a filesystem monotonic anchor, with coordinated restore and production protected storage still open |
 | Context package | [context-package-v1.md](context/context-package-v1.md), [schema](context/context-package-v1.schema.json), [example](context/fixtures/context-package-v1.example.json) | 1 | Immutable scoped invocation context with trust, digest, expiry, access and egress rules |
 | Tool registry | [tool-registry-v1.schema.json](tools/tool-registry-v1.schema.json), [example](tools/tool-registry-v1.example.json) | 1 | Capability-derived tool affordance metadata, not permission |
 | Tool validation | [tool-validation-pipeline-v1.md](tools/tool-validation-pipeline-v1.md) | 1 | Registry projection, proposal validation, permission recheck and broker dispatch |

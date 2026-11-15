@@ -6,16 +6,16 @@
 
 ## Executed
 
-- `CARGO_HOME=/tmp/lia-cargo cargo test --locked --workspace` — 17 tests passed, 0 failed. Includes outcomes/evidence/outbox atomicity, verified and unknown outcome states, integer RFC3339 parsing, migration 001–007 startup, `synchronous=FULL`, immediate migration serialization, command/lease replay checks, process termination after consume-before-effect commit and during an uncommitted transaction, two pinned WAL readers, a contending writer with observed `SQLITE_BUSY`, checkpoint progress and WAL truncation.
+- `CARGO_HOME=/tmp/lia-cargo cargo test --locked --workspace` — 20 tests passed, 0 failed. Includes outcomes/evidence/outbox atomicity, verified and unknown outcome states, integer RFC3339 parsing, migration 001–008 startup, `synchronous=FULL`, immediate migration serialization, command/lease replay checks, process termination after consume-before-effect commit and during an uncommitted transaction, two pinned WAL readers, a contending writer with observed `SQLITE_BUSY`, checkpoint progress and WAL truncation.
 - `CARGO_HOME=/tmp/lia-cargo cargo clippy --locked --workspace --all-targets -- -D warnings` — passed.
-- `node scripts/check-sqlite-migrations.mjs` — applied migrations 001–007 under SQLite 3.54.1; zero-first, duplicate/backward sequence and premature deletion checks behaved as expected.
+- `npm run check:sqlite` — applied migrations 001–008 under SQLite 3.54.1; zero-first, duplicate/backward sequence and premature deletion checks behaved as expected.
 - Local SECURITY-01 tests cover RFC 8032, JCS number formatting, non-BMP UTF-16 key ordering, wrong payload/domain/key, truncated signature and noncanonical Ed25519 S rejection. See `docs/p4/security/signed-message-canonicalization-v1.md` for the draft field mapping.
 
 ## Not executed / known limits
 
 - No measured production-scale contention/load profile or prolonged WAL growth/long-lived-reader run; the unit test exercises bounded local WAL mechanics only.
-- No stale-backup restore anti-rollback proof. The external monotonic anchor was chosen but is not implemented; restoring SQLite alone is not detected by the crate yet.
-- Migration 007 adds integer columns and integer retention guards, but legacy timestamp data is not fully backfilled and legacy floating-point `julianday()` CHECK constraints in migration 003 remain. Do not treat the migration as complete clock hardening.
+- The filesystem anchor prototype rejects restoring a stale SQLite database without its matching current anchor, and rejects anchor time rollback. Restoring the database and anchor together is not detected; this is not a production protected monotonic store.
+- Migration 008 rebuilds affected lease/session tables to remove the legacy floating-point `julianday()` checks. Rust startup backfills legacy timestamp text to exact integer microseconds before migration 008. The filesystem clock anchor remains a prototype and does not establish production clock trust.
 - No generated Rust/TypeScript ProtoJSON interoperability, OIDC/mTLS, device key lifecycle, Temporal/NATS, live adapter, or full IPC/security conformance tests.
 
 No acceptance condition or conformance gate is marked Passed.

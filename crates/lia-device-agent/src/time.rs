@@ -94,7 +94,6 @@ pub(crate) fn parse_rfc3339_us(s: &str) -> Result<i64, StoreError> {
         .ok_or_else(|| StoreError::Invalid("timestamp outside microsecond range".into()))
 }
 
-#[cfg(test)]
 pub(crate) fn format_rfc3339_us(us: i64) -> String {
     let secs = us.div_euclid(1_000_000);
     let frac = us.rem_euclid(1_000_000);
@@ -134,7 +133,6 @@ fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
     let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
     era * 146097 + doe - 719468
 }
-#[cfg(test)]
 fn civil_from_days(z: i64) -> (i64, i64, i64) {
     let z = z + 719468;
     let era = z.div_euclid(146097);

@@ -1,3 +1,11 @@
+## 0.2.5 — 15 November 2026
+
+**Baseline:** Blueprint v1.14.8. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Adds SQLite migration 008 to rebuild legacy lease/session tables without floating-point `julianday()` CHECK constraints; Rust startup backfills legacy timestamps to exact integer microseconds before applying it.
+- Adds a development filesystem sidecar integrity/time anchor. It advances before protected commits, rejects SQLite-only stale restores and clock rollback, and fails closed on mismatch. Coordinated database-plus-anchor restore and production protected monotonic storage remain open.
+- Extends local evidence through migrations 001–008 and retains SQLITE-02 as Not Run pending extended workload, recovery and integration procedures.
+
 # P4 contract package changelog
 
 ## 0.2.4 — 15 November 2026

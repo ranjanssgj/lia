@@ -1,5 +1,18 @@
-use rusqlite::{Connection, OpenFlags, OptionalExtension, TransactionBehavior, params};
-use std::{path::Path, time::Duration};
+use rusqlite::{
+    Connection, OpenFlags, OptionalExtension, Transaction, TransactionBehavior, params,
+    params_from_iter, types::Value,
+};
+use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    fs::{self, OpenOptions},
+    io::{Read, Write},
+    path::{Path, PathBuf},
+    sync::{
+        Arc,
+        atomic::{AtomicU64, Ordering},
+    },
+    time::Duration,
+};
 
 const MIGRATIONS: &[(i64, &str)] = &[
     (
@@ -31,10 +44,263 @@ const MIGRATIONS: &[(i64, &str)] = &[
         include_str!("../../../docs/p4/sql/sqlite/007-integer-time-and-integrity-anchor.sql"),
     ),
     (
-        7,
-        include_str!("../../../docs/p4/sql/sqlite/007-integer-time-and-integrity-anchor.sql"),
+        8,
+        include_str!("../../../docs/p4/sql/sqlite/008-integer-time-table-rebuild.sql"),
     ),
 ];
+
+fn backfill_integer_times(tx: &Transaction<'_>) -> Result<(), StoreError> {
+    let maps: &[(&str, &[(&str, &str)])] = &[
+        (
+            "local_operation_journal",
+            &[
+                ("received_at", "received_at_us"),
+                ("expires_at", "expires_at_us"),
+                ("updated_at", "updated_at_us"),
+            ],
+        ),
+        (
+            "local_operation_attempt",
+            &[
+                ("started_at", "started_at_us"),
+                ("completed_at", "completed_at_us"),
+            ],
+        ),
+        (
+            "local_session_sequence",
+            &[
+                ("updated_at", "updated_at_us"),
+                ("retain_until", "retain_until_us"),
+            ],
+        ),
+        (
+            "local_consumed_nonce",
+            &[
+                ("consumed_at", "consumed_at_us"),
+                ("expires_at", "expires_at_us"),
+            ],
+        ),
+        (
+            "local_offline_lease",
+            &[
+                ("issued_at", "issued_at_us"),
+                ("not_before", "not_before_us"),
+                ("expires_at", "expires_at_us"),
+                ("received_at", "received_at_us"),
+                ("consumed_at", "consumed_at_us"),
+            ],
+        ),
+        (
+            "local_outbox",
+            &[
+                ("occurred_at", "occurred_at_us"),
+                ("expires_at", "expires_at_us"),
+            ],
+        ),
+        (
+            "local_operation_evidence",
+            &[("observed_at", "observed_at_us")],
+        ),
+    ];
+    for (table, pairs) in maps {
+        let select = format!(
+            "SELECT rowid, {} FROM {table}",
+            pairs
+                .iter()
+                .map(|(old, _)| *old)
+                .collect::<Vec<_>>()
+                .join(",")
+        );
+        let mut stmt = tx.prepare(&select)?;
+        let mut rows = stmt.query([])?;
+        let mut batch = Vec::new();
+        while let Some(row) = rows.next()? {
+            let rowid: i64 = row.get(0)?;
+            let mut ints = Vec::with_capacity(pairs.len());
+            for (idx, (old, _)) in pairs.iter().enumerate() {
+                let value: Option<String> = row.get(idx + 1)?;
+                let converted = value
+                    .as_deref()
+                    .map(crate::time::parse_rfc3339_us)
+                    .transpose()
+                    .map_err(|e| {
+                        StoreError::Invalid(format!("cannot backfill {table}.{old}: {e}"))
+                    })?;
+                ints.push(converted.map_or(Value::Null, Value::Integer));
+            }
+            batch.push((rowid, ints));
+        }
+        drop(rows);
+        drop(stmt);
+        let set = pairs
+            .iter()
+            .enumerate()
+            .map(|(i, (_, new))| format!("{new}=COALESCE({new},?{})", i + 1))
+            .collect::<Vec<_>>()
+            .join(",");
+        let update = format!("UPDATE {table} SET {set} WHERE rowid=?{}", pairs.len() + 1);
+        for (rowid, mut values) in batch {
+            values.push(Value::Integer(rowid));
+            tx.execute(&update, params_from_iter(values))?;
+        }
+    }
+    Ok(())
+}
+
+/// Supplies the wall-clock sample used for signed-message expiry and the durable rollback
+/// high-water mark. Production uses the host clock; tests inject deterministic samples.
+pub trait TrustedClock: Send + Sync {
+    fn now_us(&self) -> Result<i64, StoreError>;
+}
+
+#[derive(Debug, Default)]
+pub struct SystemTrustedClock;
+impl TrustedClock for SystemTrustedClock {
+    fn now_us(&self) -> Result<i64, StoreError> {
+        let d = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|_| StoreError::Invalid("system clock is before Unix epoch".into()))?;
+        i64::try_from(d.as_micros())
+            .map_err(|_| StoreError::Invalid("system clock overflow".into()))
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Anchor {
+    sequence: i64,
+    time_us: i64,
+}
+static ANCHOR_TEMP_ID: AtomicU64 = AtomicU64::new(0);
+
+#[cfg(test)]
+struct TestClock;
+#[cfg(test)]
+impl TrustedClock for TestClock {
+    fn now_us(&self) -> Result<i64, StoreError> {
+        crate::time::parse_rfc3339_us("2026-11-15T00:03:00Z")
+    }
+}
+#[cfg(test)]
+struct FixedClock(i64);
+#[cfg(test)]
+impl TrustedClock for FixedClock {
+    fn now_us(&self) -> Result<i64, StoreError> {
+        Ok(self.0)
+    }
+}
+
+fn anchor_path(database: &Path) -> PathBuf {
+    let mut name = database.as_os_str().to_os_string();
+    name.push(".lia-anchor");
+    PathBuf::from(name)
+}
+#[cfg(test)]
+fn clear_database_files(path: &Path) {
+    for candidate in [
+        path.to_path_buf(),
+        path.with_extension("sqlite-wal"),
+        path.with_extension("sqlite-shm"),
+        anchor_path(path),
+    ] {
+        let _ = fs::remove_file(candidate);
+    }
+}
+fn read_anchor(path: &Path) -> Result<Option<Anchor>, StoreError> {
+    match fs::symlink_metadata(path) {
+        Ok(meta) => {
+            if meta.file_type().is_symlink() || !meta.is_file() {
+                return Err(StoreError::Invalid(
+                    "external anchor must be a regular non-symlink file".into(),
+                ));
+            }
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                if meta.permissions().mode() & 0o077 != 0 {
+                    return Err(StoreError::Invalid(
+                        "external anchor permissions must exclude group and other access".into(),
+                    ));
+                }
+            }
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(e) => {
+            return Err(StoreError::Invalid(format!(
+                "cannot inspect external anchor: {e}"
+            )));
+        }
+    }
+    let mut file = match OpenOptions::new().read(true).open(path) {
+        Ok(file) => file,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(e) => {
+            return Err(StoreError::Invalid(format!(
+                "cannot read external anchor: {e}"
+            )));
+        }
+    };
+    let mut data = String::new();
+    file.read_to_string(&mut data)
+        .map_err(|e| StoreError::Invalid(format!("invalid external anchor: {e}")))?;
+    let mut parts = data.trim().split(' ');
+    if parts.next() != Some("LIA-ANCHOR-1") {
+        return Err(StoreError::Invalid(
+            "external anchor format/version invalid".into(),
+        ));
+    }
+    let sequence = parts
+        .next()
+        .and_then(|v| v.parse().ok())
+        .ok_or_else(|| StoreError::Invalid("external anchor sequence invalid".into()))?;
+    let time_us = parts
+        .next()
+        .and_then(|v| v.parse().ok())
+        .ok_or_else(|| StoreError::Invalid("external anchor time invalid".into()))?;
+    if parts.next().is_some() || sequence < 0 || time_us < 0 {
+        return Err(StoreError::Invalid("external anchor fields invalid".into()));
+    }
+    Ok(Some(Anchor { sequence, time_us }))
+}
+fn write_anchor(path: &Path, anchor: Anchor) -> Result<(), StoreError> {
+    let parent = path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    fs::create_dir_all(parent)?;
+    let suffix = ANCHOR_TEMP_ID.fetch_add(1, Ordering::Relaxed);
+    let mut temp = path.as_os_str().to_os_string();
+    temp.push(format!(".tmp.{}.{}", std::process::id(), suffix));
+    let temp = PathBuf::from(temp);
+    #[cfg(unix)]
+    let mut file = {
+        use std::os::unix::fs::OpenOptionsExt;
+        OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .mode(0o600)
+            .open(&temp)?
+    };
+    #[cfg(not(unix))]
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&temp)?;
+    let content = format!("LIA-ANCHOR-1 {} {}\n", anchor.sequence, anchor.time_us);
+    if let Err(e) = file
+        .write_all(content.as_bytes())
+        .and_then(|_| file.sync_all())
+    {
+        let _ = fs::remove_file(&temp);
+        return Err(StoreError::Invalid(format!(
+            "cannot persist external anchor: {e}"
+        )));
+    }
+    drop(file);
+    fs::rename(&temp, path)?;
+    #[cfg(unix)]
+    fs::File::open(parent)?.sync_all()?;
+    Ok(())
+}
 
 fn outcome_key(value: ObservedOutcome) -> &'static str {
     match value {
@@ -52,6 +318,11 @@ pub enum StoreError {
 impl From<rusqlite::Error> for StoreError {
     fn from(e: rusqlite::Error) -> Self {
         Self::Sql(e)
+    }
+}
+impl From<std::io::Error> for StoreError {
+    fn from(e: std::io::Error) -> Self {
+        Self::Invalid(e.to_string())
     }
 }
 impl std::fmt::Display for StoreError {
@@ -174,21 +445,45 @@ impl EffectPermit {
 
 pub struct AgentStore {
     conn: Connection,
+    anchor_path: Option<PathBuf>,
+    clock: Arc<dyn TrustedClock>,
 }
 impl AgentStore {
     pub fn open(path: impl AsRef<Path>) -> Result<Self, StoreError> {
+        #[cfg(test)]
+        let clock: Arc<dyn TrustedClock> = Arc::new(TestClock);
+        #[cfg(not(test))]
+        let clock: Arc<dyn TrustedClock> = Arc::new(SystemTrustedClock);
+        Self::open_with_clock(path, clock)
+    }
+    pub fn open_with_clock(
+        path: impl AsRef<Path>,
+        clock: Arc<dyn TrustedClock>,
+    ) -> Result<Self, StoreError> {
+        let path = path.as_ref();
         let conn = Connection::open_with_flags(
             path,
             OpenFlags::SQLITE_OPEN_READ_WRITE
                 | OpenFlags::SQLITE_OPEN_CREATE
                 | OpenFlags::SQLITE_OPEN_NO_MUTEX,
         )?;
-        Self::configure(conn)
+        Self::configure(conn, Some(anchor_path(path)), clock)
     }
     pub fn open_in_memory() -> Result<Self, StoreError> {
-        Self::configure(Connection::open_in_memory()?)
+        #[cfg(test)]
+        let clock: Arc<dyn TrustedClock> = Arc::new(TestClock);
+        #[cfg(not(test))]
+        let clock: Arc<dyn TrustedClock> = Arc::new(SystemTrustedClock);
+        Self::open_in_memory_with_clock(clock)
     }
-    fn configure(mut conn: Connection) -> Result<Self, StoreError> {
+    pub fn open_in_memory_with_clock(clock: Arc<dyn TrustedClock>) -> Result<Self, StoreError> {
+        Self::configure(Connection::open_in_memory()?, None, clock)
+    }
+    fn configure(
+        mut conn: Connection,
+        anchor_path: Option<PathBuf>,
+        clock: Arc<dyn TrustedClock>,
+    ) -> Result<Self, StoreError> {
         conn.busy_timeout(Duration::from_secs(5))?;
         conn.pragma_update(None, "foreign_keys", "ON")?;
         conn.pragma_update(None, "journal_mode", "WAL")?;
@@ -211,6 +506,10 @@ impl AgentStore {
                 )
                 .optional()?;
             if exists.is_none() {
+                if *version == 8 {
+                    tx.execute_batch("DROP TRIGGER IF EXISTS local_session_sequence_monotonic;")?;
+                    backfill_integer_times(&tx)?;
+                }
                 tx.execute_batch(sql)?;
                 tx.execute(
                     "INSERT INTO lia_schema_migrations(version) VALUES (?1)",
@@ -219,7 +518,129 @@ impl AgentStore {
             }
             tx.commit()?;
         }
-        Ok(Self { conn })
+        let mut store = Self {
+            conn,
+            anchor_path,
+            clock,
+        };
+        store.initialize_or_validate_anchor()?;
+        Ok(store)
+    }
+    fn initialize_or_validate_anchor(&mut self) -> Result<(), StoreError> {
+        let Some(anchor_file) = self.anchor_path.as_deref() else {
+            let now = self.clock.now_us()?;
+            self.conn.execute("UPDATE local_trusted_clock_state SET last_trusted_time_us=MAX(last_trusted_time_us,?1) WHERE singleton=1", [now])?;
+            return Ok(());
+        };
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let sequence: i64 = tx.query_row(
+            "SELECT anchor_sequence FROM local_integrity_state WHERE singleton=1",
+            [],
+            |r| r.get(0),
+        )?;
+        let last_time: i64 = tx.query_row(
+            "SELECT last_trusted_time_us FROM local_trusted_clock_state WHERE singleton=1",
+            [],
+            |r| r.get(0),
+        )?;
+        match read_anchor(anchor_file)? {
+            Some(anchor) if anchor.sequence == sequence && anchor.time_us >= last_time => {
+                let now = self.clock.now_us()?;
+                if now < anchor.time_us {
+                    return Err(StoreError::Invalid(
+                        "trusted wall clock rollback detected by external high-water mark".into(),
+                    ));
+                }
+                let high_water = now.max(anchor.time_us);
+                if high_water > anchor.time_us {
+                    write_anchor(
+                        anchor_file,
+                        Anchor {
+                            sequence,
+                            time_us: high_water,
+                        },
+                    )?;
+                }
+                if high_water > last_time {
+                    tx.execute("UPDATE local_trusted_clock_state SET last_trusted_time_us=?1 WHERE singleton=1", [high_water])?;
+                }
+            }
+            Some(_) => {
+                return Err(StoreError::Invalid("SQLite integrity/time state does not match external anchor; fail-closed reconciliation required".into()));
+            }
+            None => {
+                let history: i64 = tx.query_row("SELECT (SELECT COUNT(*) FROM local_consumed_nonce)+(SELECT COUNT(*) FROM local_operation_attempt)+(SELECT COUNT(*) FROM local_session_sequence WHERE has_accepted_sequence=1)", [], |r| r.get(0))?;
+                if sequence != 0 || last_time != 0 || history != 0 {
+                    return Err(StoreError::Invalid("external integrity anchor is missing for a non-empty replay journal; coordinator reconciliation is required".into()));
+                }
+                let now = self.clock.now_us()?;
+                if now < last_time {
+                    return Err(StoreError::Invalid("trusted clock moved backwards".into()));
+                }
+                write_anchor(
+                    anchor_file,
+                    Anchor {
+                        sequence: 0,
+                        time_us: now,
+                    },
+                )?;
+                tx.execute("UPDATE local_trusted_clock_state SET last_trusted_time_us=?1 WHERE singleton=1", [now])?;
+            }
+        }
+        tx.commit()?;
+        Ok(())
+    }
+    fn advance_integrity_anchor(
+        tx: &Transaction<'_>,
+        path: Option<&Path>,
+        now_us: i64,
+    ) -> Result<(), StoreError> {
+        let sequence: i64 = tx.query_row(
+            "SELECT anchor_sequence FROM local_integrity_state WHERE singleton=1",
+            [],
+            |r| r.get(0),
+        )?;
+        let last_time: i64 = tx.query_row(
+            "SELECT last_trusted_time_us FROM local_trusted_clock_state WHERE singleton=1",
+            [],
+            |r| r.get(0),
+        )?;
+        if now_us < last_time {
+            return Err(StoreError::Invalid(
+                "trusted wall clock rollback detected".into(),
+            ));
+        }
+        let anchor = Anchor {
+            sequence,
+            time_us: last_time,
+        };
+        if let Some(path) = path {
+            if read_anchor(path)? != Some(anchor) {
+                return Err(StoreError::Invalid(
+                    "external integrity/time anchor mismatch; refusing protected write".into(),
+                ));
+            }
+            let next = Anchor {
+                sequence: sequence
+                    .checked_add(1)
+                    .ok_or_else(|| StoreError::Invalid("integrity sequence exhausted".into()))?,
+                time_us: now_us,
+            };
+            // Write/flush the external anchor first. If the SQLite commit is interrupted,
+            // startup observes the mismatch and fails closed rather than replaying.
+            write_anchor(path, next)?;
+        }
+        tx.execute(
+            "UPDATE local_integrity_state SET anchor_sequence=anchor_sequence+1 WHERE singleton=1",
+            [],
+        )?;
+        tx.execute(
+            "UPDATE local_trusted_clock_state SET last_trusted_time_us=?1 WHERE singleton=1",
+            [now_us],
+        )?;
+        Ok(())
     }
     pub fn pragma_i64(&self, name: &str) -> Result<i64, StoreError> {
         Ok(self
@@ -251,22 +672,27 @@ impl AgentStore {
         )?;
         self.conn.pragma_update(None, "foreign_keys", "ON")?;
         self.conn.pragma_update(None, "journal_mode", "WAL")?;
+        self.conn.pragma_update(None, "synchronous", "FULL")?;
+        self.initialize_or_validate_anchor()?;
         Ok(())
     }
     /// On startup after an interrupted process, quarantine all committed in-flight effects.
     /// It preserves the possible-effect marker and never returns the operation to accepted.
-    pub fn reconcile_uncertain_operations(&mut self, at: &str) -> Result<usize, StoreError> {
+    pub fn reconcile_uncertain_operations(&mut self, _at: &str) -> Result<usize, StoreError> {
+        let now_us = self.clock.now_us()?;
+        let trusted_at = crate::time::format_rfc3339_us(now_us);
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let count = tx.execute(
-            "UPDATE local_operation_journal SET current_status='reconciliation_required',updated_at=?1 WHERE current_status='running' AND side_effect_may_have_occurred=1",
-            [at],
+            "UPDATE local_operation_journal SET current_status='reconciliation_required',updated_at=?1,updated_at_us=?2 WHERE current_status='running' AND side_effect_may_have_occurred=1",
+            params![trusted_at, now_us],
         )?;
         tx.execute(
             "UPDATE local_operation_attempt SET attempt_status='reconciliation_required' WHERE attempt_status='started' AND operation_id IN (SELECT operation_id FROM local_operation_journal WHERE current_status='reconciliation_required' AND side_effect_may_have_occurred=1)",
             [],
         )?;
+        Self::advance_integrity_anchor(&tx, self.anchor_path.as_deref(), now_us)?;
         tx.commit()?;
         Ok(count)
     }
@@ -274,6 +700,15 @@ impl AgentStore {
     /// matching outbox event in one transaction. Verified states cannot be written without
     /// evidence because migration 006 enforces that invariant as well.
     pub fn finish_attempt(&mut self, c: &AttemptCompletion) -> Result<(), StoreError> {
+        let occurred_us = crate::time::parse_rfc3339_us(&c.occurred_at)?;
+        let outbox_expires_us = crate::time::parse_rfc3339_us(&c.outbox_expires_at)?;
+        let evidence_observed_us = c
+            .evidence
+            .as_ref()
+            .map(|e| crate::time::parse_rfc3339_us(&e.observed_at))
+            .transpose()?;
+        let trusted_now_us = self.clock.now_us()?;
+        let trusted_now = crate::time::format_rfc3339_us(trusted_now_us);
         match (c.outcome, c.evidence.as_ref()) {
             (ObservedOutcome::VerifiedSuccess, Some(e)) if e.outcome == c.outcome => {}
             (ObservedOutcome::VerifiedFailure, Some(e))
@@ -324,8 +759,8 @@ impl AgentStore {
                 ));
             }
             tx.execute(
-                "INSERT INTO local_operation_evidence(evidence_id,operation_id,attempt_id,evidence_kind,observed_outcome,evidence_sha256,evidence_reference,sensitivity,observed_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)",
-                params![e.evidence_id,c.operation_id,c.attempt_id,e.evidence_kind,outcome_key(e.outcome),e.sha256.as_slice(),e.reference,e.sensitivity,e.observed_at],
+                "INSERT INTO local_operation_evidence(evidence_id,operation_id,attempt_id,evidence_kind,observed_outcome,evidence_sha256,evidence_reference,sensitivity,observed_at,observed_at_us) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)",
+                params![e.evidence_id,c.operation_id,c.attempt_id,e.evidence_kind,outcome_key(e.outcome),e.sha256.as_slice(),e.reference,e.sensitivity,e.observed_at,evidence_observed_us],
             )?;
         }
         let (attempt_status, operation_status) = match c.outcome {
@@ -334,12 +769,12 @@ impl AgentStore {
             ObservedOutcome::Unknown => ("outcome_unknown", "unknown_outcome"),
         };
         tx.execute(
-            "UPDATE local_operation_attempt SET attempt_status=?1,completed_at=?2,failure_code=?3 WHERE attempt_id=?4 AND operation_id=?5",
-            params![attempt_status,c.occurred_at,c.failure_code,c.attempt_id,c.operation_id],
+            "UPDATE local_operation_attempt SET attempt_status=?1,completed_at=?2,completed_at_us=?3,failure_code=?4 WHERE attempt_id=?5 AND operation_id=?6",
+            params![attempt_status,c.occurred_at,occurred_us,c.failure_code,c.attempt_id,c.operation_id],
         )?;
         tx.execute(
-            "UPDATE local_operation_journal SET current_status=?1,updated_at=?2 WHERE operation_id=?3 AND side_effect_may_have_occurred=1",
-            params![operation_status,c.occurred_at,c.operation_id],
+            "UPDATE local_operation_journal SET current_status=?1,updated_at=?2,updated_at_us=?3 WHERE operation_id=?4 AND side_effect_may_have_occurred=1",
+            params![operation_status,trusted_now,trusted_now_us,c.operation_id],
         )?;
         let sequence: i64 = tx.query_row(
             "SELECT COALESCE(MAX(aggregate_sequence),0)+1 FROM local_outbox WHERE account_id=?1 AND aggregate_type='operation' AND aggregate_id=?2",
@@ -358,9 +793,10 @@ impl AgentStore {
         let payload_digest = crate::signatures::sha256(payload_json.as_bytes());
         let sensitivity = c.evidence.as_ref().map_or(1, |e| e.sensitivity);
         tx.execute(
-            "INSERT INTO local_outbox(event_id,account_id,producer_id,source_event_id,event_type,schema_version,aggregate_type,aggregate_id,aggregate_sequence,correlation_id,occurred_at,payload_json,payload_reference,payload_digest_sha256,sensitivity,expires_at,delivery_state) VALUES (?1,?2,'device-agent',?1,'lia.device.operation.outcome.v1','1','operation',?3,?4,?5,?6,?7,NULL,?8,?9,?10,'pending')",
-            params![c.event_id,account_id,c.operation_id,sequence,c.correlation_id,c.occurred_at,payload_json,payload_digest.as_slice(),sensitivity,c.outbox_expires_at],
+            "INSERT INTO local_outbox(event_id,account_id,producer_id,source_event_id,event_type,schema_version,aggregate_type,aggregate_id,aggregate_sequence,correlation_id,occurred_at,payload_json,payload_reference,payload_digest_sha256,sensitivity,expires_at,delivery_state,occurred_at_us,expires_at_us) VALUES (?1,?2,'device-agent',?1,'lia.device.operation.outcome.v1','1','operation',?3,?4,?5,?6,?7,NULL,?8,?9,?10,'pending',?11,?12)",
+            params![c.event_id,account_id,c.operation_id,sequence,c.correlation_id,c.occurred_at,payload_json,payload_digest.as_slice(),sensitivity,c.outbox_expires_at,occurred_us,outbox_expires_us],
         )?;
+        Self::advance_integrity_anchor(&tx, self.anchor_path.as_deref(), trusted_now_us)?;
         tx.commit()?;
         Ok(())
     }
@@ -417,14 +853,15 @@ impl AgentStore {
         attempt_id: &str,
         attempt_number: i64,
         worker_generation: i64,
-        at: &str,
+        _at: &str,
     ) -> Result<EffectPermit, StoreError> {
         if command.session_sequence < 0 {
             return Err(StoreError::Invalid("negative command sequence".into()));
         }
         let nonce_expiry_us = crate::time::parse_rfc3339_us(&command.nonce_expires_at)?;
         let command_expiry_us = crate::time::parse_rfc3339_us(&command.expires_at)?;
-        let now_us = crate::time::parse_rfc3339_us(at)?;
+        let now_us = self.clock.now_us()?;
+        let trusted_at = crate::time::format_rfc3339_us(now_us);
         let retention_covers_expiry = i64::from(nonce_expiry_us >= command_expiry_us);
         if retention_covers_expiry != 1 {
             return Err(StoreError::Invalid(
@@ -443,23 +880,24 @@ impl AgentStore {
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let n=tx.execute("INSERT INTO local_consumed_nonce(account_id,message_type,nonce,reference_id,consumed_at,expires_at,consumed_at_us,expires_at_us) VALUES (?1,'command',?2,?3,?4,?5,?6,?7)",params![op.account_id,command.nonce,command.command_id,at,command.nonce_expires_at,now_us,nonce_expiry_us])?;
+        let n=tx.execute("INSERT INTO local_consumed_nonce(account_id,message_type,nonce,reference_id,consumed_at,expires_at,consumed_at_us,expires_at_us) VALUES (?1,'command',?2,?3,?4,?5,?6,?7)",params![op.account_id,command.nonce,command.command_id,trusted_at,command.nonce_expires_at,now_us,nonce_expiry_us])?;
         if n != 1 {
             return Err(StoreError::Invalid("nonce was not recorded".into()));
         }
-        let seq=tx.execute("UPDATE local_session_sequence SET last_session_sequence=?1,has_accepted_sequence=1,updated_at=?2,updated_at_us=?3 WHERE session_id=?4 AND ((has_accepted_sequence=0 AND ?1=0) OR (has_accepted_sequence=1 AND ?1>last_session_sequence))",params![command.session_sequence,at,now_us,command.session_id])?;
+        let seq=tx.execute("UPDATE local_session_sequence SET last_session_sequence=?1,has_accepted_sequence=1,updated_at=?2,updated_at_us=?3 WHERE session_id=?4 AND ((has_accepted_sequence=0 AND ?1=0) OR (has_accepted_sequence=1 AND ?1>last_session_sequence))",params![command.session_sequence,trusted_at,now_us,command.session_id])?;
         if seq != 1 {
             return Err(StoreError::Invalid(
                 "unknown session or non-increasing command sequence".into(),
             ));
         }
-        let changed=tx.execute("UPDATE local_operation_journal SET current_status='running',side_effect_may_have_occurred=1,updated_at=?1,updated_at_us=?5 WHERE operation_id=?2 AND account_id=?3 AND target_device_id=?4 AND current_status='accepted' AND expires_at_us>?5",params![at,op.operation_id,op.account_id,op.target_device_id,now_us])?;
+        let changed=tx.execute("UPDATE local_operation_journal SET current_status='running',side_effect_may_have_occurred=1,updated_at=?1,updated_at_us=?5 WHERE operation_id=?2 AND account_id=?3 AND target_device_id=?4 AND current_status='accepted' AND expires_at_us>?5",params![trusted_at,op.operation_id,op.account_id,op.target_device_id,now_us])?;
         if changed != 1 {
             return Err(StoreError::Invalid(
                 "operation is absent, expired, or not accepted".into(),
             ));
         }
-        tx.execute("INSERT INTO local_operation_attempt(attempt_id,command_id,operation_id,attempt_number,worker_lease_generation,attempt_status,started_at,started_at_us) VALUES (?1,?2,?3,?4,?5,'started',?6,?7)",params![attempt_id,command.command_id,op.operation_id,attempt_number,worker_generation,at,now_us])?;
+        tx.execute("INSERT INTO local_operation_attempt(attempt_id,command_id,operation_id,attempt_number,worker_lease_generation,attempt_status,started_at,started_at_us) VALUES (?1,?2,?3,?4,?5,'started',?6,?7)",params![attempt_id,command.command_id,op.operation_id,attempt_number,worker_generation,trusted_at,now_us])?;
+        Self::advance_integrity_anchor(&tx, self.anchor_path.as_deref(), now_us)?;
         tx.commit()?;
         Ok(EffectPermit {
             operation_id: op.operation_id.clone(),
@@ -471,7 +909,8 @@ impl AgentStore {
         &mut self,
         c: LeaseConsumption<'_>,
     ) -> Result<EffectPermit, StoreError> {
-        let now_us = crate::time::parse_rfc3339_us(c.at)?;
+        let now_us = self.clock.now_us()?;
+        let trusted_at = crate::time::format_rfc3339_us(now_us);
         let nonce_expiry_us = crate::time::parse_rfc3339_us(c.nonce_expires_at)?;
         let tx = self
             .conn
@@ -482,20 +921,21 @@ impl AgentStore {
         if stored_nonce != c.nonce {
             return Err(StoreError::Invalid("lease nonce mismatch".into()));
         }
-        tx.execute("INSERT INTO local_consumed_nonce(account_id,message_type,nonce,reference_id,consumed_at,expires_at,consumed_at_us,expires_at_us) VALUES (?1,'offline_lease',?2,?3,?4,?5,?6,?7)",params![c.account_id,c.nonce,c.lease_id,c.at,c.nonce_expires_at,now_us,nonce_expiry_us])?;
-        let changed=tx.execute("UPDATE local_operation_journal SET current_status='running',side_effect_may_have_occurred=1,updated_at=?1,updated_at_us=?4 WHERE operation_id=?2 AND account_id=?3 AND current_status='accepted' AND expires_at_us>?4",params![c.at,op,c.account_id,now_us])?;
+        tx.execute("INSERT INTO local_consumed_nonce(account_id,message_type,nonce,reference_id,consumed_at,expires_at,consumed_at_us,expires_at_us) VALUES (?1,'offline_lease',?2,?3,?4,?5,?6,?7)",params![c.account_id,c.nonce,c.lease_id,trusted_at,c.nonce_expires_at,now_us,nonce_expiry_us])?;
+        let changed=tx.execute("UPDATE local_operation_journal SET current_status='running',side_effect_may_have_occurred=1,updated_at=?1,updated_at_us=?4 WHERE operation_id=?2 AND account_id=?3 AND current_status='accepted' AND expires_at_us>?4",params![trusted_at,op,c.account_id,now_us])?;
         if changed != 1 {
             return Err(StoreError::Invalid(
                 "leased operation is absent, expired, or not accepted".into(),
             ));
         }
-        tx.execute("INSERT INTO local_operation_attempt(attempt_id,command_id,operation_id,attempt_number,worker_lease_generation,attempt_status,started_at,started_at_us) VALUES (?1,?2,?3,?4,?5,'started',?6,?7)",params![c.attempt_id,c.lease_id,op,c.attempt_number,c.worker_generation,c.at,now_us])?;
-        let changed=tx.execute("UPDATE local_offline_lease SET lease_state='consumed',consumed_at=?1,consumed_at_us=?4 WHERE lease_id=?2 AND account_id=?3 AND lease_state='stored'",params![c.at,c.lease_id,c.account_id,now_us])?;
+        tx.execute("INSERT INTO local_operation_attempt(attempt_id,command_id,operation_id,attempt_number,worker_lease_generation,attempt_status,started_at,started_at_us) VALUES (?1,?2,?3,?4,?5,'started',?6,?7)",params![c.attempt_id,c.lease_id,op,c.attempt_number,c.worker_generation,trusted_at,now_us])?;
+        let changed=tx.execute("UPDATE local_offline_lease SET lease_state='consumed',consumed_at=?1,consumed_at_us=?4 WHERE lease_id=?2 AND account_id=?3 AND lease_state='stored'",params![trusted_at,c.lease_id,c.account_id,now_us])?;
         if changed != 1 {
             return Err(StoreError::Invalid(
                 "lease consume transition failed".into(),
             ));
         }
+        Self::advance_integrity_anchor(&tx, self.anchor_path.as_deref(), now_us)?;
         tx.commit()?;
         Ok(EffectPermit {
             operation_id: op,
@@ -569,7 +1009,7 @@ mod tests {
     #[test]
     fn migrations_wal_foreign_keys_and_first_zero_once() {
         let mut s = AgentStore::open_in_memory().unwrap();
-        assert_eq!(s.schema_version().unwrap(), 7);
+        assert_eq!(s.schema_version().unwrap(), 8);
         assert_eq!(s.pragma_i64("foreign_keys").unwrap(), 1);
         assert_eq!(
             s.pragma_i64("synchronous").unwrap(),
@@ -606,21 +1046,56 @@ mod tests {
         assert!(s.conn.query_row("SELECT last_session_sequence FROM local_session_sequence WHERE session_id='session'",[],|r|r.get::<_,i64>(0)).unwrap()==0);
     }
     #[test]
+    fn migration_008_backfills_legacy_microseconds_and_removes_julianday_checks() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        conn.pragma_update(None, "foreign_keys", "ON").unwrap();
+        for (_, sql) in MIGRATIONS.iter().take(7) {
+            conn.execute_batch(sql).unwrap();
+        }
+        conn.execute("INSERT INTO local_session_sequence(session_id,last_session_sequence,updated_at,retain_until,has_accepted_sequence) VALUES ('legacy',0,'2026-11-15T00:00:01.123456Z','2026-11-15T00:10:01.123456Z',0)", []).unwrap();
+        let tx = conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .unwrap();
+        tx.execute_batch("DROP TRIGGER IF EXISTS local_session_sequence_monotonic;")
+            .unwrap();
+        backfill_integer_times(&tx).unwrap();
+        tx.execute_batch(MIGRATIONS[7].1).unwrap();
+        tx.commit().unwrap();
+        let (updated, expiry): (i64,i64) = conn.query_row("SELECT updated_at_us,retain_until_us FROM local_session_sequence WHERE session_id='legacy'", [], |r| Ok((r.get(0)?,r.get(1)?))).unwrap();
+        assert_eq!(
+            updated,
+            crate::time::parse_rfc3339_us("2026-11-15T00:00:01.123456Z").unwrap()
+        );
+        assert_eq!(
+            expiry,
+            crate::time::parse_rfc3339_us("2026-11-15T00:10:01.123456Z").unwrap()
+        );
+        let legacy_time_sql: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE sql LIKE '%julianday%'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            legacy_time_sql, 0,
+            "migrated schema must not retain floating-point time checks or triggers"
+        );
+    }
+    #[test]
     fn file_database_uses_wal_and_applies_entire_migration_chain() {
         let path =
             std::env::temp_dir().join(format!("lia-device-agent-{}.sqlite", std::process::id()));
-        let _ = std::fs::remove_file(&path);
+        clear_database_files(&path);
         let s = AgentStore::open(&path).unwrap();
         let mode: String = s
             .conn
             .query_row("PRAGMA journal_mode", [], |r| r.get(0))
             .unwrap();
         assert_eq!(mode.to_ascii_lowercase(), "wal");
-        assert_eq!(s.schema_version().unwrap(), 7);
+        assert_eq!(s.schema_version().unwrap(), 8);
         drop(s);
-        let _ = std::fs::remove_file(&path);
-        let _ = std::fs::remove_file(path.with_extension("sqlite-wal"));
-        let _ = std::fs::remove_file(path.with_extension("sqlite-shm"));
+        clear_database_files(&path);
     }
     #[test]
     fn concurrent_first_open_serializes_migrations() {
@@ -628,7 +1103,7 @@ mod tests {
             "lia-agent-concurrent-{}.sqlite",
             std::process::id()
         ));
-        let _ = std::fs::remove_file(&path);
+        clear_database_files(&path);
         let barrier = std::sync::Arc::new(std::sync::Barrier::new(3));
         let handles: Vec<_> = (0..2)
             .map(|_| {
@@ -642,11 +1117,9 @@ mod tests {
             .collect();
         barrier.wait();
         for handle in handles {
-            assert_eq!(handle.join().unwrap().unwrap(), 7);
+            assert_eq!(handle.join().unwrap().unwrap(), 8);
         }
-        let _ = std::fs::remove_file(&path);
-        let _ = std::fs::remove_file(path.with_extension("sqlite-wal"));
-        let _ = std::fs::remove_file(path.with_extension("sqlite-shm"));
+        clear_database_files(&path);
     }
     #[test]
     fn backup_restore_preserves_replay_barrier_and_restart_reconciles_effects() {
@@ -655,7 +1128,7 @@ mod tests {
         let backup = base.with_extension("backup.sqlite");
         let restored = base.with_extension("restored.sqlite");
         for path in [&source, &backup, &restored] {
-            let _ = std::fs::remove_file(path);
+            clear_database_files(path);
         }
         {
             let mut store = AgentStore::open(&source).unwrap();
@@ -677,8 +1150,9 @@ mod tests {
         }
         {
             let mut restore_target = AgentStore::open(&restored).unwrap();
+            std::fs::copy(anchor_path(&source), anchor_path(&restored)).unwrap();
             restore_target.restore_from(&backup).unwrap();
-            assert_eq!(restore_target.schema_version().unwrap(), 7);
+            assert_eq!(restore_target.schema_version().unwrap(), 8);
             assert_eq!(
                 restore_target
                     .reconcile_uncertain_operations("2026-11-15T00:01:00Z")
@@ -703,10 +1177,95 @@ mod tests {
             assert_eq!(attempt_status, "reconciliation_required");
         }
         for path in [&source, &backup, &restored] {
-            let _ = std::fs::remove_file(path);
-            let _ = std::fs::remove_file(path.with_extension("sqlite-wal"));
-            let _ = std::fs::remove_file(path.with_extension("sqlite-shm"));
+            clear_database_files(path);
         }
+    }
+
+    #[test]
+    fn stale_database_restore_is_rejected_by_external_anchor() {
+        let path =
+            std::env::temp_dir().join(format!("lia-stale-restore-{}.sqlite", std::process::id()));
+        let backup = path.with_extension("stale-backup.sqlite");
+        clear_database_files(&path);
+        let _ = std::fs::remove_file(&backup);
+        let mut store = AgentStore::open(&path).unwrap();
+        store
+            .open_session("session", "2026-11-15T00:00:00Z", "2099-11-15T00:10:10Z")
+            .unwrap();
+        store.insert_operation(&op("restore-one")).unwrap();
+        store.insert_operation(&op("restore-two")).unwrap();
+        store
+            .consume_command_before_effect(
+                &op("restore-one"),
+                &command("restore-c1", 0),
+                "restore-a1",
+                1,
+                1,
+                "2026-11-15T00:00:02Z",
+            )
+            .unwrap();
+        store.backup_to(&backup).unwrap();
+        store
+            .consume_command_before_effect(
+                &op("restore-two"),
+                &command("restore-c2", 1),
+                "restore-a2",
+                2,
+                1,
+                "2026-11-15T00:00:03Z",
+            )
+            .unwrap();
+        assert!(
+            store.restore_from(&backup).is_err(),
+            "restoring a lower protected-write sequence must fail closed"
+        );
+        assert!(
+            store
+                .consume_command_before_effect(
+                    &op("restore-two"),
+                    &command("restore-replay", 1),
+                    "restore-a3",
+                    3,
+                    1,
+                    "2026-11-15T00:00:03Z"
+                )
+                .is_err()
+        );
+        drop(store);
+        assert!(
+            AgentStore::open(&path).is_err(),
+            "startup must reject the stale DB/anchor pair"
+        );
+        clear_database_files(&path);
+        let _ = std::fs::remove_file(&backup);
+    }
+
+    #[test]
+    fn external_clock_high_water_rejects_rollback() {
+        let path =
+            std::env::temp_dir().join(format!("lia-clock-rollback-{}.sqlite", std::process::id()));
+        clear_database_files(&path);
+        let now = crate::time::parse_rfc3339_us("2026-11-15T00:03:00Z").unwrap();
+        let clock: Arc<dyn TrustedClock> = Arc::new(FixedClock(now));
+        let mut store = AgentStore::open_with_clock(&path, clock).unwrap();
+        store
+            .open_session("session", "2026-11-15T00:00:00Z", "2099-11-15T00:10:10Z")
+            .unwrap();
+        store.insert_operation(&op("clock-op")).unwrap();
+        store
+            .consume_command_before_effect(
+                &op("clock-op"),
+                &command("clock-cmd", 0),
+                "clock-attempt",
+                1,
+                1,
+                "2026-11-15T00:00:02Z",
+            )
+            .unwrap();
+        drop(store);
+        let rolled_back: Arc<dyn TrustedClock> = Arc::new(FixedClock(now - 1));
+        assert!(AgentStore::open_with_clock(&path, rolled_back).is_err());
+        clear_database_files(&path);
     }
     #[test]
     fn increasing_command_consumes_nonce_and_effect_marker_atomically() {
@@ -1026,7 +1585,7 @@ mod tests {
         }
         if let Ok(path) = std::env::var("LIA_KILL_TEST_TX_PATH") {
             let conn = Connection::open(path).unwrap();
-            conn.execute_batch("BEGIN IMMEDIATE; UPDATE local_trusted_clock_state SET last_trusted_time_us=1 WHERE singleton=1;").unwrap();
+            conn.execute_batch("CREATE TABLE kill_test(value INTEGER); INSERT INTO kill_test VALUES(0); BEGIN IMMEDIATE; UPDATE kill_test SET value=1;").unwrap();
             // exit() skips Rust destructors, leaving SQLite to recover the uncommitted WAL txn.
             std::process::exit(0);
         }
@@ -1035,7 +1594,7 @@ mod tests {
         let bin = std::env::current_exe().unwrap();
         let commit_path =
             std::env::temp_dir().join(format!("lia-kill-commit-{}.sqlite", std::process::id()));
-        let _ = std::fs::remove_file(&commit_path);
+        clear_database_files(&commit_path);
         let status = Command::new(&bin)
             .arg("store::tests::process_kill_recovery_windows")
             .arg("--exact")
@@ -1058,7 +1617,7 @@ mod tests {
 
         let txn_path =
             std::env::temp_dir().join(format!("lia-kill-txn-{}.sqlite", std::process::id()));
-        let _ = std::fs::remove_file(&txn_path);
+        clear_database_files(&txn_path);
         drop(AgentStore::open(&txn_path).unwrap());
         let status = Command::new(bin)
             .arg("store::tests::process_kill_recovery_windows")
@@ -1068,28 +1627,22 @@ mod tests {
             .unwrap();
         assert!(status.success());
         let store = AgentStore::open(&txn_path).unwrap();
-        let time: i64 = store
+        let value: i64 = store
             .conn
-            .query_row(
-                "SELECT last_trusted_time_us FROM local_trusted_clock_state WHERE singleton=1",
-                [],
-                |r| r.get(0),
-            )
+            .query_row("SELECT value FROM kill_test", [], |r| r.get(0))
             .unwrap();
         assert_eq!(
-            time, 0,
+            value, 0,
             "uncommitted write must roll back after process termination"
         );
-        let _ = std::fs::remove_file(&txn_path);
-        let _ = std::fs::remove_file(txn_path.with_extension("sqlite-wal"));
-        let _ = std::fs::remove_file(txn_path.with_extension("sqlite-shm"));
+        clear_database_files(&txn_path);
     }
 
     #[test]
     fn wal_readers_contending_writers_busy_and_checkpoint_progress() {
         let path =
             std::env::temp_dir().join(format!("lia-wal-contention-{}.sqlite", std::process::id()));
-        let _ = std::fs::remove_file(&path);
+        clear_database_files(&path);
         let store = AgentStore::open(&path).unwrap();
         let reader = Connection::open(&path).unwrap();
         reader
@@ -1139,8 +1692,6 @@ mod tests {
         drop(writer);
         drop(contender);
         drop(store);
-        let _ = std::fs::remove_file(&path);
-        let _ = std::fs::remove_file(&wal_path);
-        let _ = std::fs::remove_file(path.with_extension("sqlite-shm"));
+        clear_database_files(&path);
     }
 }

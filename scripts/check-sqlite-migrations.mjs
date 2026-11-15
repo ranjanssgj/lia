@@ -13,10 +13,17 @@ try {
     "docs/p4/sql/sqlite/005-sequence-zero-initial-use.sql",
     "docs/p4/sql/sqlite/006-operation-outcomes-and-evidence.sql",
     "docs/p4/sql/sqlite/007-integer-time-and-integrity-anchor.sql",
+    "docs/p4/sql/sqlite/008-integer-time-table-rebuild.sql",
   ]) {
     db.exec(await readFile(migration, "utf8"));
     console.log(`applied: ${migration}`);
   }
+  const [{ remainingJulianday }] = db.exec({
+    sql: "SELECT COUNT(*) AS remainingJulianday FROM sqlite_master WHERE sql LIKE '%julianday%'",
+    returnValue: "resultRows",
+    rowMode: "object",
+  });
+  if (remainingJulianday !== 0) throw new Error(`Legacy floating-point time SQL remains: ${remainingJulianday}`);
   const [{ version }] = db.exec({
     sql: "SELECT sqlite_version() AS version",
     returnValue: "resultRows",
