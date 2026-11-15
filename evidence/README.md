@@ -22,7 +22,7 @@ The contract-hygiene workflow is structural validation only. It does not complet
 
 ## P5 M2 partial implementation checks (15 November 2026)
 
-- [IPC-01 local IPC primitive checks](IPC-01/2026-11-15-m2-spike/README.md) — bounded framing, envelope validation, private Unix socket setup and Linux peer credentials. The full gate remains Not Run.
+- [IPC-01 local IPC primitive checks](IPC-01/2026-11-15-m2-spike/README.md) — bounded framing, envelope/session validation, private Unix socket setup and Linux peer credentials. The full gate remains Not Run.
 
 ## P5 M1 replay follow-up (15 November 2026)
 

@@ -6,13 +6,13 @@
 
 ## Executed
 
-**Source commit:** `09bfea8bd0600eda8121eef3d06dff046536c4b4` (implementation tree used for this run).
+**Source commit:** `2af5ec4cc690204cc0ae83aa7c7abfe4bf43192c` (implementation tree used for this run).
 
-- `cargo test --locked --workspace` — 25 tests passed, 0 failed. Five IPC unit tests cover valid frame round-trip, allowlist enforcement, zero/oversized/truncated frames, invalid UTF-8/JSON, duplicate keys, unknown envelope fields, UUID shape, private directory/socket modes, refusal to replace an existing path, inode-tied cleanup, authenticated accept before message reads, kernel `SO_PEERCRED` UID/PID reads, expected-UID rejection, and deadline expiry validation.
+- `cargo test --locked --workspace` — 28 tests passed, 0 failed. Seven IPC unit tests cover valid frame round-trip, allowlist enforcement, zero/oversized/truncated frames, invalid UTF-8/JSON, duplicate keys, unknown envelope fields, UUID shape, private directory/socket modes, refusal to replace an existing path, inode-tied cleanup, authenticated accept before message reads, kernel `SO_PEERCRED` UID/PID reads, expected-UID rejection, deadline expiry, random session UUID issuance, hello-response validation, first-zero sequencing, strict increase, replay/reordering rejection, and cross-session rejection.
 - `cargo clippy --locked --workspace --all-targets -- -D warnings` — passed.
 - `cargo fmt --all -- --check` — passed.
 
-The spike uses the P4 draft's 4-byte big-endian frame and 262,144-byte cap. Frame parsing rejects unknown envelope keys, duplicate keys and unallowlisted method names. `PrivateSocket` binds only beneath an already 0700 owner-controlled directory and uses 0600 for the socket. Peer credentials come from Linux `SO_PEERCRED`, not JSON claims.
+The spike uses P4 contract revision 0.2.7's 4-byte big-endian frame and 262,144-byte cap. Frame parsing rejects unknown envelope keys, duplicate keys and unallowlisted method names. `PrivateSocket` binds only beneath an already 0700 owner-controlled directory and uses 0600 for the socket. Peer credentials come from Linux `SO_PEERCRED`, not JSON claims.
 
 ## Not executed / known limits
 

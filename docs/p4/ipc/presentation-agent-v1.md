@@ -35,6 +35,8 @@ Each frame uses this envelope:
 {
   "protocol_version": "1",
   "message_id": "uuid",
+  "session_id": "uuid-or-omitted",
+  "session_sequence": "uint64-decimal-string-or-omitted",
   "request_id": "uuid-or-null",
   "correlation_id": "uuid-or-null",
   "kind": "request-or-response-or-event",
@@ -46,6 +48,10 @@ Each frame uses this envelope:
 ~~~
 
 - message_id is unique per frame. request_id correlates a response with its request.
+- A `presentation.hello` request omits `session_id` and `session_sequence`. Its successful response supplies a fresh random UUID `session_id`; the session sequence remains omitted.
+- Every subsequent frame carries that `session_id`. It is scoped to one authenticated connection and discarded on disconnect. A reconnect receives a new ID, so captured frames from the old process generation fail session validation.
+- A `presentation.user_event` request carries `session_sequence` as a canonical unsigned decimal string to avoid JSON number precision loss. It begins at `"0"`; each later accepted user event must be strictly greater than the last accepted value. Equal, lower, noncanonical, or out-of-range values are rejected. Responses and agent events omit this field.
+- The sequence watermark is per live presentation connection and is consumed before user-event dispatch. It is a replay/order control, not peer authentication, a permission grant, or proof that a UI action is allowed.
 - correlation_id links a presentation update to the originating conversation, turn, or operation without including the full content.
 - method is an allowlisted contract operation, not a dynamically resolved function name.
 - deadline_at is checked by the receiver. Expired presentation events are discarded; stale user intents are never replayed as actions.
@@ -66,7 +72,7 @@ Each frame uses this envelope:
 | presentation.health | Bidirectional | Health, frame-budget and asset-load telemetry |
 | presentation.shutdown | Rust → Godot | Graceful renderer shutdown |
 
-A user_event identifies a UI control ID and a typed event (clicked, dismissed, text submitted, interruption requested). It does not contain a free-form tool name or arbitrary command. The Rust agent resolves the control ID against the current UI action registry and then applies authentication, policy, resource and permission checks.
+A user_event identifies a UI control ID and a typed event (clicked, dismissed, text submitted, interruption requested). It does not contain a free-form tool name or arbitrary command. The Rust agent first validates the live session ID and strictly increasing client sequence, then resolves the control ID against the current UI action registry and applies authentication, policy, resource and permission checks. Same-UID `SO_PEERCRED` does not identify a specific renderer; until the agent has a verified renderer-session binding, the IPC layer must not dispatch user events to state-changing handlers.
 
 No method is defined for shell execution, arbitrary process launch, filesystem reads/writes, key injection, global pointer control, browser automation, provider API calls, memory mutation, or permission changes.
 
@@ -85,12 +91,12 @@ The snapshot is derived state. Godot cannot edit canonical personality, emotiona
 
 ## 6. Backpressure, cancellation and lifecycle
 
-- One connection is active for one presentation process generation. A new process generation invalidates the prior IPC session.
+- One connection is active for one presentation process generation. A new process generation gets a new random session ID and invalidates the prior IPC session. The sequence watermark exists only for that live connection; no old user event is replayed after reconnect.
 - State replacement may coalesce older unsent snapshots. User interaction events, shutdown, and operation cancellation signals are not silently coalesced.
 - Every request has a deadline and bounded response. There is no unbounded queue.
 - Renderer restart does not replay old user actions. The Rust agent sends a fresh snapshot after a successful hello/ready exchange.
 - Disconnecting the renderer does not terminate an OS operation or workflow; it only removes presentation. User interruption/stop is delivered separately to the Rust authority.
-- A stale response is ignored by request_id and process generation.
+- A stale response is ignored by request_id and process generation. A stale user event is rejected by session ID or monotonic session sequence before dispatch.
 - The Rust agent continues operating without Godot when safe; presentation failure is a degraded UI state, not loss of device authority.
 
 ## 7. Observability and data minimization
@@ -101,8 +107,8 @@ Every request/response carries message_id and correlation_id. Logs may include m
 
 1. Linux peer credentials reject another UID and an unexpected process; endpoint permissions are verified.
 2. Windows named-pipe ACL and client identity reject another user/session.
-3. Oversized, truncated, malformed, invalid-version and unknown-method frames fail closed.
-4. A renderer restart establishes a new generation and receives a state snapshot; stale frames are ignored.
+3. Oversized, truncated, malformed, invalid-version and unknown-method frames fail closed; duplicate, backward, noncanonical and cross-session user-event sequences are rejected before dispatch.
+4. A renderer restart establishes a new random session UUID and receives a state snapshot; stale frames and replayed/out-of-order user events are ignored.
 5. A malicious/modified Godot client cannot invoke an OS capability or forge operation evidence.
 6. Backpressure remains bounded; state coalescing does not drop user stop/interruption signals.
 7. Rust agent and Godot can independently restart without stuck sockets, orphaned processes or stale action replay.

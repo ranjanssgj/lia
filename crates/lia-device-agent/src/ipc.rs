@@ -6,6 +6,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{Map, Number, Value};
 use std::collections::BTreeSet;
 use std::fmt;
+use std::fs::File;
 use std::io::{self, Read, Write};
 use std::os::fd::AsRawFd;
 use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
@@ -30,6 +31,11 @@ const ALLOWED_METHODS: &[&str] = &[
 pub struct Envelope {
     pub protocol_version: String,
     pub message_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    /// Canonical unsigned decimal string. Only user-event requests carry this field.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_sequence: Option<String>,
     pub request_id: Option<String>,
     pub correlation_id: Option<String>,
     pub kind: String,
@@ -55,6 +61,38 @@ impl Envelope {
         }
         if !ALLOWED_METHODS.contains(&self.method.as_str()) {
             return invalid("IPC method is not allowlisted");
+        }
+        match (self.method.as_str(), self.kind.as_str()) {
+            ("presentation.hello", "request") => {
+                if self.session_id.is_some() || self.session_sequence.is_some() {
+                    return invalid("hello request must not carry a session or sequence");
+                }
+            }
+            ("presentation.hello", "response") => {
+                if self.session_id.as_deref().is_none_or(|id| !is_uuid(id))
+                    || self.session_sequence.is_some()
+                {
+                    return invalid("hello response must issue a session UUID without a sequence");
+                }
+            }
+            ("presentation.hello", _) => return invalid("hello must be a request or response"),
+            ("presentation.user_event", "request") => {
+                if self.session_id.as_deref().is_none_or(|id| !is_uuid(id))
+                    || self
+                        .session_sequence
+                        .as_deref()
+                        .is_none_or(|sequence| parse_sequence(sequence).is_err())
+                {
+                    return invalid("user-event request requires a session UUID and sequence");
+                }
+            }
+            _ => {
+                if self.session_id.as_deref().is_none_or(|id| !is_uuid(id))
+                    || self.session_sequence.is_some()
+                {
+                    return invalid("non-hello messages require a session UUID and no sequence");
+                }
+            }
         }
         if !self.body.is_object() {
             return invalid("IPC body must be a JSON object");
@@ -98,6 +136,97 @@ fn is_uuid(value: &str) -> bool {
             8 | 13 | 18 | 23 => byte == b'-',
             _ => byte.is_ascii_hexdigit(),
         })
+}
+
+fn parse_sequence(value: &str) -> io::Result<u64> {
+    if value.is_empty()
+        || (value.len() > 1 && value.starts_with('0'))
+        || !value.bytes().all(|byte| byte.is_ascii_digit())
+    {
+        return invalid("session sequence must be a canonical unsigned decimal string");
+    }
+    value
+        .parse::<u64>()
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
+}
+
+/// Per-connection replay state. A new instance gets a fresh OS-random session ID;
+/// disconnecting discards its watermark, so old frames cannot cross reconnects.
+#[derive(Clone, Debug)]
+pub struct PresentationSession {
+    session_id: String,
+    last_user_sequence: Option<u64>,
+}
+
+impl PresentationSession {
+    pub fn new() -> io::Result<Self> {
+        let mut bytes = [0_u8; 16];
+        File::open("/dev/urandom")?.read_exact(&mut bytes)?;
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        let hex = bytes
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<Vec<_>>()
+            .join("");
+        let id = format!(
+            "{}-{}-{}-{}-{}",
+            &hex[0..8],
+            &hex[8..12],
+            &hex[12..16],
+            &hex[16..20],
+            &hex[20..32]
+        );
+        Ok(Self {
+            session_id: id,
+            last_user_sequence: None,
+        })
+    }
+
+    #[cfg(test)]
+    fn with_id(session_id: String) -> io::Result<Self> {
+        if !is_uuid(&session_id) {
+            return invalid("session ID must be a UUID");
+        }
+        Ok(Self {
+            session_id,
+            last_user_sequence: None,
+        })
+    }
+
+    pub fn session_id(&self) -> &str {
+        &self.session_id
+    }
+
+    /// Validate and consume a user-event sequence before any handler can dispatch it.
+    /// This provides replay ordering only; it does not authenticate renderer authority.
+    pub fn accept_user_event(&mut self, envelope: &Envelope) -> io::Result<()> {
+        envelope.validate()?;
+        if envelope.method != "presentation.user_event" || envelope.kind != "request" {
+            return invalid("only user-event requests use the client sequence");
+        }
+        if envelope.session_id.as_deref() != Some(self.session_id.as_str()) {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "IPC session ID does not match this connection",
+            ));
+        }
+        let sequence = parse_sequence(
+            envelope
+                .session_sequence
+                .as_deref()
+                .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "missing sequence"))?,
+        )?;
+        match self.last_user_sequence {
+            None if sequence != 0 => return invalid("first user-event sequence must be zero"),
+            Some(last) if sequence <= last => {
+                return invalid("user-event sequence did not strictly increase");
+            }
+            _ => {}
+        }
+        self.last_user_sequence = Some(sequence);
+        Ok(())
+    }
 }
 
 fn invalid<T>(message: impl Into<String>) -> io::Result<T> {
@@ -386,6 +515,8 @@ mod tests {
         Envelope {
             protocol_version: "1".into(),
             message_id: "00000000-0000-4000-8000-000000000001".into(),
+            session_id: None,
+            session_sequence: None,
             request_id: Some("00000000-0000-4000-8000-000000000002".into()),
             correlation_id: None,
             kind: "request".into(),
@@ -394,6 +525,14 @@ mod tests {
             deadline_at: None,
             body: serde_json::json!({"renderer_build":"test"}),
         }
+    }
+
+    fn user_event(session_id: &str, sequence: &str) -> Envelope {
+        let mut event = envelope();
+        event.method = "presentation.user_event".into();
+        event.session_id = Some(session_id.into());
+        event.session_sequence = Some(sequence.into());
+        event
     }
 
     fn frame(payload: &[u8]) -> Vec<u8> {
@@ -430,6 +569,60 @@ mod tests {
                 .unwrap_err()
                 .kind(),
             io::ErrorKind::TimedOut
+        );
+    }
+
+    #[test]
+    fn presentation_session_rejects_replays_reordering_and_cross_session_frames() {
+        let id = "00000000-0000-4000-8000-000000000003";
+        let mut session = PresentationSession::with_id(id.into()).unwrap();
+        session.accept_user_event(&user_event(id, "0")).unwrap();
+        assert_eq!(
+            session
+                .accept_user_event(&user_event(id, "0"))
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::InvalidData
+        );
+        session.accept_user_event(&user_event(id, "2")).unwrap();
+        assert_eq!(
+            session
+                .accept_user_event(&user_event(id, "1"))
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::InvalidData
+        );
+        assert_eq!(
+            session
+                .accept_user_event(&user_event("00000000-0000-4000-8000-000000000004", "3"))
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::PermissionDenied
+        );
+        assert_eq!(
+            session
+                .accept_user_event(&user_event(id, "03"))
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::InvalidData
+        );
+    }
+
+    #[test]
+    fn fresh_sessions_use_random_v4_uuids() {
+        let first = PresentationSession::new().unwrap();
+        let second = PresentationSession::new().unwrap();
+        assert!(is_uuid(first.session_id()));
+        assert_ne!(first.session_id(), second.session_id());
+        assert_eq!(first.session_id().as_bytes()[14], b'4');
+        let mut hello_response = envelope();
+        hello_response.kind = "response".into();
+        hello_response.session_id = Some(first.session_id().into());
+        hello_response.validate().unwrap();
+        hello_response.session_id = None;
+        assert_eq!(
+            hello_response.validate().unwrap_err().kind(),
+            io::ErrorKind::InvalidData
         );
     }
 

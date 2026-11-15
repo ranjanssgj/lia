@@ -1,3 +1,11 @@
+## 0.2.7 — 15 November 2026
+
+**Baseline:** Blueprint v1.14.11. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Resolves the draft IPC replay-field mismatch: a successful hello issues a random connection-scoped session UUID; user-event requests carry canonical decimal session sequences beginning at zero and increasing strictly.
+- Defines disconnect/reconnect to discard the old session and sequence watermark. The sequence is replay control only and does not authenticate the renderer or authorize user events.
+- Adds Rust session UUID issuance and user-event sequence validation primitives; service handshake, same-UID renderer binding, dispatch policy, restart/backpressure integration and IPC-01 remain Not Run.
+
 ## 0.2.6 — 15 November 2026
 
 **Baseline:** Blueprint v1.14.10. The package remains Draft; no implementation conformance gate is marked Passed.
