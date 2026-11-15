@@ -44,13 +44,11 @@ impl Envelope {
         if self.protocol_version != "1" {
             return invalid("unsupported IPC protocol version");
         }
-        for (name, value) in [
-            ("message_id", self.message_id.as_str()),
-            ("kind", self.kind.as_str()),
-        ] {
-            if value.is_empty() || value.len() > 128 {
-                return invalid(format!("invalid {name}"));
-            }
+        if !is_uuid(&self.message_id) {
+            return invalid("message_id must be a UUID");
+        }
+        if self.kind.is_empty() || self.kind.len() > 128 {
+            return invalid("invalid kind");
         }
         if !matches!(self.kind.as_str(), "request" | "response" | "event") {
             return invalid("invalid IPC message kind");
@@ -71,7 +69,7 @@ impl Envelope {
             .into_iter()
             .flatten()
         {
-            if value.is_empty() || value.len() > 128 {
+            if !is_uuid(value) {
                 return invalid("invalid request/correlation identifier");
             }
         }
@@ -92,6 +90,14 @@ impl Envelope {
         }
         Ok(())
     }
+}
+
+fn is_uuid(value: &str) -> bool {
+    value.len() == 36
+        && value.bytes().enumerate().all(|(index, byte)| match index {
+            8 | 13 | 18 | 23 => byte == b'-',
+            _ => byte.is_ascii_hexdigit(),
+        })
 }
 
 fn invalid<T>(message: impl Into<String>) -> io::Result<T> {
@@ -207,7 +213,7 @@ impl PrivateSocket {
         if metadata.file_type().is_symlink()
             || !metadata.is_dir()
             || metadata.uid() != unsafe { libc::geteuid() }
-            || metadata.permissions().mode() & 0o077 != 0
+            || metadata.permissions().mode() & 0o777 != 0o700
         {
             return Err(io::Error::new(
                 io::ErrorKind::PermissionDenied,
@@ -379,8 +385,8 @@ mod tests {
     fn envelope() -> Envelope {
         Envelope {
             protocol_version: "1".into(),
-            message_id: "message-1".into(),
-            request_id: Some("request-1".into()),
+            message_id: "00000000-0000-4000-8000-000000000001".into(),
+            request_id: Some("00000000-0000-4000-8000-000000000002".into()),
             correlation_id: None,
             kind: "request".into(),
             method: "presentation.hello".into(),
@@ -406,6 +412,14 @@ mod tests {
         forbidden.method = "system.execute".into();
         assert_eq!(
             write_frame(&mut Vec::new(), &forbidden).unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+        let mut invalid_id = envelope();
+        invalid_id.message_id = "not-a-uuid".into();
+        assert_eq!(
+            write_frame(&mut Vec::new(), &invalid_id)
+                .unwrap_err()
+                .kind(),
             io::ErrorKind::InvalidData
         );
         let mut expired = envelope();
@@ -457,14 +471,14 @@ mod tests {
 
     #[test]
     fn rejects_duplicate_keys_and_unknown_envelope_fields() {
-        let duplicate = br#"{"protocol_version":"1","message_id":"a","message_id":"b"}"#;
+        let duplicate = br#"{"protocol_version":"1","message_id":"00000000-0000-4000-8000-000000000001","message_id":"00000000-0000-4000-8000-000000000001"}"#;
         assert_eq!(
             read_frame(&mut Cursor::new(frame(duplicate)))
                 .unwrap_err()
                 .kind(),
             io::ErrorKind::InvalidData
         );
-        let extra = br#"{"protocol_version":"1","message_id":"a","kind":"event","method":"presentation.hello","sent_at":"2026-11-15T00:00:00Z","body":{},"surprise":true}"#;
+        let extra = br#"{"protocol_version":"1","message_id":"00000000-0000-4000-8000-000000000001","kind":"event","method":"presentation.hello","sent_at":"2026-11-15T00:00:00Z","body":{},"surprise":true}"#;
         assert_eq!(
             read_frame(&mut Cursor::new(frame(extra)))
                 .unwrap_err()
