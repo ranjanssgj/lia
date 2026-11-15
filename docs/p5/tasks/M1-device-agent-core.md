@@ -48,4 +48,4 @@ Sources checked 15 November 2026: [rusqlite 0.41.1](https://docs.rs/crate/rusqli
 
 **Implementation status:** migration 007 creates database-side integer high-water state and retention guards. Migration 008 rebuilds the affected tables after Rust startup backfills exact integer microseconds from legacy RFC 3339 values. The crate prototype uses a mode-restricted filesystem sidecar to anchor protected SQLite commits and UTC-microsecond high-water time; it rejects SQLite-only stale restore and clock rollback. Restoring both files together remains undetected, and the filesystem sidecar is not a production protected monotonic store. These remain SQLITE-02 limitations; no gate is Passed.
 
-The M2 threat-to-test map is drafted at `docs/p5/tasks/M2-threat-model-test-map.md`; no IPC implementation or IPC-01 evidence exists yet.
+The M2 threat-to-test map is at `docs/p5/tasks/M2-threat-model-test-map.md`; its initial Linux IPC spike is in PR #6. IPC-01 remains Not Run.

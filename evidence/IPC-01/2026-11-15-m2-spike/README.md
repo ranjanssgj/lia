@@ -6,7 +6,7 @@
 
 ## Executed
 
-**Source commit:** `0dd7fdf24a0cc4aaaa936e8459014cfcbacb0b93` (implementation tree used for this run).
+**Source commit:** `09bfea8bd0600eda8121eef3d06dff046536c4b4` (implementation tree used for this run).
 
 - `cargo test --locked --workspace` — 25 tests passed, 0 failed. Five IPC unit tests cover valid frame round-trip, allowlist enforcement, zero/oversized/truncated frames, invalid UTF-8/JSON, duplicate keys, unknown envelope fields, UUID shape, private directory/socket modes, refusal to replace an existing path, inode-tied cleanup, authenticated accept before message reads, kernel `SO_PEERCRED` UID/PID reads, expected-UID rejection, and deadline expiry validation.
 - `cargo clippy --locked --workspace --all-targets -- -D warnings` — passed.

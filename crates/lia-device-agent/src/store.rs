@@ -1407,6 +1407,86 @@ mod tests {
         assert_eq!((sequence, accepted), (0, 0));
     }
     #[test]
+    fn command_rejects_expiry_and_out_of_order_replay() {
+        let mut s = AgentStore::open_in_memory().unwrap();
+        s.open_session("session", "2026-11-15T00:00:00Z", "2099-11-15T00:10:10Z")
+            .unwrap();
+        for id in ["expired", "first", "later", "out-of-order"] {
+            s.insert_operation(&op(id)).unwrap();
+        }
+
+        let mut expired = command("expired-command", 0);
+        expired.expires_at = "2026-11-15T00:00:02Z".into();
+        expired.nonce_expires_at = "2026-11-15T00:10:00Z".into();
+        assert!(
+            s.consume_command_before_effect(
+                &op("expired"),
+                &expired,
+                "expired-attempt",
+                1,
+                1,
+                "ignored-by-trusted-clock",
+            )
+            .is_err()
+        );
+
+        s.consume_command_before_effect(
+            &op("first"),
+            &command("first-command", 0),
+            "first-attempt",
+            1,
+            1,
+            "ignored-by-trusted-clock",
+        )
+        .unwrap();
+        s.consume_command_before_effect(
+            &op("later"),
+            &command("later-command", 2),
+            "later-attempt",
+            1,
+            1,
+            "ignored-by-trusted-clock",
+        )
+        .unwrap();
+        assert!(
+            s.consume_command_before_effect(
+                &op("out-of-order"),
+                &command("replayed-command", 1),
+                "replay-attempt",
+                1,
+                1,
+                "ignored-by-trusted-clock",
+            )
+            .is_err()
+        );
+
+        let sequence: i64 = s
+            .conn
+            .query_row(
+                "SELECT last_session_sequence FROM local_session_sequence WHERE session_id='session'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(sequence, 2);
+        let status: String = s
+            .conn
+            .query_row(
+                "SELECT current_status FROM local_operation_journal WHERE operation_id='out-of-order'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(status, "accepted");
+        let consumed_nonces: i64 = s
+            .conn
+            .query_row("SELECT count(*) FROM local_consumed_nonce", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(consumed_nonces, 2);
+    }
+    #[test]
     fn lease_claim_binding_and_consume_before_effect() {
         let mut s = AgentStore::open_in_memory().unwrap();
         s.insert_operation(&op("leased")).unwrap();

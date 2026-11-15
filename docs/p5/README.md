@@ -2,7 +2,7 @@
 
 **Status:** M0 readiness complete; M1 core merged with follow-up evidence open; M2 IPC spike in progress.
 **Scope:** The approved first slice in Blueprint §6, on one Linux host, one supported display and one exact Hyprland profile.
-**Authority:** Blueprint v1.14.9 and P4 contract package 0.2.5 (Draft) in this branch.
+**Authority:** Blueprint v1.14.10 and P4 contract package 0.2.6 (Draft) in this branch.
 
 P5 proves one complete interaction path across presentation, conversation, fresh desktop context, current authorization, one same-display window move, truthful outcome reporting and one inspectable/deletable low-sensitivity memory. It does not establish general Linux, Windows, mobile, Home Assistant, cloud, or production-provider support.
 
@@ -14,10 +14,10 @@ The P4 artifacts are drafts. Coding may begin only against a named contract revi
 
 | Milestone | Outcome and likely paths | Acceptance conditions | Required gates / evidence | Depends on |
 |---|---|---|---|---|
-| **M0 — Agent-ready baseline** | `AGENTS.md`, root `README.md`, `.gitignore`, `CODEOWNERS`, `docs/p5/README.md`, `toolchain/`, `.github/workflows/`, `scripts/`, `testdata/`, `evidence/`; repair `docs/p4/openapi/lia-v1.yaml` | Enables agents to build from a clean checkout and know what is safe to change; no AC is claimed satisfied | CI applies Protobuf 36.2 compile, OpenAPI 3.1 bundle/parse, PostgreSQL 16.16 migration chain, SQLite 3.54.1 migration chain, JSON Schema/fixture validation and strict TypeScript check. Record tool versions, hashes and reports. Keep conformance gate statuses Not Run until their full implementation procedures are fulfilled | Owner chooses exact Hyprland baseline before M3; reverify toolchain sources on intentional upgrades |
+| **M0 — Agent-ready baseline** | `AGENTS.md`, root `README.md`, `.gitignore`, `CODEOWNERS`, `docs/p5/README.md`, `toolchain/`, `.github/workflows/`, `scripts/`, `testdata/`, `evidence/`; repair `docs/p4/openapi/lia-v1.yaml` | Enables agents to build from a clean checkout and know what is safe to change; no AC is claimed satisfied | CI applies Protobuf 36.2 compile, OpenAPI 3.1 bundle/parse, PostgreSQL 16.16 migration chain, SQLite 3.54.1 migration chain, JSON Schema/fixture validation and strict TypeScript check. Record tool versions, hashes and reports. Keep conformance gate statuses Not Run until their full implementation procedures are fulfilled | Selected Hyprland v0.57.2 stable for M3; migrate to Lua configuration and verify package/build provenance before the adapter proof |
 | **M1 — Device-agent core** | `crates/` workspace, SQLite migrations 001–008, outcome/evidence/outbox model, lease/nonce/session-sequence ledgers, restore/reconciliation boundaries, security and digest vectors in `testdata/` | Foundation for AC-005, AC-006, AC-008, AC-009, AC-011; no end-user claim until later milestones integrate it | SQLITE-02 plus local SECURITY-01 vector subset; clean DB, upgrade, crash/restore, replay and consume-before-effect evidence | M0; Rust 1.99.1, rusqlite 0.41.1 with bundled SQLite 3.54.0, exact crypto pins and checked-in vector format |
 | **M2 — Presentation IPC spike** | Threat-model map drafted; M2 spike implements framed JSON validation, private Unix socket endpoint and Linux peer credentials; service lifecycle/backpressure remain | Supports truthful lifecycle/capability state and user control in AC-001 and AC-010 | IPC-01 Linux subset: peer UID/PID, malformed/oversized/truncated frames, disconnect/restart, stale messages, backpressure and renderer restart evidence | M0; Ubuntu 24.04 CI is the development baseline only (not desktop support); see [M2 threat map](tasks/M2-threat-model-test-map.md) |
-| **M3 — Desktop context and Hyprland adapter** | Active-window/geometry observation, capability manifest, same-display move, read-back verification and ADP harness | AC-003–AC-006, AC-008 and AC-011 | ADAPTER-01 shared cases applicable to this profile; HYPR-01, HYPR-02; exact compositor/OS, fixture hashes, operation/attempt evidence, permission-denial and stale-resource results | M0, M1, M2; owner selects exact Hyprland version; specify Hyprland request/event use, work-area bounds and display checks |
+| **M3 — Desktop context and Hyprland adapter** | Active-window/geometry observation, capability manifest, same-display move, read-back verification and ADP harness | AC-003–AC-006, AC-008 and AC-011 | ADAPTER-01 shared cases applicable to this profile; HYPR-01, HYPR-02; Hyprland v0.57.2 build/package provenance, Lua config, fixture hashes, operation/attempt evidence, permission-denial and stale-resource results | M0, M1, M2; exact P5 reference selected as Hyprland v0.57.2 stable; migrate compositor profile to Lua and specify request/event use, work-area bounds and display checks |
 | **M4 — Godot presentation** | Character lifecycle, state display, user placement/pin/lock controls, truthful animation tied to operation results | AC-001, AC-007, AC-010 | GODOT-01 and IPC-01 integration evidence; animation-state traces for success, denied, failed, unsupported and unknown outcomes | M2 and M3; Godot engine/export templates/plugin hashes pinned |
 | **M5 — Conversation and memory loop** | Text and push-to-talk interaction; synthetic provider first; later approved local/hosted provider trials; persisted preference with provenance, inspect/delete | AC-002 and AC-009; end-to-end AC-001–AC-011 regression | MODEL-01, SPEECH-01 and MEM-01 as applicable; provider locality/retention/cancellation, interruption, restart, provenance, inspection and deletion evidence; full slice acceptance run | M1–M4; owner decisions on ASR/TTS/LLM candidates and locality rules; memory-local schema and retention policy |
 
@@ -31,7 +31,7 @@ The owner approved this P5-local dependency profile: SQLITE-02, local SECURITY-0
 
 The owner deferred LIA's project license decision. No license is selected or implied, and this plan does not grant redistribution rights. The [dependency/model-weight license register](../../toolchain/LICENSE-REGISTER.md) records locked validation dependencies, including the M1 Rust lockfile, and open artifact reviews. The adopted [provider evaluation policy](provider-evaluation.md) sets egress boundaries without selecting any model/provider.
 
-M1 implementation is underway on `feat/p5-m1-device-agent-core`; PR #4 and PR #5 have merged to `main`. Its planned scope and evidence boundaries are recorded in [the task plan](tasks/M1-device-agent-core.md). PR #5 CI passed the Rust and contract-hygiene jobs. The M2 spike is on a separate branch. No conformance gate or acceptance condition is marked Passed.
+M1 core implementation is merged through PR #5; M1 follow-up tests and evidence are continuing alongside M2 on the separate IPC branch. Its planned scope and evidence boundaries are recorded in [the task plan](tasks/M1-device-agent-core.md). PR #5 CI passed the Rust and contract-hygiene jobs. M2 is tracked in draft PR #6. No conformance gate or acceptance condition is marked Passed.
 
 ### Open owner decisions
 
@@ -39,7 +39,7 @@ M1 implementation is underway on `feat/p5-m1-device-agent-core`; PR #4 and PR #5
 |---|---|
 | P5-local gate profile | Approved 15 November 2026; recorded above |
 | LIA project license | Deferred by owner; no LICENSE file selected |
-| Exact Hyprland build/profile | Open; required before M3 |
+| Exact Hyprland build/profile | Selected by user-authorized delegation on 15 November 2026: stable v0.57.2; Lua config migration, exact package provenance and M3 proof remain open |
 | Hardware tier and GPU availability | Open; needed before local LLM evaluation |
 | Languages | Open; “English first, Hindi stretch” remains a proposal |
 | Hosted evaluation budget and time box | Open; $20/month and two weeks remain proposals |
@@ -73,7 +73,7 @@ For CI-hosted evidence, retain immutable run URLs and downloadable reports or ch
 
 The readiness research is dated 2026-11-14. Re-verify all version facts from primary release sources immediately before creating lockfiles or toolchain files. Pin a compatible set per milestone, including code generators and runtime libraries; record exact versions and artifact hashes. Apply a documented dependency cool-down for newly published versions. Do not copy candidate versions from the research note without rechecking.
 
-Owner decisions remain open: exact Hyprland baseline; hardware/GPU tier; languages; hosted evaluation budget and time box; project license; and any change to the coordinator’s Node baseline. ASR/TTS/LLM candidates remain unselected. The P5-local gate profile was approved by the owner on 15 November 2026. The approved slice is local-first; PostgreSQL, Temporal, NATS and hosted inference are not required for baseline desktop operation. Do not silently add them to the slice.
+Hyprland v0.57.2 is selected for the P5 M3 reference profile; exact package/build provenance and HYPR-01/02 evidence remain open. Owner decisions remain open: hardware/GPU tier; languages; hosted evaluation budget and time box; project license; and any change to the coordinator’s Node baseline. ASR/TTS/LLM candidates remain unselected. The P5-local gate profile was approved by the owner on 15 November 2026. The approved slice is local-first; PostgreSQL, Temporal, NATS and hosted inference are not required for baseline desktop operation. Do not silently add them to the slice.
 
 ## P4/P6 status boundary
 

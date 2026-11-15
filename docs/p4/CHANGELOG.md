@@ -1,3 +1,10 @@
+## 0.2.6 — 15 November 2026
+
+**Baseline:** Blueprint v1.14.10. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Records the owner-authorized exact P5 M3 Hyprland Wayland baseline as stable v0.57.2 ([official release](https://github.com/hyprwm/Hyprland/releases/tag/v0.57.2), signed release commit `11cbc6c577b84ffb1edf4df3fc5b6128c3ae6947`).
+- Notes the Hyprland 0.57 configuration migration: `.conf` files are unsupported, so the test profile must use Lua configuration. HYPR-01/02 remain Not Run; no compositor capability is claimed supported.
+
 ## 0.2.5 — 15 November 2026
 
 **Baseline:** Blueprint v1.14.8. The package remains Draft; no implementation conformance gate is marked Passed.

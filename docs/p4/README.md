@@ -1,9 +1,9 @@
 # P4 — Integration Contracts
 
 **Contract package:** P4.1  
-**Revision:** 0.2.5
+**Revision:** 0.2.6
 **Status:** Draft — review and conformance evidence required  
-**Baseline:** LIA Project Blueprint v1.14.8 (P4 in progress)
+**Baseline:** LIA Project Blueprint v1.14.10 (P4 in progress)
 **Date:** 15 November 2026
 
 ## Purpose
@@ -39,12 +39,12 @@ This remains a contract design package. P5 M1 now consumes the draft SQLite migr
 | Event subjects | [subjects.yaml](events/subjects.yaml) | lia.v1 | Domain event owner |
 | Temporal boundaries | [temporal-contracts-v1.md](workflows/temporal-contracts-v1.md) | 1 | Temporal workflow authority |
 | Provider interfaces | [provider-interfaces-v1.ts](providers/provider-interfaces-v1.ts) | 1 | LIA model gateway |
-| Changelog | [CHANGELOG.md](CHANGELOG.md) | 0.2.5 | Review history and verification provenance for the P4 contract package |
-| P4 gate matrix | [p4-conformance-matrix.md](conformance/p4-conformance-matrix.md) | 0.2.5 | Procedure, expected evidence and status for architecture proof gates |
+| Changelog | [CHANGELOG.md](CHANGELOG.md) | 0.2.6 | Review history and verification provenance for the P4 contract package |
+| P4 gate matrix | [p4-conformance-matrix.md](conformance/p4-conformance-matrix.md) | 0.2.6 | Procedure, expected evidence and status for architecture proof gates |
 | Adapter contract | [adapter-conformance-v1.md](adapters/adapter-conformance-v1.md) | 1 | Manifest semantics, resource lifecycle, execution checks and 24 common adapter conformance cases |
 | Manifest schema | [capability-manifest-v1.schema.json](adapters/capability-manifest-v1.schema.json) | 1 | Strict JSON Schema for adapter capability manifests |
 | Hyprland fixture | [hyprland-wayland-manifest.example.json](adapters/fixtures/hyprland-wayland-manifest.example.json) | Example | Synthetic first-Linux-profile manifest fixture |
-| Compatibility matrix | [compatibility-matrix.md](compatibility-matrix.md) | 0.1.1 | Approved stack baselines, exact-pin status and proof-gate mapping |
+| Compatibility matrix | [compatibility-matrix.md](compatibility-matrix.md) | 0.1.2 | Approved stack baselines, exact-pin status and proof-gate mapping |
 | PostgreSQL retention jobs | [002-retention-deletion.sql](sql/postgres/002-retention-deletion.sql) | 002 | Orchestration metadata only; canonical tombstones remain owner-domain data |
 | SQLite tombstones | [002-retention-tombstones.sql](sql/sqlite/002-retention-tombstones.sql) | 002 | Local replay-prevention markers; not the canonical deletion authority |
 | PostgreSQL integrity and lease ledger | [003-integrity-and-lease-ledger.sql](sql/postgres/003-integrity-and-lease-ledger.sql) | 003 | Account-consistent references, exact lease-to-operation claim matching and coordinator issuance ledger |
