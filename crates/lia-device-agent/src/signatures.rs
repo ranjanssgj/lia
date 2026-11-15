@@ -135,6 +135,41 @@ mod tests {
             vector["sha256Hex"].as_str().unwrap()
         );
     }
+    #[test]
+    fn jcs_number_format_and_utf16_key_order_vectors() {
+        let numbers: serde_json::Value = serde_json::from_str(
+            r#"{"numbers":[333333333.33333329,1E30,4.50,2e-3,0.000000000000000000000000001]}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            String::from_utf8(canonical_json(&numbers).unwrap()).unwrap(),
+            r#"{"numbers":[333333333.3333333,1e+30,4.5,0.002,1e-27]}"#
+        );
+        let keys: serde_json::Value =
+            serde_json::from_str(r#"{"\uE000":1,"\uD83D\uDE00":2}"#).unwrap();
+        assert_eq!(
+            String::from_utf8(canonical_json(&keys).unwrap()).unwrap(),
+            r#"{"😀":2,"":1}"#
+        );
+    }
+    #[test]
+    fn signature_rejects_wrong_payload_key_domain_truncation_and_noncanonical_s() {
+        use ed25519_dalek::{Signer, SigningKey};
+        let signing = SigningKey::from_bytes(&[7; 32]);
+        let payload = br#"{"x":1}"#;
+        let sig = signing.sign(&command_signing_input(payload)).to_bytes();
+        assert!(verify_command(&signing.verifying_key().to_bytes(), &sig, payload).is_ok());
+        assert!(verify_command(&signing.verifying_key().to_bytes(), &sig, br#"{"x":2}"#).is_err());
+        assert!(verify_lease(&signing.verifying_key().to_bytes(), &sig, payload).is_err());
+        let other = SigningKey::from_bytes(&[8; 32]);
+        assert!(verify_command(&other.verifying_key().to_bytes(), &sig, payload).is_err());
+        assert!(<[u8; 64]>::try_from(&sig[..63]).is_err());
+        let mut noncanonical = sig;
+        noncanonical[63] |= 0x80;
+        assert!(
+            verify_command(&signing.verifying_key().to_bytes(), &noncanonical, payload).is_err()
+        );
+    }
     fn hex(s: &str) -> Vec<u8> {
         let chars: Vec<_> = s.chars().filter(|c| !c.is_whitespace()).collect();
         chars

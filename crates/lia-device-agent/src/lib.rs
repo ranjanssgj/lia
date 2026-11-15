@@ -3,8 +3,9 @@
 
 pub mod signatures;
 mod store;
+mod time;
 
 pub use store::{
-    AgentStore, CommandClaims, EffectPermit, LeaseClaims, LeaseConsumption, OperationClaims,
-    StoreError,
+    AgentStore, AttemptCompletion, CommandClaims, EffectPermit, EvidenceRecord, LeaseClaims,
+    LeaseConsumption, ObservedOutcome, OperationClaims, OperationOutcomeState, StoreError,
 };

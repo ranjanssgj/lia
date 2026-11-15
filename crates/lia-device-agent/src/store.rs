@@ -22,7 +22,27 @@ const MIGRATIONS: &[(i64, &str)] = &[
         5,
         include_str!("../../../docs/p4/sql/sqlite/005-sequence-zero-initial-use.sql"),
     ),
+    (
+        6,
+        include_str!("../../../docs/p4/sql/sqlite/006-operation-outcomes-and-evidence.sql"),
+    ),
+    (
+        7,
+        include_str!("../../../docs/p4/sql/sqlite/007-integer-time-and-integrity-anchor.sql"),
+    ),
+    (
+        7,
+        include_str!("../../../docs/p4/sql/sqlite/007-integer-time-and-integrity-anchor.sql"),
+    ),
 ];
+
+fn outcome_key(value: ObservedOutcome) -> &'static str {
+    match value {
+        ObservedOutcome::VerifiedSuccess => "verified_success",
+        ObservedOutcome::VerifiedFailure => "verified_failure",
+        ObservedOutcome::Unknown => "unknown",
+    }
+}
 
 #[derive(Debug)]
 pub enum StoreError {
@@ -98,6 +118,41 @@ pub struct LeaseConsumption<'a> {
     pub at: &'a str,
     pub nonce_expires_at: &'a str,
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ObservedOutcome {
+    VerifiedSuccess,
+    VerifiedFailure,
+    Unknown,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum OperationOutcomeState {
+    NotAttempted,
+    Unknown,
+    VerifiedSuccess,
+    VerifiedFailure,
+}
+#[derive(Clone, Debug)]
+pub struct EvidenceRecord {
+    pub evidence_id: String,
+    pub evidence_kind: String,
+    pub outcome: ObservedOutcome,
+    pub sha256: [u8; 32],
+    pub reference: String,
+    pub sensitivity: i64,
+    pub observed_at: String,
+}
+#[derive(Clone, Debug)]
+pub struct AttemptCompletion {
+    pub operation_id: String,
+    pub attempt_id: String,
+    pub event_id: String,
+    pub correlation_id: String,
+    pub occurred_at: String,
+    pub outbox_expires_at: String,
+    pub outcome: ObservedOutcome,
+    pub failure_code: Option<String>,
+    pub evidence: Option<EvidenceRecord>,
+}
 /// Constructed only after the replay marker and possible-effect journal are committed.
 #[derive(Debug)]
 pub struct EffectPermit {
@@ -133,13 +188,22 @@ impl AgentStore {
     pub fn open_in_memory() -> Result<Self, StoreError> {
         Self::configure(Connection::open_in_memory()?)
     }
-    fn configure(conn: Connection) -> Result<Self, StoreError> {
+    fn configure(mut conn: Connection) -> Result<Self, StoreError> {
         conn.busy_timeout(Duration::from_secs(5))?;
         conn.pragma_update(None, "foreign_keys", "ON")?;
         conn.pragma_update(None, "journal_mode", "WAL")?;
+        conn.pragma_update(None, "synchronous", "FULL")?;
+        if conn.query_row("PRAGMA synchronous", [], |r| r.get::<_, i64>(0))? != 2 {
+            return Err(StoreError::Invalid(
+                "SQLite synchronous=FULL is required".into(),
+            ));
+        }
         conn.execute_batch("CREATE TABLE IF NOT EXISTS lia_schema_migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));")?;
         for (version, sql) in MIGRATIONS {
-            let exists: Option<i64> = conn
+            // Lock before checking the version. Two processes can otherwise both see a
+            // missing migration and race to apply the same DDL.
+            let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+            let exists: Option<i64> = tx
                 .query_row(
                     "SELECT version FROM lia_schema_migrations WHERE version=?1",
                     [version],
@@ -147,14 +211,13 @@ impl AgentStore {
                 )
                 .optional()?;
             if exists.is_none() {
-                let tx = conn.unchecked_transaction()?;
                 tx.execute_batch(sql)?;
                 tx.execute(
                     "INSERT INTO lia_schema_migrations(version) VALUES (?1)",
                     [version],
                 )?;
-                tx.commit()?;
             }
+            tx.commit()?;
         }
         Ok(Self { conn })
     }
@@ -207,8 +270,132 @@ impl AgentStore {
         tx.commit()?;
         Ok(count)
     }
+    /// Record an adapter's final observation, its redacted evidence reference, and the
+    /// matching outbox event in one transaction. Verified states cannot be written without
+    /// evidence because migration 006 enforces that invariant as well.
+    pub fn finish_attempt(&mut self, c: &AttemptCompletion) -> Result<(), StoreError> {
+        match (c.outcome, c.evidence.as_ref()) {
+            (ObservedOutcome::VerifiedSuccess, Some(e)) if e.outcome == c.outcome => {}
+            (ObservedOutcome::VerifiedFailure, Some(e))
+                if e.outcome == c.outcome
+                    && c.failure_code.as_deref().is_some_and(|s| !s.is_empty()) => {}
+            (ObservedOutcome::Unknown, None) => {}
+            (ObservedOutcome::Unknown, Some(e)) if e.outcome == c.outcome => {}
+            (ObservedOutcome::VerifiedSuccess | ObservedOutcome::VerifiedFailure, _) => {
+                return Err(StoreError::Invalid(
+                    "verified outcome requires matching evidence".into(),
+                ));
+            }
+            _ => {
+                return Err(StoreError::Invalid(
+                    "evidence outcome does not match attempt outcome".into(),
+                ));
+            }
+        }
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let row: Option<(String, String, i64)> = tx.query_row(
+            "SELECT o.account_id,o.current_status,a.worker_lease_generation FROM local_operation_journal o JOIN local_operation_attempt a ON a.operation_id=o.operation_id WHERE o.operation_id=?1 AND a.attempt_id=?2 AND a.attempt_status IN ('started','reconciliation_required','outcome_unknown') AND o.side_effect_may_have_occurred=1",
+            params![c.operation_id, c.attempt_id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        ).optional()?;
+        let (account_id, operation_status, _) = row.ok_or_else(|| {
+            StoreError::Invalid(
+                "attempt is absent, terminal, or not marked as possibly effected".into(),
+            )
+        })?;
+        if !matches!(
+            operation_status.as_str(),
+            "running" | "verifying" | "reconciliation_required" | "unknown_outcome"
+        ) {
+            return Err(StoreError::Invalid(
+                "operation cannot accept an outcome from its current state".into(),
+            ));
+        }
+        if let Some(e) = &c.evidence {
+            if !(0..=3).contains(&e.sensitivity)
+                || e.evidence_id.is_empty()
+                || e.evidence_kind.is_empty()
+                || e.reference.is_empty()
+            {
+                return Err(StoreError::Invalid(
+                    "evidence metadata is incomplete or invalid".into(),
+                ));
+            }
+            tx.execute(
+                "INSERT INTO local_operation_evidence(evidence_id,operation_id,attempt_id,evidence_kind,observed_outcome,evidence_sha256,evidence_reference,sensitivity,observed_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)",
+                params![e.evidence_id,c.operation_id,c.attempt_id,e.evidence_kind,outcome_key(e.outcome),e.sha256.as_slice(),e.reference,e.sensitivity,e.observed_at],
+            )?;
+        }
+        let (attempt_status, operation_status) = match c.outcome {
+            ObservedOutcome::VerifiedSuccess => ("completed", "succeeded_verified"),
+            ObservedOutcome::VerifiedFailure => ("failed", "failed"),
+            ObservedOutcome::Unknown => ("outcome_unknown", "unknown_outcome"),
+        };
+        tx.execute(
+            "UPDATE local_operation_attempt SET attempt_status=?1,completed_at=?2,failure_code=?3 WHERE attempt_id=?4 AND operation_id=?5",
+            params![attempt_status,c.occurred_at,c.failure_code,c.attempt_id,c.operation_id],
+        )?;
+        tx.execute(
+            "UPDATE local_operation_journal SET current_status=?1,updated_at=?2 WHERE operation_id=?3 AND side_effect_may_have_occurred=1",
+            params![operation_status,c.occurred_at,c.operation_id],
+        )?;
+        let sequence: i64 = tx.query_row(
+            "SELECT COALESCE(MAX(aggregate_sequence),0)+1 FROM local_outbox WHERE account_id=?1 AND aggregate_type='operation' AND aggregate_id=?2",
+            params![account_id,c.operation_id],
+            |r| r.get(0),
+        )?;
+        let payload = serde_json::json!({
+            "eventId": c.event_id,
+            "operationId": c.operation_id,
+            "attemptId": c.attempt_id,
+            "outcome": outcome_key(c.outcome),
+            "evidenceId": c.evidence.as_ref().map(|e| e.evidence_id.as_str()),
+        });
+        let payload_json =
+            serde_json::to_string(&payload).map_err(|e| StoreError::Invalid(e.to_string()))?;
+        let payload_digest = crate::signatures::sha256(payload_json.as_bytes());
+        let sensitivity = c.evidence.as_ref().map_or(1, |e| e.sensitivity);
+        tx.execute(
+            "INSERT INTO local_outbox(event_id,account_id,producer_id,source_event_id,event_type,schema_version,aggregate_type,aggregate_id,aggregate_sequence,correlation_id,occurred_at,payload_json,payload_reference,payload_digest_sha256,sensitivity,expires_at,delivery_state) VALUES (?1,?2,'device-agent',?1,'lia.device.operation.outcome.v1','1','operation',?3,?4,?5,?6,?7,NULL,?8,?9,?10,'pending')",
+            params![c.event_id,account_id,c.operation_id,sequence,c.correlation_id,c.occurred_at,payload_json,payload_digest.as_slice(),sensitivity,c.outbox_expires_at],
+        )?;
+        tx.commit()?;
+        Ok(())
+    }
+    pub fn operation_outcome(
+        &self,
+        operation_id: &str,
+    ) -> Result<OperationOutcomeState, StoreError> {
+        let row: Option<(String, i64, i64)> = self.conn.query_row(
+            "SELECT current_status,side_effect_may_have_occurred,(SELECT count(*) FROM local_operation_attempt a WHERE a.operation_id=o.operation_id) FROM local_operation_journal o WHERE operation_id=?1",
+            [operation_id],
+            |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?)),
+        ).optional()?;
+        let (status, may_have_effected, attempts) =
+            row.ok_or_else(|| StoreError::Invalid("operation not found".into()))?;
+        match status.as_str() {
+            "succeeded_verified" => Ok(OperationOutcomeState::VerifiedSuccess),
+            "failed" => Ok(OperationOutcomeState::VerifiedFailure),
+            "unknown_outcome" | "reconciliation_required" | "running" | "verifying"
+                if may_have_effected == 1 =>
+            {
+                Ok(OperationOutcomeState::Unknown)
+            }
+            _ if attempts == 0 => Ok(OperationOutcomeState::NotAttempted),
+            _ => Ok(OperationOutcomeState::Unknown),
+        }
+    }
     pub fn insert_operation(&mut self, c: &OperationClaims) -> Result<(), StoreError> {
-        self.conn.execute("INSERT INTO local_operation_journal(operation_id,account_id,target_device_id,target_credential_generation,capability_id,capability_schema_version,resource_type,resource_id,resource_generation,arguments_sha256,grant_reference,policy_version,risk_tier,current_status,received_at,expires_at,updated_at,revocation_epoch,purpose,originating_task_id,arguments_schema_uri,expected_resource_revision,resource_observed_at,resource_owning_device_id) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,'accepted',?14,?15,?14,?16,?17,?18,?19,?20,?21,?22)", params![c.operation_id,c.account_id,c.target_device_id,c.target_credential_generation,c.capability_id,c.capability_schema_version,c.resource_type,c.resource_id,c.resource_generation,c.arguments_sha256.as_slice(),c.grant_reference,c.policy_version,c.risk_tier,c.received_at,c.expires_at,c.revocation_epoch,c.purpose,c.originating_task_id,c.arguments_schema_uri,c.expected_resource_revision,c.resource_observed_at,c.resource_owning_device_id])?;
+        let received_us = crate::time::parse_rfc3339_us(&c.received_at)?;
+        let expires_us = crate::time::parse_rfc3339_us(&c.expires_at)?;
+        if expires_us <= received_us {
+            return Err(StoreError::Invalid(
+                "operation expiry must follow receipt".into(),
+            ));
+        }
+        self.conn.execute("INSERT INTO local_operation_journal(operation_id,account_id,target_device_id,target_credential_generation,capability_id,capability_schema_version,resource_type,resource_id,resource_generation,arguments_sha256,grant_reference,policy_version,risk_tier,current_status,received_at,expires_at,updated_at,revocation_epoch,purpose,originating_task_id,arguments_schema_uri,expected_resource_revision,resource_observed_at,resource_owning_device_id,received_at_us,expires_at_us,updated_at_us) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,'accepted',?14,?15,?14,?16,?17,?18,?19,?20,?21,?22,?23,?24,?23)", params![c.operation_id,c.account_id,c.target_device_id,c.target_credential_generation,c.capability_id,c.capability_schema_version,c.resource_type,c.resource_id,c.resource_generation,c.arguments_sha256.as_slice(),c.grant_reference,c.policy_version,c.risk_tier,c.received_at,c.expires_at,c.revocation_epoch,c.purpose,c.originating_task_id,c.arguments_schema_uri,c.expected_resource_revision,c.resource_observed_at,c.resource_owning_device_id,received_us,expires_us])?;
         Ok(())
     }
     pub fn open_session(
@@ -217,7 +404,7 @@ impl AgentStore {
         opened_at: &str,
         retain_until: &str,
     ) -> Result<(), StoreError> {
-        self.conn.execute("INSERT INTO local_session_sequence(session_id,last_session_sequence,updated_at,retain_until,has_accepted_sequence) VALUES (?1,0,?2,?3,0)",params![session_id,opened_at,retain_until])?;
+        self.conn.execute("INSERT INTO local_session_sequence(session_id,last_session_sequence,updated_at,retain_until,has_accepted_sequence,updated_at_us,retain_until_us) VALUES (?1,0,?2,?3,0,?4,?5)",params![session_id,opened_at,retain_until,crate::time::parse_rfc3339_us(opened_at)?,crate::time::parse_rfc3339_us(retain_until)?])?;
         Ok(())
     }
     /// Call only after the caller has verified the signed CommandEnvelope, trust state,
@@ -235,21 +422,19 @@ impl AgentStore {
         if command.session_sequence < 0 {
             return Err(StoreError::Invalid("negative command sequence".into()));
         }
-        let retention_covers_expiry: i64 = self.conn.query_row(
-            "SELECT julianday(?1)>=julianday(?2)",
-            params![command.nonce_expires_at, command.expires_at],
-            |r| r.get(0),
-        )?;
+        let nonce_expiry_us = crate::time::parse_rfc3339_us(&command.nonce_expires_at)?;
+        let command_expiry_us = crate::time::parse_rfc3339_us(&command.expires_at)?;
+        let now_us = crate::time::parse_rfc3339_us(at)?;
+        let retention_covers_expiry = i64::from(nonce_expiry_us >= command_expiry_us);
         if retention_covers_expiry != 1 {
             return Err(StoreError::Invalid(
                 "nonce retention must cover signed command expiry".into(),
             ));
         }
-        let in_window: i64 = self.conn.query_row(
-            "SELECT (julianday(?1)>=julianday(?2) AND julianday(?1)<julianday(?3))",
-            params![at, command.not_before, command.expires_at],
-            |r| r.get(0),
-        )?;
+        let in_window = i64::from(
+            now_us >= crate::time::parse_rfc3339_us(&command.not_before)?
+                && now_us < command_expiry_us,
+        );
         if in_window != 1 {
             return Err(StoreError::Invalid(
                 "command is outside its signed time window".into(),
@@ -258,23 +443,23 @@ impl AgentStore {
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let n=tx.execute("INSERT INTO local_consumed_nonce(account_id,message_type,nonce,reference_id,consumed_at,expires_at) VALUES (?1,'command',?2,?3,?4,?5)",params![op.account_id,command.nonce,command.command_id,at,command.nonce_expires_at])?;
+        let n=tx.execute("INSERT INTO local_consumed_nonce(account_id,message_type,nonce,reference_id,consumed_at,expires_at,consumed_at_us,expires_at_us) VALUES (?1,'command',?2,?3,?4,?5,?6,?7)",params![op.account_id,command.nonce,command.command_id,at,command.nonce_expires_at,now_us,nonce_expiry_us])?;
         if n != 1 {
             return Err(StoreError::Invalid("nonce was not recorded".into()));
         }
-        let seq=tx.execute("UPDATE local_session_sequence SET last_session_sequence=?1,has_accepted_sequence=1,updated_at=?2 WHERE session_id=?3 AND ((has_accepted_sequence=0 AND ?1=0) OR (has_accepted_sequence=1 AND ?1>last_session_sequence))",params![command.session_sequence,at,command.session_id])?;
+        let seq=tx.execute("UPDATE local_session_sequence SET last_session_sequence=?1,has_accepted_sequence=1,updated_at=?2,updated_at_us=?3 WHERE session_id=?4 AND ((has_accepted_sequence=0 AND ?1=0) OR (has_accepted_sequence=1 AND ?1>last_session_sequence))",params![command.session_sequence,at,now_us,command.session_id])?;
         if seq != 1 {
             return Err(StoreError::Invalid(
                 "unknown session or non-increasing command sequence".into(),
             ));
         }
-        let changed=tx.execute("UPDATE local_operation_journal SET current_status='running',side_effect_may_have_occurred=1,updated_at=?1 WHERE operation_id=?2 AND account_id=?3 AND target_device_id=?4 AND current_status='accepted' AND julianday(expires_at)>julianday(?1)",params![at,op.operation_id,op.account_id,op.target_device_id])?;
+        let changed=tx.execute("UPDATE local_operation_journal SET current_status='running',side_effect_may_have_occurred=1,updated_at=?1,updated_at_us=?5 WHERE operation_id=?2 AND account_id=?3 AND target_device_id=?4 AND current_status='accepted' AND expires_at_us>?5",params![at,op.operation_id,op.account_id,op.target_device_id,now_us])?;
         if changed != 1 {
             return Err(StoreError::Invalid(
                 "operation is absent, expired, or not accepted".into(),
             ));
         }
-        tx.execute("INSERT INTO local_operation_attempt(attempt_id,command_id,operation_id,attempt_number,worker_lease_generation,attempt_status,started_at) VALUES (?1,?2,?3,?4,?5,'started',?6)",params![attempt_id,command.command_id,op.operation_id,attempt_number,worker_generation,at])?;
+        tx.execute("INSERT INTO local_operation_attempt(attempt_id,command_id,operation_id,attempt_number,worker_lease_generation,attempt_status,started_at,started_at_us) VALUES (?1,?2,?3,?4,?5,'started',?6,?7)",params![attempt_id,command.command_id,op.operation_id,attempt_number,worker_generation,at,now_us])?;
         tx.commit()?;
         Ok(EffectPermit {
             operation_id: op.operation_id.clone(),
@@ -286,24 +471,26 @@ impl AgentStore {
         &mut self,
         c: LeaseConsumption<'_>,
     ) -> Result<EffectPermit, StoreError> {
+        let now_us = crate::time::parse_rfc3339_us(c.at)?;
+        let nonce_expiry_us = crate::time::parse_rfc3339_us(c.nonce_expires_at)?;
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let row:Option<(String,String)> = tx.query_row("SELECT operation_id,nonce FROM local_offline_lease WHERE lease_id=?1 AND account_id=?2 AND lease_state='stored' AND julianday(not_before)<=julianday(?3) AND julianday(expires_at)>julianday(?3)",params![c.lease_id,c.account_id,c.at],|r|Ok((r.get(0)?,r.get(1)?))).optional()?;
+        let row:Option<(String,String)> = tx.query_row("SELECT operation_id,nonce FROM local_offline_lease WHERE lease_id=?1 AND account_id=?2 AND lease_state='stored' AND not_before_us<=?3 AND expires_at_us>?3",params![c.lease_id,c.account_id,now_us],|r|Ok((r.get(0)?,r.get(1)?))).optional()?;
         let (op, stored_nonce) =
             row.ok_or_else(|| StoreError::Invalid("lease not available or expired".into()))?;
         if stored_nonce != c.nonce {
             return Err(StoreError::Invalid("lease nonce mismatch".into()));
         }
-        tx.execute("INSERT INTO local_consumed_nonce(account_id,message_type,nonce,reference_id,consumed_at,expires_at) VALUES (?1,'offline_lease',?2,?3,?4,?5)",params![c.account_id,c.nonce,c.lease_id,c.at,c.nonce_expires_at])?;
-        let changed=tx.execute("UPDATE local_operation_journal SET current_status='running',side_effect_may_have_occurred=1,updated_at=?1 WHERE operation_id=?2 AND account_id=?3 AND current_status='accepted' AND julianday(expires_at)>julianday(?1)",params![c.at,op,c.account_id])?;
+        tx.execute("INSERT INTO local_consumed_nonce(account_id,message_type,nonce,reference_id,consumed_at,expires_at,consumed_at_us,expires_at_us) VALUES (?1,'offline_lease',?2,?3,?4,?5,?6,?7)",params![c.account_id,c.nonce,c.lease_id,c.at,c.nonce_expires_at,now_us,nonce_expiry_us])?;
+        let changed=tx.execute("UPDATE local_operation_journal SET current_status='running',side_effect_may_have_occurred=1,updated_at=?1,updated_at_us=?4 WHERE operation_id=?2 AND account_id=?3 AND current_status='accepted' AND expires_at_us>?4",params![c.at,op,c.account_id,now_us])?;
         if changed != 1 {
             return Err(StoreError::Invalid(
                 "leased operation is absent, expired, or not accepted".into(),
             ));
         }
-        tx.execute("INSERT INTO local_operation_attempt(attempt_id,command_id,operation_id,attempt_number,worker_lease_generation,attempt_status,started_at) VALUES (?1,?2,?3,?4,?5,'started',?6)",params![c.attempt_id,c.lease_id,op,c.attempt_number,c.worker_generation,c.at])?;
-        let changed=tx.execute("UPDATE local_offline_lease SET lease_state='consumed',consumed_at=?1 WHERE lease_id=?2 AND account_id=?3 AND lease_state='stored'",params![c.at,c.lease_id,c.account_id])?;
+        tx.execute("INSERT INTO local_operation_attempt(attempt_id,command_id,operation_id,attempt_number,worker_lease_generation,attempt_status,started_at,started_at_us) VALUES (?1,?2,?3,?4,?5,'started',?6,?7)",params![c.attempt_id,c.lease_id,op,c.attempt_number,c.worker_generation,c.at,now_us])?;
+        let changed=tx.execute("UPDATE local_offline_lease SET lease_state='consumed',consumed_at=?1,consumed_at_us=?4 WHERE lease_id=?2 AND account_id=?3 AND lease_state='stored'",params![c.at,c.lease_id,c.account_id,now_us])?;
         if changed != 1 {
             return Err(StoreError::Invalid(
                 "lease consume transition failed".into(),
@@ -330,7 +517,11 @@ impl AgentStore {
                     .into(),
             ));
         }
-        self.conn.execute("INSERT INTO local_offline_lease(lease_id,issuer_id,audience,operation_id,account_id,target_device_id,target_credential_generation,capability_id,capability_schema_version,resource_type,resource_id,resource_generation,resource_observed_revision,resource_observed_at,resource_owning_device_id,arguments_schema_uri,arguments_sha256,purpose,originating_task_id,grant_reference,policy_version,revocation_epoch,risk_tier,nonce,signing_key_generation,issued_at,not_before,expires_at,received_at,lease_state) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,?29,'stored')",params![l.lease_id,l.issuer_id,l.audience,op.operation_id,op.account_id,op.target_device_id,op.target_credential_generation,op.capability_id,op.capability_schema_version,op.resource_type,op.resource_id,op.resource_generation,op.expected_resource_revision,op.resource_observed_at,op.resource_owning_device_id,op.arguments_schema_uri,op.arguments_sha256.as_slice(),op.purpose,op.originating_task_id,op.grant_reference,op.policy_version,op.revocation_epoch,op.risk_tier,l.nonce,l.signing_key_generation,l.issued_at,l.not_before,l.expires_at,received_at])?;
+        let issued = crate::time::parse_rfc3339_us(&l.issued_at)?;
+        let not_before = crate::time::parse_rfc3339_us(&l.not_before)?;
+        let expires = crate::time::parse_rfc3339_us(&l.expires_at)?;
+        let received = crate::time::parse_rfc3339_us(received_at)?;
+        self.conn.execute("INSERT INTO local_offline_lease(lease_id,issuer_id,audience,operation_id,account_id,target_device_id,target_credential_generation,capability_id,capability_schema_version,resource_type,resource_id,resource_generation,resource_observed_revision,resource_observed_at,resource_owning_device_id,arguments_schema_uri,arguments_sha256,purpose,originating_task_id,grant_reference,policy_version,revocation_epoch,risk_tier,nonce,signing_key_generation,issued_at,not_before,expires_at,received_at,lease_state,issued_at_us,not_before_us,expires_at_us,received_at_us) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,?29,'stored',?30,?31,?32,?33)",params![l.lease_id,l.issuer_id,l.audience,op.operation_id,op.account_id,op.target_device_id,op.target_credential_generation,op.capability_id,op.capability_schema_version,op.resource_type,op.resource_id,op.resource_generation,op.expected_resource_revision,op.resource_observed_at,op.resource_owning_device_id,op.arguments_schema_uri,op.arguments_sha256.as_slice(),op.purpose,op.originating_task_id,op.grant_reference,op.policy_version,op.revocation_epoch,op.risk_tier,l.nonce,l.signing_key_generation,l.issued_at,l.not_before,l.expires_at,received_at,issued,not_before,expires,received])?;
         Ok(())
     }
 }
@@ -378,8 +569,13 @@ mod tests {
     #[test]
     fn migrations_wal_foreign_keys_and_first_zero_once() {
         let mut s = AgentStore::open_in_memory().unwrap();
-        assert_eq!(s.schema_version().unwrap(), 5);
+        assert_eq!(s.schema_version().unwrap(), 7);
         assert_eq!(s.pragma_i64("foreign_keys").unwrap(), 1);
+        assert_eq!(
+            s.pragma_i64("synchronous").unwrap(),
+            2,
+            "SQLite FULL durability is synchronous=2"
+        );
         // SQLite reports memory journal mode as memory; the file-backed WAL assertion is separate in CI.
         s.open_session("session", "2026-11-15T00:00:00Z", "2026-11-15T00:10:10Z")
             .unwrap();
@@ -420,8 +616,34 @@ mod tests {
             .query_row("PRAGMA journal_mode", [], |r| r.get(0))
             .unwrap();
         assert_eq!(mode.to_ascii_lowercase(), "wal");
-        assert_eq!(s.schema_version().unwrap(), 5);
+        assert_eq!(s.schema_version().unwrap(), 7);
         drop(s);
+        let _ = std::fs::remove_file(&path);
+        let _ = std::fs::remove_file(path.with_extension("sqlite-wal"));
+        let _ = std::fs::remove_file(path.with_extension("sqlite-shm"));
+    }
+    #[test]
+    fn concurrent_first_open_serializes_migrations() {
+        let path = std::env::temp_dir().join(format!(
+            "lia-agent-concurrent-{}.sqlite",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_file(&path);
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(3));
+        let handles: Vec<_> = (0..2)
+            .map(|_| {
+                let path = path.clone();
+                let barrier = barrier.clone();
+                std::thread::spawn(move || {
+                    barrier.wait();
+                    AgentStore::open(path).and_then(|store| store.schema_version())
+                })
+            })
+            .collect();
+        barrier.wait();
+        for handle in handles {
+            assert_eq!(handle.join().unwrap().unwrap(), 7);
+        }
         let _ = std::fs::remove_file(&path);
         let _ = std::fs::remove_file(path.with_extension("sqlite-wal"));
         let _ = std::fs::remove_file(path.with_extension("sqlite-shm"));
@@ -456,7 +678,7 @@ mod tests {
         {
             let mut restore_target = AgentStore::open(&restored).unwrap();
             restore_target.restore_from(&backup).unwrap();
-            assert_eq!(restore_target.schema_version().unwrap(), 5);
+            assert_eq!(restore_target.schema_version().unwrap(), 7);
             assert_eq!(
                 restore_target
                     .reconcile_uncertain_operations("2026-11-15T00:01:00Z")
@@ -669,6 +891,97 @@ mod tests {
             )
             .unwrap();
         assert_eq!(state, "consumed");
+    }
+    #[test]
+    fn finish_attempt_records_verified_and_unknown_outcomes_atomically() {
+        let mut s = AgentStore::open_in_memory().unwrap();
+        s.open_session("session", "2026-11-15T00:00:00Z", "2099-11-15T00:10:10Z")
+            .unwrap();
+        for id in ["success", "failure", "unknown", "not-attempted"] {
+            s.insert_operation(&op(id)).unwrap();
+        }
+        for (index, id) in ["success", "failure", "unknown"].iter().enumerate() {
+            let command_id = format!("cmd-{id}");
+            s.consume_command_before_effect(
+                &op(id),
+                &command(&command_id, index as i64),
+                &format!("attempt-{id}"),
+                1,
+                1,
+                "2026-11-15T00:00:02Z",
+            )
+            .unwrap();
+        }
+        let evidence = |id: &str, outcome| EvidenceRecord {
+            evidence_id: format!("evidence-{id}"),
+            evidence_kind: "adapter-readback".into(),
+            outcome,
+            sha256: [9; 32],
+            reference: format!("local-evidence://{id}"),
+            sensitivity: 0,
+            observed_at: "2026-11-15T00:00:03Z".into(),
+        };
+        let complete = |id: &str, outcome, evidence, failure_code| AttemptCompletion {
+            operation_id: id.into(),
+            attempt_id: format!("attempt-{id}"),
+            event_id: format!("event-{id}"),
+            correlation_id: format!("correlation-{id}"),
+            occurred_at: "2026-11-15T00:00:04Z".into(),
+            outbox_expires_at: "2026-11-16T00:00:00Z".into(),
+            outcome,
+            failure_code,
+            evidence,
+        };
+        assert!(
+            s.finish_attempt(&complete(
+                "success",
+                ObservedOutcome::VerifiedSuccess,
+                None,
+                None
+            ))
+            .is_err()
+        );
+        s.finish_attempt(&complete(
+            "success",
+            ObservedOutcome::VerifiedSuccess,
+            Some(evidence("success", ObservedOutcome::VerifiedSuccess)),
+            None,
+        ))
+        .unwrap();
+        s.finish_attempt(&complete(
+            "failure",
+            ObservedOutcome::VerifiedFailure,
+            Some(evidence("failure", ObservedOutcome::VerifiedFailure)),
+            Some("readback-mismatch".into()),
+        ))
+        .unwrap();
+        s.finish_attempt(&complete("unknown", ObservedOutcome::Unknown, None, None))
+            .unwrap();
+        assert_eq!(
+            s.operation_outcome("not-attempted").unwrap(),
+            OperationOutcomeState::NotAttempted
+        );
+        assert_eq!(
+            s.operation_outcome("success").unwrap(),
+            OperationOutcomeState::VerifiedSuccess
+        );
+        assert_eq!(
+            s.operation_outcome("failure").unwrap(),
+            OperationOutcomeState::VerifiedFailure
+        );
+        assert_eq!(
+            s.operation_outcome("unknown").unwrap(),
+            OperationOutcomeState::Unknown
+        );
+        let (outbox_count, evidence_count): (i64,i64) = s.conn.query_row("SELECT (SELECT count(*) FROM local_outbox),(SELECT count(*) FROM local_operation_evidence)", [], |r| Ok((r.get(0)?,r.get(1)?))).unwrap();
+        assert_eq!((outbox_count, evidence_count), (3, 2));
+        let (payload,digest): (String,Vec<u8>) = s.conn.query_row("SELECT payload_json,payload_digest_sha256 FROM local_outbox WHERE event_id='event-success'", [], |r| Ok((r.get(0)?,r.get(1)?))).unwrap();
+        assert_eq!(
+            digest.as_slice(),
+            crate::signatures::sha256(payload.as_bytes())
+        );
+        assert!(s.conn.execute("UPDATE local_operation_evidence SET evidence_reference='tampered' WHERE evidence_id='evidence-success'", []).is_err());
+        assert!(s.conn.execute("UPDATE local_operation_journal SET current_status='succeeded_verified' WHERE operation_id='not-attempted'", []).is_err());
     }
     #[test]
     fn sequence_zero_update_then_monotonic_and_retention_immutable() {

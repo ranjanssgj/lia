@@ -3,7 +3,7 @@
 **Status:** In progress; scope recorded before implementation on 15 November 2026.
 **Acceptance conditions:** AC-005, AC-006, AC-008, AC-009, AC-011 foundations.
 **Gates:** SQLITE-02; local SECURITY-01 vector subset.
-**P4 baseline:** Draft package 0.2.2 on the P5 scope-decision branch.
+**P4 baseline:** Draft package 0.2.4 on the P5 branch; P4 implementation gates remain Not Run.
 
 ## Contract inputs
 
@@ -12,6 +12,8 @@
 - `docs/p4/sql/sqlite/003-consumption-ledger.sql` — exact lease-to-operation binding, distinct command/lease replay paths, consume-before-effect and retained watermarks.
 - `docs/p4/sql/sqlite/004-manifest-revision-json-safe.sql` — JSON-safe manifest revision checks.
 - `docs/p4/sql/sqlite/005-sequence-zero-initial-use.sql` — first command sequence zero exactly once, then strict increase.
+- `docs/p4/sql/sqlite/006-operation-outcomes-and-evidence.sql` — verified/unknown outcome evidence metadata and integrity guards.
+- `docs/p4/sql/sqlite/007-integer-time-and-integrity-anchor.sql` — integer time columns and retention triggers.
 - `docs/p4/security/security-profile-v1.md` §4–6 — Ed25519/JCS domains, replay, local peer boundary.
 - `docs/p4/proto/lia/v1/control_plane.proto` — `CommandEnvelope`, `OfflineAuthorizationLease`, `ResourceReference` and `RiskTier` fields.
 
@@ -23,7 +25,7 @@ Verify the public RFC 8032 Ed25519 primitive vector and the checked-in JCS/SHA-2
 
 ## Sequence-zero clarification
 
-The owner requires the first `CommandEnvelope.session_sequence` in a new session to be zero. Migration 003 initializes the watermark to zero but also requires every accepted value to be greater than that watermark, which rejects a first value of zero. Do not edit migration 003. Add forward migration 005 with an explicit `has_accepted_sequence` marker: the first acceptance may be exactly zero; all later values must strictly increase. The watermark and its retention deadline remain immutable except for monotonic sequence advancement, and deletion remains blocked until session expiry plus configured clock skew.
+The owner requires the first `CommandEnvelope.session_sequence` in a new session to be zero. Migration 003 initializes the watermark to zero but also requires every accepted value to be greater than that watermark, which rejects a first value of zero. Do not edit migration 003. Forward migration 005 adds an explicit `has_accepted_sequence` marker: the first acceptance may be exactly zero; all later values must strictly increase. The watermark and its retention deadline remain immutable except for monotonic sequence advancement, and deletion remains blocked until session expiry plus configured clock skew.
 
 ## Pins and license review
 
@@ -34,7 +36,15 @@ Sources checked 15 November 2026: [rusqlite 0.41.1](https://docs.rs/crate/rusqli
 ## Expected artifacts
 
 - Workspace manifest, exact direct dependencies and `Cargo.lock`.
-- Forward SQLite migration 005 and a recorded migration chain through 005.
+- Forward SQLite migrations 005–007 and a recorded migration chain through 007.
 - Store/bootstrap/claim/replay code plus tests for migrations, WAL/foreign keys, claim mismatches, nonce replay, zero-first/monotonic sequence behavior, retention, consume-before-effect atomicity, and backup/restore reconciliation.
 - RFC 8032 and JCS/SHA-256 fixture checks.
 - Redacted run evidence under `evidence/SQLITE-02/<run-id>/` and `evidence/SECURITY-01-local/<run-id>/`; statuses stay Not Run until procedures and review are complete.
+
+## Stale restore and trusted-time decision
+
+**Decision:** use an external monotonic integrity/time anchor. A production implementation must advance it before each protected SQLite commit and fail closed on startup mismatch; the external anchor also keeps a UTC-microsecond high-water mark and rejects clock rollback. Restoring a stale SQLite backup must require coordinator reconciliation. Restoring both database and anchor together remains outside this protection and requires a separate recovery control.
+
+**Implementation status:** migration 007 creates the database-side sequence/high-water state and uses integer-valued retention guards. The Rust crate does not yet update/reconcile that state with an external anchor, legacy timestamp columns are not fully backfilled, and legacy `julianday()` CHECK constraints in migration 003 remain. Do not use migration 007 as proof against stale restore or clock rollback. These are blocking SQLITE-02 items.
+
+The M2 threat-to-test map is drafted at `docs/p5/tasks/M2-threat-model-test-map.md`; no IPC implementation or IPC-01 evidence exists yet.

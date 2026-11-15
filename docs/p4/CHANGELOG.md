@@ -1,5 +1,22 @@
 # P4 contract package changelog
 
+## 0.2.4 — 15 November 2026
+
+**Baseline:** Blueprint v1.14.7. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Adds SQLite migration 007 with integer microsecond columns and integer-valued nonce/session retention guards. Runtime command/lease admission now parses RFC 3339 to integer microseconds; complete legacy-row backfill and removal of older floating-point CHECK constraints remain open.
+- Records device-store outcome/evidence/outbox writes and explicit `synchronous=FULL`; migrations acquire `BEGIN IMMEDIATE` before checking their version.
+- Adds signed-message canonicalization profile and local RFC 8785 number/non-BMP key-order and negative signature checks. Generated-language interoperability remains Not Run.
+- No conformance gate is marked Passed; process-kill, contention/WAL, stale-restore anchor, and full SECURITY-01 procedures remain open.
+
+## 0.2.3 — 15 November 2026
+
+**Baseline:** Blueprint v1.14.7. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Adds SQLite migration 006 for immutable outcome evidence metadata and database guards requiring evidence for verified success/failure, plus a durable possible-effect marker for unknown outcomes.
+- Defines the store boundary: not attempted is an accepted operation with no attempt; verified success/failure require matching evidence; any ambiguous possible effect is unknown and reconciled rather than replayed.
+- Clarifies that outcomes, attempt state, evidence metadata and the corresponding local outbox event commit atomically.
+
 ## 0.2.2 — 15 November 2026
 
 **Baseline:** Blueprint v1.14.5. The package remains Draft; no implementation conformance gate is marked Passed.

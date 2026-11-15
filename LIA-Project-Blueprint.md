@@ -4,10 +4,10 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.14.6
+> **Version:** 1.14.7
 > **Last updated:** 15 November 2026  
 > **Current phase:** P5 — First Vertical Slice (M0 complete; M1 in progress)
-> **Current workstream:** M1 — Device-agent core (in progress)
+> **Current workstream:** M1 — Device-agent core (in progress); M2 threat-map planning started in parallel
 > **Document status:** P5 M0 contract hygiene passed in PR #3; implementation/conformance gates remain Not Run
 
 ------------------------------------------------------------------------
@@ -8893,3 +8893,11 @@ Every release must produce an artifact-derived SPDX 2.3 JSON SBOM, dependency/li
 P4.1 contract package revision 0.2.2 reconciles cross-surface field types and response semantics and clarifies that the first command session sequence is zero exactly once, then strictly increases, adds the accepted-request status endpoint, makes `RATE_LIMITED` observable through HTTP 429/`Retry-After`, aligns evidence response identifiers with operation attempts, and carries device event source identity/sensitivity into Protobuf. Manifest revisions are restricted to the exact JSON/JCS-safe integer range `1..9007199254740991`; the Protobuf wire field remains `uint64`, while ProtoJSON's string representation is explicitly mapped to bounded JSON/SQL integers.
 
 PostgreSQL migration 003 adds account-consistent foreign keys and a coordinator offline-lease issuance ledger whose claims must match the referenced operation. SQLite migration 003 records device-side lease/nonce/session-sequence consumption before side effects in one transaction. PostgreSQL migration 004 adds rebuildable ObjectiveSummary, RunSummary, GrantSummary and RequestStatus projections; it does not create canonical run/step or grant authority. SQLite migration 004 enforces the manifest revision bound. The exact schema and mapping contract is maintained in [docs/p4/README.md](docs/p4/README.md).
+
+## 20.14 P5 implementation progress — 15 November 2026
+
+PR #4 (P5 scope decision) is merged to `main`; PR #5 (M1 device-agent core) is open and ready for review against `main`. The M1 store now records attempt completion, verified/unknown outcomes, evidence metadata and local outbox events transactionally; sets and checks SQLite `synchronous=FULL`; and serializes migrations with `BEGIN IMMEDIATE`. SQLite migration 007 adds integer-microsecond timestamp columns and trusted-time retention guards. Local tests cover the full migration chain, outcome/evidence invariants, lease/command replay and claim binding, and startup migration serialization. Local SECURITY-01 vectors now include RFC 8785 number and non-BMP key-order cases plus negative signature cases.
+
+These are implementation checks, not conformance passes. SQLITE-02 still requires process-kill windows, multi-reader/contending-writer and `SQLITE_BUSY` behavior, checkpoint/WAL-growth/long-reader measurements, and stale-backup recovery. The external monotonic integrity/time anchor has been selected but is not implemented or verified; legacy timestamp backfill and removal of floating-point CHECK constraints remain open. Protobuf/ProtoJSON interoperability, OIDC/mTLS, and full security lifecycle checks remain Not Run. The run evidence records these limits and no gate is marked Passed.
+
+M2 has started in parallel at the planning level. The threat-model-to-test map is at [docs/p5/tasks/M2-threat-model-test-map.md](docs/p5/tasks/M2-threat-model-test-map.md); socket implementation, baseline pinning and IPC-01 execution have not started. M1 remains the active workstream.
