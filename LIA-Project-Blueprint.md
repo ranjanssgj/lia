@@ -4,11 +4,11 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.14.3\
-> **Last updated:** 14 November 2026\
-> **Current phase:** P5 --- First Vertical Slice (M0 readiness; implementation not started)\
-> **Current workstream:** M0 --- Agent-ready baseline (In Progress)\
-> **Document status:** P4.1 contract package 0.2.1 is merged but remains Draft; P5 onboarding and M0 scaffolding are in progress; implementation and conformance gates remain Not Run
+> **Version:** 1.14.4  
+> **Last updated:** 15 November 2026  
+> **Current phase:** P5 — First Vertical Slice (M0 complete; implementation not started)  
+> **Current workstream:** M1 — Device-agent core (planning)  
+> **Document status:** P5 M0 contract hygiene passed in PR #3; implementation/conformance gates remain Not Run
 
 ------------------------------------------------------------------------
 
@@ -1499,37 +1499,20 @@ This section will map each requirement to its source product capability,
 architecture component, implementation work item, and test case as later
 phases are completed.
 
-  -----------------------------------------------------------------------
-  Requirement range Product domain    Architecture      Test mapping
-                                      mapping           
-  ----------------- ----------------- ----------------- -----------------
-  FR-001--009       Presence and      TBD in P3         TBD in P2.7
-                    lifecycle                           
+| Requirement range | Product domain | Architecture mapping | Contract, acceptance and proof mapping |
+|---|---|---|---|
+| FR-001–009 | Presence and lifecycle | ADR-047, ADR-050, P3.6 presentation boundaries | AC-001/010; IPC-01, GODOT-01 |
+| FR-010–019 | Environmental and spatial awareness | ADR-103, ADR-106, ADR-107, ADR-137 | AC-003; ADAPTER-01, HYPR-01 |
+| FR-020–029 | Communication | ADR-123, ADR-143; P3.7 provider boundary | AC-002; MODEL-01, SPEECH-01 |
+| FR-030–039 | Embodiment | ADR-050, ADR-128, ADR-145 | AC-001/007/010; IPC-01, GODOT-01 |
+| FR-040–049 | OS interaction | ADR-101–107, ADR-137 | AC-004–006/008/011; ADAPTER-01, HYPR-01/02, SECURITY-01 local subset |
+| FR-050–059 | Application and file interaction | ADR-101, ADR-110, P3.6 connector boundaries | TOOL-01 and adapter-specific proof; outside the P5 first-slice scope |
+| FR-060–069 | Memory | ADR-091–099, ADR-122 | AC-009; MEM-01, with local persistence in SQLITE-02 |
+| FR-070–089 | Autonomy and tasks | ADR-112, ADR-117–119; P3.4 workflow authority | TOOL-01, TEMP-01/02 and NATS-01; coordinator-profile proofs deferred to P6 |
+| FR-090–099 | Configuration and control | ADR-050, ADR-105, ADR-123 | AC-010; IPC-01, GODOT-01, SECURITY-01 local subset |
+| FR-100–109 | Runtime self-management | ADR-100, ADR-124, P3.2 deployment boundaries | SUPPLY-01 and OPS-01/02; coordinator/deployment proof deferred to P6 |
 
-  FR-010--019       Environmental     TBD in P3         TBD in P2.7
-                    awareness                           
-
-  FR-020--029       Communication     TBD in P3         TBD in P2.7
-
-  FR-030--039       Embodiment        TBD in P3         TBD in P2.7
-
-  FR-040--049       OS interaction    TBD in P3         TBD in P2.7
-
-  FR-050--059       Application and   TBD in P3         TBD in P2.7
-                    file interaction                    
-
-  FR-060--069       Memory            TBD in P3         TBD in P2.7
-
-  FR-070--089       Autonomy and      TBD in P3         TBD in P2.7
-                    tasks                               
-
-  FR-090--099       Configuration and TBD in P3         TBD in P2.7
-                    control                             
-
-  FR-100--109       Runtime           TBD in P3         TBD in P2.7
-                    self-management                     
-  -----------------------------------------------------------------------
-
+The table maps requirement groups to approved architecture decisions, versioned P4 contracts, P5 acceptance conditions and named proof gates. A gate listed here is not a claim that it has passed.
 ------------------------------------------------------------------------
 
 ### Supplemental traceability for expanded P2.1 requirements
@@ -1582,6 +1565,8 @@ registers through controlled change; prior identifiers remain unchanged.
 
 
 # 8. Decision register
+
+**Canonical ADR rule:** The entries in this register are the canonical source for every ADR's identifier, decision, status and consequence. Later P3 sections provide rationale and historical detail. Where their wording differs, this register controls; reconcile the summary here first and then update the explanatory text. Later explanatory headings are labelled “Rationale for ADR” to avoid presenting a second decision record.
 
   ----------------------------------------------------------------------------
   ID                Decision           Status              Rationale /
@@ -2593,6 +2578,8 @@ Docker Compose remains the initial development and self-host/reference packaging
 
 **1.14.1 — 14 Nov 2026:** Opened P4.1 and translated the approved P2/P3 baselines into draft integration contracts: Protobuf device control, OpenAPI 3.1 API, device IPC, PostgreSQL/SQLite persistence, Temporal workflow boundaries, NATS event delivery, provider-neutral interfaces, security profile, adapter manifests/conformance, runtime and supply-chain requirements. Added the P4 contract package and initial conformance/compatibility matrices. All implementation gates remained Not Run.
 
+**1.14.4 — 15 Nov 2026:** Recorded the owner-approved P5-local gate dependency profile; updated P5 M0 status after PR #3 merged and contract-hygiene CI passed; replaced stale TBD traceability cells with architecture/contract/acceptance/proof mappings; established the ADR decision-register canonical rule and relabelled later ADR expansions as rationale; removed the duplicate Phase 2 exit heading. No P4 implementation conformance gate is marked Passed.
+
 **1.14.3 — 14 Nov 2026:** Started P5 M0 readiness. Added repository agent guidance, onboarding README and P5 milestone/AC-to-gate mapping; pinned the initial contract-validation toolchain with a seven-day dependency cool-down; added CI for OpenAPI, Protobuf, PostgreSQL/SQLite migration chains, JSON Schema fixtures and TypeScript; added initial standards-derived security/digest vectors and an evidence index; tightened ignore rules so public test keys, database fixtures and Godot export presets remain trackable; repaired malformed OpenAPI response YAML. The contract-hygiene workflow and all P4/P5 implementation conformance gates are awaiting CI/evidence review and remain Not Run.
 
 **1.14.2 — 14 Nov 2026:** Reconciled P4.1 cross-contract inconsistencies identified during independent validation review. Aligned manifest revision types and JSON-safe bounds; added accepted-request status polling and HTTP 429/Retry-After; aligned operation-attempt evidence identifiers and device event source/sensitivity fields; added account-consistent references, exact offline-lease-to-operation claim binding and device-local consume-before-effect ledgers; introduced rebuildable API summary projections without moving canonical ownership from Temporal or Permission Authority; completed the P4/P6 gate mapping and migration inventory. Contract package revision 0.2.1 remains Draft and all conformance gates remain Not Run.
@@ -2606,30 +2593,10 @@ Docker Compose remains the initial development and self-host/reference packaging
 **P2.1–P2.7 status:** Complete as requirements baselines; runtime implementation and verification remain engineering work  
 **P3.1–P3.8 status:** Complete — architecture and reference technology baseline approved  
 **P4.1 status:** Contract package 0.2.1 and consistency corrections are merged; contracts remain Draft
-**P4 implementation status:** No P4 conformance gate is marked Passed. Protobuf generation/interoperability, OpenAPI validation, PostgreSQL migrations, SQLite migrations, security, Temporal, NATS, live adapters and end-to-end integration remain unverified
-**P5 status:** M0 onboarding/readiness is in progress; slice implementation has not started. The approved first slice remains Linux-first and local-first; Temporal, PostgreSQL coordinator services and NATS are outside its baseline
-**Overall status:** P0–P3 baselines are approved. P4 contracts remain drafts. P5 M0 defines agent instructions, initial pins, contract-hygiene CI, fixtures and evidence conventions; a draft contract or green hygiene check is not a passed implementation gate or production authorization.
-**Next action:** Review the P5 M0 branch and CI results, resolve any contract-hygiene failures, then begin the scoped P5 implementation milestones. Keep the exact Hyprland version and M5 provider/locality choices open for the owner.
-
-## Phase 2 exit criteria
-
-Phase 2 is complete only when:
-
--   Functional requirements are reviewed, uniquely identified, and
-    approved.
--   Non-functional requirements have measurable targets or explicit TBD
-    owners.
--   Context and perception boundaries are defined.
--   Interaction requirements cover voice, text, interruption, presence,
-    and embodiment.
--   Memory requirements define persistence, retrieval, correction, and
-    deletion behavior.
--   Autonomy, security, and permission requirements define execution
-    authority and user controls.
--   Acceptance criteria cover all P0 requirements and the agreed first
-    vertical slice.
--   Requirements are internally consistent and traceable into the
-    architecture phase.
+**P4 implementation status:** No P4 conformance gate is marked Passed. Contract hygiene passed; P4 implementation conformance including interoperability, security, persistence, Temporal, NATS, live adapters and end-to-end integration remains unverified
+**P5 status:** M0 contract-hygiene readiness is complete: PR #3 merged on 15 November 2026, and the contract-hygiene workflow passed on the PR head. No P5 implementation or conformance gate has passed. P5 remains Linux-first and local-first; coordinator infrastructure is outside the baseline
+**Overall status:** P0–P3 baselines are approved. P4 contracts remain drafts. P5 M0 provides agent instructions, initial validation pins, CI, fixtures and evidence conventions; a green hygiene check is not a passed implementation gate or production authorization.
+**Next action:** Start M1 planning against the pinned P4 contracts and approved P5-local gate profile. Choose and record exact SQLite and cryptography library pins after license/source review. Keep the exact Hyprland version and M5 hardware, language, budget and provider choices open for the owner.
 
 ## Phase 2 exit criteria
 
@@ -6933,61 +6900,61 @@ This ordering avoids premature lock-in and endless deferral: candidates can be e
 
 ## 19.55 P3.5 architecture decision records
 
-### ADR-091 — Domain-owned canonical data with one authority per record
+### Rationale for ADR-091 — Domain-owned canonical data with one authority per record
 
 **Status:** Approved
 
 LIA assigns each record to one canonical owning domain. Workflow, permission, memory, device-local, provider-owned, artifact and notification data retain separate authorities. Replicas, caches, indexes and backups are non-authoritative projections and cannot silently replace their source.
 
-### ADR-092 — Governed memory remains separate from workflow/control storage
+### Rationale for ADR-092 — Governed memory remains separate from workflow/control storage
 
 **Status:** Approved
 
 The P2.5 Memory Authority owns canonical memory and governed relationships. The workflow coordinator stores only task state, evidence references and minimum authorized context required for execution. Physical placement of canonical memory storage remains deployment-configurable and is selected through P3.8.
 
-### ADR-093 — Scoped, minimum-necessary synchronization
+### Rationale for ADR-093 — Scoped, minimum-necessary synchronization
 
 **Status:** Approved
 
 Synchronization is an independently authorized operation. Records are projected only to account, project, task/run, device or explicitly permitted scopes. Sensitivity, owner, purpose, retention and destination capability are checked before transfer. Enrollment does not grant memory or file synchronization.
 
-### ADR-094 — Domain-specific consistency and semantic conflict resolution
+### Rationale for ADR-094 — Domain-specific consistency and semantic conflict resolution
 
 **Status:** Approved
 
 Control/permission and workflow state use authoritative current checks and coordinator-serialized transitions. Permitted memory/client replicas converge through versioned synchronization and explicit conflicts. Timestamp-only last-write-wins is not accepted for canonical memory, deletion, grants, approvals or workflow state.
 
-### ADR-095 — Deletion tombstones prevent stale replica and backup resurrection
+### Rationale for ADR-095 — Deletion tombstones prevent stale replica and backup resurrection
 
 **Status:** Approved
 
 Forget/erase operations create durable tombstones at the owning authority, restrict retrieval immediately and propagate to dependent records, indexes, caches, workers, replicas and restoration paths. Offline/unreachable copies and external-provider deletion are reported as pending or unverified until evidence exists.
 
-### ADR-096 — Backup and restore are isolated from live authority and sync
+### Rationale for ADR-096 — Backup and restore are isolated from live authority and sync
 
 **Status:** Approved
 
 Backups are domain-scoped recovery snapshots, not live replicas. Restore occurs in staging and reapplies current deletion, correction, grant, device-revocation and policy state before retrieval or execution. Secrets/private keys are excluded from ordinary backup and stale operations are reconciled, not replayed.
 
-### ADR-097 — Device-local and secret material stays within its owning security boundary
+### Rationale for ADR-097 — Device-local and secret material stays within its owning security boundary
 
 **Status:** Approved
 
 Raw screen/audio/camera captures, live desktop state, private keys and connector credentials are not generally synchronized. Authorized tasks may transfer minimum derived evidence or obtain a just-in-time scoped credential reference through the appropriate owner. Device identity keys are not reused as general data-encryption keys.
 
-### ADR-098 — Strong consistency is reserved for authority and workflow state
+### Rationale for ADR-098 — Strong consistency is reserved for authority and workflow state
 
 **Status:** Approved
 
 Permission, revocation, campaign policy and workflow transitions require authoritative current checks and guarded state changes. Memory and client projections may converge asynchronously using revisions, provenance and conflict handling. External-provider observations remain timestamped snapshots, not authority over provider state.
 
-### ADR-099 — Retention and lifecycle are defined by data domain
+### Rationale for ADR-099 — Retention and lifecycle are defined by data domain
 
 **Status:** Approved
 
 Memory, workflow history, event journals, notifications, artifacts, caches, worker workspaces, connector snapshots and backups have distinct ownership and retention rules. A storage product's default TTL or backup policy cannot silently define LIA's retention behavior.
 
-### ADR-100 — Technology selection follows subsystem contract readiness
+### Rationale for ADR-100 — Technology selection follows subsystem contract readiness
 
 **Status:** Approved
 
@@ -7588,67 +7555,67 @@ These references describe platform constraints that may change across OS release
 
 ### P3.6 architecture decision records
 
-#### ADR-101 — Adapters are explicit execution boundaries with local ownership
+#### Rationale for ADR-101 — Adapters are explicit execution boundaries with local ownership
 
 **Status:** Approved
 
 Every OS, device, home gateway and external service operation is exposed through a declared adapter boundary. The adapter executes only within the resource and trust domain it owns; remote coordination routes requests but cannot bypass the owning device or provider authority.
 
-#### ADR-102 — Versioned capability manifests describe support, not permission
+#### Rationale for ADR-102 — Versioned capability manifests describe support, not permission
 
 **Status:** Approved
 
 Adapters publish versioned, runtime-aware capability manifests with typed operations, resource types, prerequisites, risk floors, data classes, freshness, side-effect, verification and cancellation semantics. Discovery or declaration never grants permission. Unsupported, unavailable, degraded and permission-required capabilities remain distinct states.
 
-#### ADR-103 — Resource identity and observations are scoped, revisioned and time-bounded
+#### Rationale for ADR-103 — Resource identity and observations are scoped, revisioned and time-bounded
 
 **Status:** Approved
 
 Adapter resources use owner-bound opaque identities, resource generations/revisions, source identity, observation timestamps and explicit freshness. Provider-owned state remains authoritative at the provider; local desktop and device state remains authoritative at its originating node. A cached observation is not current state or execution evidence.
 
-#### ADR-104 — Shared operation semantics do not imply platform capability parity
+#### Rationale for ADR-104 — Shared operation semantics do not imply platform capability parity
 
 **Status:** Approved
 
 Linux, Windows, mobile, home and service adapters implement a common invocation/result contract while exposing only capabilities their actual platform/runtime supports. LIA does not emulate unsupported operations, silently switch security models or promise parity through a lowest-common-denominator abstraction.
 
-#### ADR-105 — The owning executor revalidates every operation before side effects
+#### Rationale for ADR-105 — The owning executor revalidates every operation before side effects
 
 **Status:** Approved
 
 An operation is bound to the P3.3 authenticated command envelope, target, adapter, resource, capability, typed arguments, preconditions, current grant, risk policy, expiry and stable operation identity. The owning executor rechecks trust, authorization, current state and platform support before acting.
 
-#### ADR-106 — Observation, action and verification are separate capabilities
+#### Rationale for ADR-106 — Observation, action and verification are separate capabilities
 
 **Status:** Approved
 
 Read/observe, subscribe, control, configure and verify rights are separately declared and granted. An API acknowledgement or accepted command is not proof of the resulting state. Completion requires resource-appropriate evidence; ambiguous side effects enter P3.4 reconciliation rather than blind retry.
 
-#### ADR-107 — Desktop automation is compositor/window-manager and OS specific
+#### Rationale for ADR-107 — Desktop automation is compositor/window-manager and OS specific
 
 **Status:** Approved
 
 Linux Wayland and X11, and Windows desktop operations, have separate implementation and security surfaces. Capabilities are discovered for the current session and compositor/window manager/API context. LIA shall report unsupported control honestly and shall not claim universal window-management, focus, input or accessibility coverage.
 
-#### ADR-108 — Mobile is a constrained companion node, not an always-on executor
+#### Rationale for ADR-108 — Mobile is a constrained companion node, not an always-on executor
 
 **Status:** Approved
 
 Android and iOS capabilities are bounded by their app lifecycle, background-execution policy, user-granted permissions and supported system APIs. Always-on coordination and durable task execution remain independent of the phone. Mobile background availability is best-effort unless the OS explicitly guarantees the relevant event/task path.
 
-#### ADR-109 — Home automation authorization is per resource and physical action
+#### Rationale for ADR-109 — Home automation authorization is per resource and physical action
 
 **Status:** Approved
 
 Home integrations model devices, endpoints, properties, observations, events and actions independently. Read and control grants are separate; risk is assessed per operation. Locks, garage doors, security systems and safety-critical controls retain the R4 per-operation confirmation boundary. A generic home-integration grant authorizes no blanket control.
 
-#### ADR-110 — External connectors isolate provider identity, scopes and side effects
+#### Rationale for ADR-110 — External connectors isolate provider identity, scopes and side effects
 
 **Status:** Approved
 
 Each external account/connector has independent identity, credentials, scopes, quotas, provider version and event trust. Secrets are retrieved just in time through the P2.5/P3.5 data boundary. Provider state is authoritative; writes require idempotency/reconciliation and evidence. Connector availability or webhook delivery never grants permission.
 
-#### ADR-111 — Adapter lifecycle, compatibility and cancellation are explicit
+#### Rationale for ADR-111 — Adapter lifecycle, compatibility and cancellation are explicit
 
 **Status:** Approved
 
@@ -8179,85 +8146,85 @@ P4/P5 must recheck the threat model, exact dependency versions, provider control
 
 ### P3.7 architecture decision records
 
-#### ADR-112 — Intelligence proposes; deterministic authorities decide and execute
+#### Rationale for ADR-112 — Intelligence proposes; deterministic authorities decide and execute
 
 **Status:** Approved
 
 Model and agent components may interpret, retrieve, reason, propose objectives/plans, prepare typed tool requests and explain results. They do not own permissions, canonical workflow state, device/provider execution, memory authority or verified completion. Side effects pass through P3.4 workflow authority, P2.6 permission/risk policy and P3.6 resource-owning adapters.
 
-#### ADR-113 — Governed context assembly is the only model-context ingress
+#### Rationale for ADR-113 — Governed context assembly is the only model-context ingress
 
 **Status:** Approved
 
 Conversation and task models receive context only through a governed assembly boundary that enforces purpose, sensitivity, provenance, freshness, scope, locality and retention policy. Context preserves trusted instruction, user request, memory evidence and untrusted-content distinctions.
 
-#### ADR-114 — Retrieved and tool-supplied content remains untrusted data
+#### Rationale for ADR-114 — Retrieved and tool-supplied content remains untrusted data
 
 **Status:** Approved
 
 Webpages, files, messages, memory excerpts, application content, provider events, tool results and adapter descriptions cannot override trusted instructions, change grants or authorize actions. Trust labels/provenance remain attached through extraction, summarization and context compaction.
 
-#### ADR-115 — Model outputs are typed proposals and fail closed on invalid structure
+#### Rationale for ADR-115 — Model outputs are typed proposals and fail closed on invalid structure
 
 **Status:** Approved
 
 Machine-consumed outputs are schema-constrained where supported, then independently validated for schema, semantics, bounds, provenance and policy. Parseable JSON or schema conformance does not prove truth, correctness, permission or safety.
 
-#### ADR-116 — Tool availability is computed from current capability and policy state
+#### Rationale for ADR-116 — Tool availability is computed from current capability and policy state
 
 **Status:** Approved
 
 The tool broker derives the model-visible tool set from current adapter manifests, target/resource state, user/task scope, locality and permission policy. This filtered set is an affordance list, not an authorization grant. The resource-owning executor revalidates the exact operation before a side effect.
 
-#### ADR-117 — Tool dispatch is mediated by a separate broker and local executor
+#### Rationale for ADR-117 — Tool dispatch is mediated by a separate broker and local executor
 
 **Status:** Approved
 
 A model tool call is an untrusted request. A deterministic broker validates tool identity, schema, resource, target, arguments, purpose, risk and approval before routing through the P3.3 command envelope to the P3.6 owning adapter. Models cannot invoke arbitrary shell commands, APIs, files or devices outside declared capabilities.
 
-#### ADR-118 — Workflow authority validates and adopts proposed plans
+#### Rationale for ADR-118 — Workflow authority validates and adopts proposed plans
 
 **Status:** Approved
 
 The planner emits a versioned plan proposal. The deterministic workflow authority validates bounds, DAG structure, permissions, deadlines, campaign policy, locality and budgets before adoption. A model cannot mark its own plan steps successful or mutate durable workflow state directly.
 
-#### ADR-119 — Agent turns, delegation and tool loops are bounded
+#### Rationale for ADR-119 — Agent turns, delegation and tool loops are bounded
 
 **Status:** Approved
 
 Every inference/task cycle has explicit limits for model turns, tool calls, plan steps, parallelism, wall time, token/resource use, retries and delegation depth. Replanning follows P3.4 bounded iteration rules. Unbounded self-prompting, recursive delegation and high-frequency model polling are prohibited.
 
-#### ADR-120 — Model routing follows task capability and data-processing policy
+#### Rationale for ADR-120 — Model routing follows task capability and data-processing policy
 
 **Status:** Approved
 
 The gateway routes by task class, modalities, output capabilities, measured quality, latency/resource constraints, sensitivity, locality, provider retention/processing terms, region and user policy. A fallback is eligible only if it satisfies the same or stricter data-handling and authority constraints.
 
-#### ADR-121 — Provider sessions are disposable execution state, not LIA authority
+#### Rationale for ADR-121 — Provider sessions are disposable execution state, not LIA authority
 
 **Status:** Approved
 
 LIA owns canonical conversation/task identifiers, workflow state, memory, instruction versions and evidence lineage. Provider-side conversation IDs, caches, prompt prefixes and session state are transient aids. Cross-provider continuation is reconstructed from authorized context.
 
-#### ADR-122 — Memory formation is a governed proposal and commit pipeline
+#### Rationale for ADR-122 — Memory formation is a governed proposal and commit pipeline
 
 **Status:** Approved
 
 Models may suggest memory candidates, but the P2.5 Memory Authority evaluates provenance, sensitivity, source scope, confidence, temporal validity, contradiction, retention and user correction before persistence. Model inference is not silently promoted to permanent memory.
 
-#### ADR-123 — Speech is a cancellable modality pipeline with text fallback
+#### Rationale for ADR-123 — Speech is a cancellable modality pipeline with text fallback
 
 **Status:** Approved
 
 Audio capture, speech recognition, turn detection, response generation and synthesis have separate permission, latency, failure and retention semantics. Raw audio remains transient by default. Interruption stops synthesis promptly and preserves task state. Text remains a complete fallback.
 
-#### ADR-124 — Model, prompt, tool and policy changes require versioned evaluation
+#### Rationale for ADR-124 — Model, prompt, tool and policy changes require versioned evaluation
 
 **Status:** Approved
 
 Model/provider versions, routing rules, instruction bundles, tool schemas, context policies and validators are versioned and traceable. Changes require representative quality, safety, privacy, tool-use, latency and cost evaluation before promotion. Canary/rollback and degraded states are required.
 
-#### ADR-125 — Multi-agent specialization is optional and subordinate
+#### Rationale for ADR-125 — Multi-agent specialization is optional and subordinate
 
 **Status:** Approved
 
@@ -8552,133 +8519,133 @@ flowchart TD
 
 ## 19.94 P3.8 architecture decision records
 
-#### ADR-126 — Two-profile reference technology baseline
+#### Rationale for ADR-126 — Two-profile reference technology baseline
 
 **Status:** Approved
 
 The P5 local-first profile and full distributed profile share logical contracts but activate only the components required by their scope.
 
-#### ADR-127 — Rust and Tokio for the desktop/device agent
+#### Rationale for ADR-127 — Rust and Tokio for the desktop/device agent
 
 **Status:** Approved
 
 Stable Rust is the local device agent and resource-owning OS adapter baseline. Tokio handles asynchronous I/O; CPU-heavy work is isolated. Adapter interfaces retain the P3.6 typed capability model.
 
-#### ADR-128 — Godot 4.7.2 stable for embodiment
+#### Rationale for ADR-128 — Godot 4.7.2 stable for embodiment
 
 **Status:** Approved with migration proof gate
 
 Godot 4.7.2 stable is the presentation baseline. GDScript handles primary presentation logic. Godot does not own OS permission, workflow, memory or tool authority. The upgrade is conditional on the VRM/asset/animation and transparent-window proof gate.
 
-#### ADR-129 — Node.js 24 LTS, TypeScript and Fastify 5 for coordinator services
+#### Rationale for ADR-129 — Node.js 24 LTS, TypeScript and Fastify 5 for coordinator services
 
 **Status:** Approved
 
 The Temporal TypeScript SDK officially supports Node 20/22/24. Node 24 is selected until Node 26 is included in that SDK support matrix and passes conformance. Fastify 5 is the HTTP API framework.
 
-#### ADR-130 — Temporal TypeScript SDK for durable workflow
+#### Rationale for ADR-130 — Temporal TypeScript SDK for durable workflow
 
 **Status:** Approved with workflow/side-effect proof gate
 
 Temporal owns durable Run/Step execution. Workflow code is deterministic; non-deterministic external operations occur in Activities. LIA operation IDs, idempotency and reconciliation remain mandatory.
 
-#### ADR-131 — PostgreSQL 16 for canonical coordinator data
+#### Rationale for ADR-131 — PostgreSQL 16 for canonical coordinator data
 
 **Status:** Approved
 
 PostgreSQL 16 is the initial domain database. Temporal persistence remains isolated in a separate database/schema/role boundary on the same major-version profile initially. Both domains preserve their own migrations and connection pools.
 
-#### ADR-132 — PostgreSQL FTS, relational graph tables and pgvector
+#### Rationale for ADR-132 — PostgreSQL FTS, relational graph tables and pgvector
 
 **Status:** Approved with retrieval benchmark gate
 
 The initial memory retrieval stack combines full-text, temporal/typed relational graph edges and pgvector. Exact vector search comes first; HNSW requires scope-filtered recall/latency and isolation evidence.
 
-#### ADR-133 — SQLite WAL for device-local persistence
+#### Rationale for ADR-133 — SQLite WAL for device-local persistence
 
 **Status:** Approved
 
 SQLite WAL is for local journals/outboxes/cache on one host only. It is not a network filesystem or cross-device shared database. Backup uses a consistent snapshot/online backup.
 
-#### ADR-134 — NATS JetStream for distributed event delivery
+#### Rationale for ADR-134 — NATS JetStream for distributed event delivery
 
 **Status:** Approved
 
 JetStream provides durable event distribution; PostgreSQL outbox/inbox remains canonical. Delivery is at least once and app-level durable deduplication remains required.
 
-#### ADR-135 — gRPC/Protobuf for control-plane communication
+#### Rationale for ADR-135 — gRPC/Protobuf for control-plane communication
 
 **Status:** Approved with interoperability proof gate
 
 Device/control-plane and typed internal RPC use gRPC over HTTP/2 and Protocol Buffers. Rust initially uses released Tonic 0.14.x; TypeScript uses generated compatible clients. Exact patch/codegen pinning and any migration to the successor grpc crate require the P4 RPC-01 proof gate. Mobile/web APIs use HTTPS/JSON.
 
-#### ADR-136 — Native Kotlin/Compose and SwiftUI companion clients
+#### Rationale for ADR-136 — Native Kotlin/Compose and SwiftUI companion clients
 
 **Status:** Approved
 
 Android uses Kotlin/Jetpack Compose; iOS uses Swift/SwiftUI. Android is first implementation target; iOS has its own lifecycle/capability manifest.
 
-#### ADR-137 — Hyprland Wayland as first Linux adapter profile
+#### Rationale for ADR-137 — Hyprland Wayland as first Linux adapter profile
 
 **Status:** Approved with first-slice conformance gate
 
 The first Linux profile is a specific Hyprland Wayland session, not general Wayland support. The adapter uses bounded requests, closes the synchronous request socket after use, reads events on the separate event socket and verifies post-move geometry.
 
-#### ADR-138 — Home Assistant WebSocket as optional first home connector
+#### Rationale for ADR-138 — Home Assistant WebSocket as optional first home connector
 
 **Status:** Approved for optional integration prototype
 
 Home Assistant is optional and not core dependency. Per-entity/action risk and permission gates remain. Actual hardware/device support is not claimed until tested.
 
-#### ADR-139 — OpenTelemetry for instrumentation
+#### Rationale for ADR-139 — OpenTelemetry for instrumentation
 
 **Status:** Approved
 
 OpenTelemetry semantic conventions and APIs are the instrumentation baseline. The JavaScript SDK 3.0 release stabilizes all three signals; Rust traces remain Beta while Rust Metrics/Logs are Stable. P4 pins compatible per-language/per-signal packages and explicitly proof-gates pre-stable Rust tracing use. Backend/exporter remains deployment-specific.
 
-#### ADR-140 — OCI images and Docker Compose for initial deployment
+#### Rationale for ADR-140 — OCI images and Docker Compose for initial deployment
 
 **Status:** Approved for reference/self-host deployment
 
 Docker Compose is the initial single-host reference/self-host runtime and is not an HA/DR guarantee. Managed production availability and recovery require a separately evidenced deployment profile. Kubernetes is deferred until measured need.
 
-#### ADR-141 — OIDC and OS-native secret stores
+#### Rationale for ADR-141 — OIDC and OS-native secret stores
 
 **Status:** Approved at protocol/interface level
 
 OIDC is the account authentication baseline. Device proof-of-possession remains separate. OS-native protected stores and hosted KMS/HSM interface are used; vendor choices remain open.
 
-#### ADR-142 — Thin LIA-owned orchestrator/tool broker
+#### Rationale for ADR-142 — Thin LIA-owned orchestrator/tool broker
 
 **Status:** Approved
 
 The core orchestration, context, model gateway, tool broker and permission integration are LIA-owned components. No third-party agent framework owns authority or execution.
 
-#### ADR-143 — Model and speech providers deferred
+#### Rationale for ADR-143 — Model and speech providers deferred
 
 **Status:** Approved deferral with P5 evaluation gate
 
 No LLM, local inference server, embedding, ASR or TTS vendor is selected. Candidates must pass task-specific quality, privacy, retention, region, latency, safety/tool-use and cost evaluation.
 
-#### ADR-144 — Local content-addressed and S3-compatible artifact storage
+#### Rationale for ADR-144 — Local content-addressed and S3-compatible artifact storage
 
 **Status:** Approved at interface/profile level
 
 Local artifacts use content-addressed files. Hosted artifacts use an S3-compatible interface; provider and backup vendor remain open.
 
-#### ADR-145 — Local presentation-to-agent IPC deferred to P4 proof
+#### Rationale for ADR-145 — Local presentation-to-agent IPC deferred to P4 proof
 
 **Status:** Approved as bounded deferral
 
 Godot and Rust communicate via local-only authenticated IPC. P4 compares Unix domain sockets, Windows named pipes and supervised child-process streams. An unauthenticated localhost command port is not accepted.
 
-#### ADR-146 — OpenTelemetry is adopted with signal-specific SDK maturity gates
+#### Rationale for ADR-146 — OpenTelemetry is adopted with signal-specific SDK maturity gates
 
 **Status:** Approved
 
 OpenTelemetry is the cross-component instrumentation semantic standard. JavaScript SDK 3.0 stabilizes all three signals; Rust traces remain Beta while Metrics/Logs are Stable. P4 pins per-language/per-signal packages and explicitly proof-gates pre-stable Rust tracing use.
 
-#### ADR-147 — Docker Compose is a single-host reference profile, not an availability guarantee
+#### Rationale for ADR-147 — Docker Compose is a single-host reference profile, not an availability guarantee
 
 **Status:** Approved
 
@@ -8873,6 +8840,8 @@ P4 is complete only after:
 P4 exit does not prove the Godot migration, Hyprland window movement, complete Windows adapter coverage, provider quality at production scale, hosted availability, mobile lifecycle, or physical home-device behavior. Those retain their P5/P6 proof gates.
 
 **Current P4 state:** Contract drafts and consistency corrections are merged; all implementation and conformance gates remain Not Run. `MOBILE-01` and `HOME-01` are explicitly deferred to P6 and are not P4 exit requirements. P5 M0 may establish tooling and contract-hygiene checks while P4 verification remains open. P5 implementation may use a named draft revision as an engineering input, but must not treat it as a verified interface or claim the associated gate Passed until the applicable procedure and evidence are reviewed.
+
+**Owner-approved P5-local gate profile (15 November 2026):** P5 may proceed against the Linux local-first profile with SQLITE-02, the local SECURITY-01 subset, Linux IPC-01, ADAPTER-01, HYPR-01/02 and GODOT-01 as its milestone gates. TEMP-01/02, NATS-01, DB-01, RPC-02 and OPS-01/02 are not P5 prerequisites and are deferred to the P6 coordinator profile. All remain Not Run; this sequencing decision does not verify a gate or remove its contract obligation.
 
 
 ## 20.9 Adapter contract and compatibility baseline

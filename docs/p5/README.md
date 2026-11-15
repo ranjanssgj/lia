@@ -1,8 +1,8 @@
 # P5 — First vertical slice plan
 
-**Status:** Planning baseline; implementation has not started.
+**Status:** M0 readiness complete; implementation has not started.
 **Scope:** The approved first slice in Blueprint §6, on one Linux host, one supported display and one exact Hyprland profile.
-**Authority:** Blueprint v1.14.2 and P4 contract package 0.2.1 on `main`.
+**Authority:** Blueprint v1.14.4 and P4 contract package 0.2.1 (Draft) on `main`.
 
 P5 proves one complete interaction path across presentation, conversation, fresh desktop context, current authorization, one same-display window move, truthful outcome reporting and one inspectable/deletable low-sensitivity memory. It does not establish general Linux, Windows, mobile, Home Assistant, cloud, or production-provider support.
 
@@ -22,6 +22,26 @@ The P4 artifacts are drafts. Coding may begin only against a named contract revi
 | **M5 — Conversation and memory loop** | Text and push-to-talk interaction; synthetic provider first; later approved local/hosted provider trials; persisted preference with provenance, inspect/delete | AC-002 and AC-009; end-to-end AC-001–AC-011 regression | MODEL-01, SPEECH-01 and MEM-01 as applicable; provider locality/retention/cancellation, interruption, restart, provenance, inspection and deletion evidence; full slice acceptance run | M1–M4; owner decisions on ASR/TTS/LLM candidates and locality rules; memory-local schema and retention policy |
 
 M0 CI shall first report clearly scoped contract hygiene results. A passing CI job is not a P4 conformance pass; implementation gates remain Not Run until their full procedures and evidence are complete.
+
+## Owner decisions and readiness record (15 November 2026)
+
+PR #3 merged M0 on 15 November 2026. Its contract-hygiene workflow passed on the PR head; see [run 43625530632](https://github.com/ranjanssgj/lia/actions/runs/43625530632). GitGuardian also passed. These checks establish contract hygiene only. P4/P5 implementation gates remain Not Run, and no acceptance condition is claimed satisfied.
+
+The owner approved this P5-local dependency profile: SQLITE-02, local SECURITY-01, Linux IPC-01, ADAPTER-01, HYPR-01/02 and GODOT-01. TEMP-01/02, NATS-01, DB-01, RPC-02 and OPS-01/02 are deferred to P6's coordinator profile, not considered passed or removed. P5 does not need Temporal, PostgreSQL coordinator services, NATS or hosted inference.
+
+The owner deferred LIA's project license decision. No license is selected or implied, and this plan does not grant redistribution rights. The initial [dependency/model-weight license register](../../toolchain/LICENSE-REGISTER.md) records locked validation dependencies and open artifact reviews. The adopted [provider evaluation policy](provider-evaluation.md) sets egress boundaries without selecting any model/provider.
+
+### Open owner decisions
+
+| Item | Status |
+|---|---|
+| P5-local gate profile | Approved 15 November 2026; recorded above |
+| LIA project license | Deferred by owner; no LICENSE file selected |
+| Exact Hyprland build/profile | Open; required before M3 |
+| Hardware tier and GPU availability | Open; needed before local LLM evaluation |
+| Languages | Open; “English first, Hindi stretch” remains a proposal |
+| Hosted evaluation budget and time box | Open; $20/month and two weeks remain proposals |
+| Coordinator Node baseline | P6 decision; Node 24 remains the blueprint reference |
 
 ## Acceptance-condition coverage
 
@@ -51,8 +71,8 @@ For CI-hosted evidence, retain immutable run URLs and downloadable reports or ch
 
 The readiness research is dated 2026-11-14. Re-verify all version facts from primary release sources immediately before creating lockfiles or toolchain files. Pin a compatible set per milestone, including code generators and runtime libraries; record exact versions and artifact hashes. Apply a documented dependency cool-down for newly published versions. Do not copy candidate versions from the research note without rechecking.
 
-Owner decisions remain open: ASR/TTS/LLM candidates and locality constraints; exact Hyprland baseline; and whether the coordinator’s Node baseline changes. The approved slice is local-first; PostgreSQL, Temporal, NATS and hosted inference are not required for baseline desktop operation. Do not silently add them to the slice.
+Owner decisions remain open: exact Hyprland baseline; hardware/GPU tier; languages; hosted evaluation budget and time box; project license; and any change to the coordinator’s Node baseline. ASR/TTS/LLM candidates remain unselected. The P5-local gate profile was approved by the owner on 15 November 2026. The approved slice is local-first; PostgreSQL, Temporal, NATS and hosted inference are not required for baseline desktop operation. Do not silently add them to the slice.
 
 ## P4/P6 status boundary
 
-P4 gate status remains as recorded in [`docs/p4/conformance/p4-conformance-matrix.md`](../p4/conformance/p4-conformance-matrix.md). P5 Linux proof does not claim Windows parity. `MOBILE-01` and `HOME-01` remain P6. P5 may use the contracts as drafts while they are verified incrementally; update versioned contracts when implementation evidence exposes a defect, preserving prior revisions where required.
+P4 gate status remains as recorded in [`docs/p4/conformance/p4-conformance-matrix.md`](../p4/conformance/p4-conformance-matrix.md), all Not Run. The owner-approved P5-local dependency profile is SQLITE-02, local SECURITY-01, Linux IPC-01, ADAPTER-01, HYPR-01/02 and GODOT-01; coordinator gates TEMP-01/02, NATS-01, DB-01, RPC-02 and OPS-01/02 are deferred to P6. P5 Linux proof does not claim Windows parity. `MOBILE-01` and `HOME-01` remain P6. P5 may use the contracts as drafts while they are verified incrementally; update versioned contracts when implementation evidence exposes a defect, preserving prior revisions where required.
