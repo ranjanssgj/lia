@@ -1,0 +1,23 @@
+{
+  "name": "lia-contract-validation",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pinned validation tools for LIA P4 contracts and P5 onboarding",
+  "packageManager": "npm@12.2.2",
+  "scripts": {
+    "check:openapi": "redocly bundle docs/p4/openapi/lia-v1.yaml --output /tmp/lia-openapi-bundle.yaml",
+    "check:types": "tsc --strict --noEmit --target ES2022 --module ESNext --moduleResolution Bundler docs/p4/providers/provider-interfaces-v1.ts",
+    "check:json": "node scripts/check-json-fixtures.mjs",
+    "check:sqlite": "node scripts/check-sqlite-migrations.mjs",
+    "check:postgres": "node scripts/check-postgres-migrations.mjs",
+    "check:proto": "bash toolchain/bootstrap-protoc.sh && .toolchain/protoc/bin/protoc --proto_path=docs/p4/proto --proto_path=.toolchain/protoc/include --include_imports --descriptor_set_out=/tmp/lia-control-plane.pb docs/p4/proto/lia/v1/control_plane.proto"
+  },
+  "devDependencies": {
+    "@redocly/cli": "2.76.0",
+    "@sqlite.org/sqlite-wasm": "3.54.1-build1",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "pg": "8.23.1",
+    "typescript": "7.0.2"
+  }
+}

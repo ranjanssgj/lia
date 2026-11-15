@@ -1,0 +1,26 @@
+# Exact versions selected for the P5 local-first baseline and contract CI.
+# Re-verify the linked primary sources before any intentional upgrade.
+verified_on = "2026-11-14"
+
+[p5]
+rust = "1.99.1" # Previous stable; 1.100.0 had shipped only two days earlier.
+godot = "4.7.2-stable" # Existing blueprint baseline.
+hyprland = "owner-decision-required" # Candidate 0.57.2; not selected by this file.
+sqlite_device_crate = "owner-decision-required" # Select/build separately from host SQLite.
+
+[contract_ci]
+node = "26.13.1" # CI-only security exception; see exceptions.md.
+npm = "12.2.2" # Lockfile authoring/CI package manager.
+typescript = "7.0.2"
+redocly_cli = "2.76.0" # 2.77+ had not completed the seven-day cool-down.
+ajv = "8.20.0"
+ajv_formats = "3.0.1"
+pg_client = "8.23.1"
+sqlite_wasm_package = "3.54.1-build1"
+sqlite_runtime = "3.54.1"
+postgres_image = "postgres:16.16@sha256:2d5c77ae9b0e0944ffb92f8d8fc2fa2edb215cb0976da8bac34df917af417e87" # linux/amd64
+protoc = "36.2"
+
+[protoc_linux_x86_64]
+url = "https://github.com/protocolbuffers/protobuf/releases/download/v36.2/protoc-36.2-linux-x86_64.zip"
+sha256 = "121f6c7afe1d4d0e3ea6aab9432038599250134cbf4474cb1167d2c7decd4278"

@@ -4,11 +4,11 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.14.2\
+> **Version:** 1.14.3\
 > **Last updated:** 14 November 2026\
-> **Current phase:** P4 --- Integration Contracts (In Progress)\
-> **Current workstream:** P4.1 --- Contract inventory and interface drafts (Draft)\
-> **Document status:** P0–P3 baselines approved; P4.1 contract package drafted for review; implementation and conformance evidence pending
+> **Current phase:** P5 --- First Vertical Slice (M0 readiness; implementation not started)\
+> **Current workstream:** M0 --- Agent-ready baseline (In Progress)\
+> **Document status:** P4.1 contract package 0.2.1 is merged but remains Draft; P5 onboarding and M0 scaffolding are in progress; implementation and conformance gates remain Not Run
 
 ------------------------------------------------------------------------
 
@@ -304,7 +304,7 @@ through controlled change; they do not invalidate earlier requirements.
   P2      Requirements engineering           Complete — baseline approved
   P3      System architecture                Complete — P3.1–P3.8 architecture and reference technology baseline approved
   P4      Integration contracts              In Progress — P4.1 contract package drafted; verification pending
-  P5      First vertical slice               Pending
+  P5      First vertical slice               In Progress — M0 agent onboarding/readiness; slice implementation not started
   P6      Companion integration              Pending
   P7      Proactive behavior                 Pending
   P8      Expanded autonomy and perception   Pending
@@ -2593,21 +2593,23 @@ Docker Compose remains the initial development and self-host/reference packaging
 
 **1.14.1 — 14 Nov 2026:** Opened P4.1 and translated the approved P2/P3 baselines into draft integration contracts: Protobuf device control, OpenAPI 3.1 API, device IPC, PostgreSQL/SQLite persistence, Temporal workflow boundaries, NATS event delivery, provider-neutral interfaces, security profile, adapter manifests/conformance, runtime and supply-chain requirements. Added the P4 contract package and initial conformance/compatibility matrices. All implementation gates remained Not Run.
 
+**1.14.3 — 14 Nov 2026:** Started P5 M0 readiness. Added repository agent guidance, onboarding README and P5 milestone/AC-to-gate mapping; pinned the initial contract-validation toolchain with a seven-day dependency cool-down; added CI for OpenAPI, Protobuf, PostgreSQL/SQLite migration chains, JSON Schema fixtures and TypeScript; added initial standards-derived security/digest vectors and an evidence index; tightened ignore rules so public test keys, database fixtures and Godot export presets remain trackable; repaired malformed OpenAPI response YAML. The contract-hygiene workflow and all P4/P5 implementation conformance gates are awaiting CI/evidence review and remain Not Run.
+
 **1.14.2 — 14 Nov 2026:** Reconciled P4.1 cross-contract inconsistencies identified during independent validation review. Aligned manifest revision types and JSON-safe bounds; added accepted-request status polling and HTTP 429/Retry-After; aligned operation-attempt evidence identifiers and device event source/sensitivity fields; added account-consistent references, exact offline-lease-to-operation claim binding and device-local consume-before-effect ledgers; introduced rebuildable API summary projections without moving canonical ownership from Temporal or Permission Authority; completed the P4/P6 gate mapping and migration inventory. Contract package revision 0.2.1 remains Draft and all conformance gates remain Not Run.
 
 
 
 # 10. Current working state
 
-**Current phase:** P4 — Integration Contracts (In Progress)  
+**Current phase:** P5 — First Vertical Slice (M0 readiness; implementation not started)
 **Phase 2 status:** Complete — approved requirements baselines  
 **P2.1–P2.7 status:** Complete as requirements baselines; runtime implementation and verification remain engineering work  
 **P3.1–P3.8 status:** Complete — architecture and reference technology baseline approved  
-**P4.1 status:** Contract inventory and interface drafts prepared; consistency revision 0.2.1 is under review  
-**P4 implementation status:** No P4 conformance gate is marked Passed. Protobuf generation/interoperability, full OpenAPI validation, PostgreSQL migrations, security, Temporal, NATS, live adapters and end-to-end integration remain unverified in this review  
-**P5 status:** Not started. The intended first slice remains Linux-first and local-first; Temporal, PostgreSQL coordinator services and NATS are outside the initial desktop vertical slice  
-**Overall status:** P0–P3 baselines are approved. P4 contracts are reviewable drafts. Code implementation may begin on scoped milestones, but a draft contract is not a verified interface or production authorization.  
-**Next action:** Review and validate P4.1 contracts, pin only the dependencies needed for each proof spike, execute the named conformance procedures, and retain reproducible evidence before declaring P4 complete.
+**P4.1 status:** Contract package 0.2.1 and consistency corrections are merged; contracts remain Draft
+**P4 implementation status:** No P4 conformance gate is marked Passed. Protobuf generation/interoperability, OpenAPI validation, PostgreSQL migrations, SQLite migrations, security, Temporal, NATS, live adapters and end-to-end integration remain unverified
+**P5 status:** M0 onboarding/readiness is in progress; slice implementation has not started. The approved first slice remains Linux-first and local-first; Temporal, PostgreSQL coordinator services and NATS are outside its baseline
+**Overall status:** P0–P3 baselines are approved. P4 contracts remain drafts. P5 M0 defines agent instructions, initial pins, contract-hygiene CI, fixtures and evidence conventions; a draft contract or green hygiene check is not a passed implementation gate or production authorization.
+**Next action:** Review the P5 M0 branch and CI results, resolve any contract-hygiene failures, then begin the scoped P5 implementation milestones. Keep the exact Hyprland version and M5 provider/locality choices open for the owner.
 
 ## Phase 2 exit criteria
 
@@ -8870,7 +8872,7 @@ P4 is complete only after:
 
 P4 exit does not prove the Godot migration, Hyprland window movement, complete Windows adapter coverage, provider quality at production scale, hosted availability, mobile lifecycle, or physical home-device behavior. Those retain their P5/P6 proof gates.
 
-**Current P4 state:** Contract drafts and consistency corrections are committed for review; all implementation and conformance gates remain Not Run. `MOBILE-01` and `HOME-01` are explicitly deferred to P6 and are not P4 exit requirements. P5 must not begin treating these drafts as verified interfaces until the applicable P4 exit criteria pass.
+**Current P4 state:** Contract drafts and consistency corrections are merged; all implementation and conformance gates remain Not Run. `MOBILE-01` and `HOME-01` are explicitly deferred to P6 and are not P4 exit requirements. P5 M0 may establish tooling and contract-hygiene checks while P4 verification remains open. P5 implementation may use a named draft revision as an engineering input, but must not treat it as a verified interface or claim the associated gate Passed until the applicable procedure and evidence are reviewed.
 
 
 ## 20.9 Adapter contract and compatibility baseline

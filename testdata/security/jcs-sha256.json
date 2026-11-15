@@ -1,0 +1,7 @@
+{
+  "source": "Synthetic primitive vector using RFC 8785 property sorting and SHA-256",
+  "purpose": "Simple canonical-object digest vector; does not cover number/string edge cases or a LIA envelope",
+  "inputJson": "{\"b\":2,\"a\":1}",
+  "canonicalJson": "{\"a\":1,\"b\":2}",
+  "sha256Hex": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777"
+}

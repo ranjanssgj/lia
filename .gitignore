@@ -1,0 +1,39 @@
+# Rust
+/target/
+**/target/
+
+# JavaScript / TypeScript
+node_modules/
+**/node_modules/
+dist/
+coverage/
+.turbo/
+
+# Godot generated/imported state
+.godot/
+export.cfg
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+/.local-data/
+/secrets/
+*.private.pem
+*_private.pem
+*.secret.key
+*_secret.key
+
+# Local runtime output; database fixtures remain trackable.
+/runtime-data/
+/.toolchain/
+*.log
+
+# Local evidence may contain sensitive data; commit only reviewed, redacted evidence.
+evidence-local/
+
+# Explicitly retain synthetic fixtures and reviewed evidence, including public keys.
+!testdata/**
+!evidence/**
