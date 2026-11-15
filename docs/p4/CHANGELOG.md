@@ -7,7 +7,7 @@
 - Adds SQLite migration 007 with integer microsecond columns and integer-valued nonce/session retention guards. Runtime command/lease admission now parses RFC 3339 to integer microseconds; complete legacy-row backfill and removal of older floating-point CHECK constraints remain open.
 - Records device-store outcome/evidence/outbox writes and explicit `synchronous=FULL`; migrations acquire `BEGIN IMMEDIATE` before checking their version.
 - Adds signed-message canonicalization profile and local RFC 8785 number/non-BMP key-order and negative signature checks. Generated-language interoperability remains Not Run.
-- No conformance gate is marked Passed; process-kill, contention/WAL, stale-restore anchor, and full SECURITY-01 procedures remain open.
+- Adds local process-kill windows, two-reader/writer contention, SQLITE_BUSY, checkpoint and WAL-truncation tests. No conformance gate is marked Passed; stale-restore anchor integration, extended workload measurements and full SECURITY-01 procedures remain open.
 
 ## 0.2.3 — 15 November 2026
 

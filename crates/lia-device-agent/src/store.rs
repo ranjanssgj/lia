@@ -1002,4 +1002,145 @@ mod tests {
                 .is_err()
         );
     }
+
+    #[test]
+    fn process_kill_recovery_windows() {
+        if let Ok(path) = std::env::var("LIA_KILL_TEST_COMMIT_PATH") {
+            let mut store = AgentStore::open(&path).unwrap();
+            store
+                .open_session("session", "2026-11-15T00:00:00Z", "2026-11-15T00:10:10Z")
+                .unwrap();
+            store.insert_operation(&op("killed-operation")).unwrap();
+            store
+                .consume_command_before_effect(
+                    &op("killed-operation"),
+                    &command("killed-command", 0),
+                    "killed-attempt",
+                    1,
+                    1,
+                    "2026-11-15T00:00:02Z",
+                )
+                .unwrap();
+            // Simulate process death after the durable consume commit and before adapter effect.
+            std::process::exit(0);
+        }
+        if let Ok(path) = std::env::var("LIA_KILL_TEST_TX_PATH") {
+            let conn = Connection::open(path).unwrap();
+            conn.execute_batch("BEGIN IMMEDIATE; UPDATE local_trusted_clock_state SET last_trusted_time_us=1 WHERE singleton=1;").unwrap();
+            // exit() skips Rust destructors, leaving SQLite to recover the uncommitted WAL txn.
+            std::process::exit(0);
+        }
+
+        use std::process::Command;
+        let bin = std::env::current_exe().unwrap();
+        let commit_path =
+            std::env::temp_dir().join(format!("lia-kill-commit-{}.sqlite", std::process::id()));
+        let _ = std::fs::remove_file(&commit_path);
+        let status = Command::new(&bin)
+            .arg("store::tests::process_kill_recovery_windows")
+            .arg("--exact")
+            .env("LIA_KILL_TEST_COMMIT_PATH", &commit_path)
+            .status()
+            .unwrap();
+        assert!(status.success());
+        let mut store = AgentStore::open(&commit_path).unwrap();
+        let state: String = store.conn.query_row("SELECT current_status FROM local_operation_journal WHERE operation_id='killed-operation'", [], |r| r.get(0)).unwrap();
+        assert_eq!(state, "running");
+        assert_eq!(
+            store
+                .reconcile_uncertain_operations("2026-11-15T00:01:00Z")
+                .unwrap(),
+            1
+        );
+        let _ = std::fs::remove_file(&commit_path);
+        let _ = std::fs::remove_file(commit_path.with_extension("sqlite-wal"));
+        let _ = std::fs::remove_file(commit_path.with_extension("sqlite-shm"));
+
+        let txn_path =
+            std::env::temp_dir().join(format!("lia-kill-txn-{}.sqlite", std::process::id()));
+        let _ = std::fs::remove_file(&txn_path);
+        drop(AgentStore::open(&txn_path).unwrap());
+        let status = Command::new(bin)
+            .arg("store::tests::process_kill_recovery_windows")
+            .arg("--exact")
+            .env("LIA_KILL_TEST_TX_PATH", &txn_path)
+            .status()
+            .unwrap();
+        assert!(status.success());
+        let store = AgentStore::open(&txn_path).unwrap();
+        let time: i64 = store
+            .conn
+            .query_row(
+                "SELECT last_trusted_time_us FROM local_trusted_clock_state WHERE singleton=1",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            time, 0,
+            "uncommitted write must roll back after process termination"
+        );
+        let _ = std::fs::remove_file(&txn_path);
+        let _ = std::fs::remove_file(txn_path.with_extension("sqlite-wal"));
+        let _ = std::fs::remove_file(txn_path.with_extension("sqlite-shm"));
+    }
+
+    #[test]
+    fn wal_readers_contending_writers_busy_and_checkpoint_progress() {
+        let path =
+            std::env::temp_dir().join(format!("lia-wal-contention-{}.sqlite", std::process::id()));
+        let _ = std::fs::remove_file(&path);
+        let store = AgentStore::open(&path).unwrap();
+        let reader = Connection::open(&path).unwrap();
+        reader
+            .execute_batch("BEGIN; SELECT last_trusted_time_us FROM local_trusted_clock_state;")
+            .unwrap();
+        let second_reader = Connection::open(&path).unwrap();
+        second_reader
+            .execute_batch("BEGIN; SELECT anchor_sequence FROM local_integrity_state;")
+            .unwrap();
+        let writer = Connection::open(&path).unwrap();
+        writer.busy_timeout(Duration::from_millis(20)).unwrap();
+        writer.execute_batch("BEGIN IMMEDIATE;").unwrap();
+        let contender = Connection::open(&path).unwrap();
+        contender.busy_timeout(Duration::from_millis(10)).unwrap();
+        assert!(
+            contender.execute_batch("BEGIN IMMEDIATE;").is_err(),
+            "contending writer should report SQLITE_BUSY within its timeout"
+        );
+        writer.execute_batch("UPDATE local_trusted_clock_state SET last_trusted_time_us=last_trusted_time_us+1; COMMIT;").unwrap();
+        let wal_path = path.with_file_name(format!(
+            "{}-wal",
+            path.file_name().unwrap().to_string_lossy()
+        ));
+        assert!(
+            std::fs::metadata(&wal_path).unwrap().len() > 0,
+            "long-lived reader should pin WAL frames"
+        );
+        let (busy, log_frames, checkpointed): (i64, i64, i64) = store
+            .conn
+            .query_row("PRAGMA wal_checkpoint(PASSIVE)", [], |r| {
+                Ok((r.get(0)?, r.get(1)?, r.get(2)?))
+            })
+            .unwrap();
+        assert!(busy == 0 || checkpointed <= log_frames);
+        reader.execute_batch("ROLLBACK;").unwrap();
+        second_reader.execute_batch("ROLLBACK;").unwrap();
+        let (_, log_after, checkpointed_after): (i64, i64, i64) = store
+            .conn
+            .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |r| {
+                Ok((r.get(0)?, r.get(1)?, r.get(2)?))
+            })
+            .unwrap();
+        assert_eq!(log_after, 0);
+        assert_eq!(checkpointed_after, 0);
+        drop(reader);
+        drop(second_reader);
+        drop(writer);
+        drop(contender);
+        drop(store);
+        let _ = std::fs::remove_file(&path);
+        let _ = std::fs::remove_file(&wal_path);
+        let _ = std::fs::remove_file(path.with_extension("sqlite-shm"));
+    }
 }
