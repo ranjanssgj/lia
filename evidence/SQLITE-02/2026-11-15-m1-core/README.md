@@ -1,7 +1,7 @@
 # M1 local SQLite implementation checks (partial evidence)
 
 **Gate:** SQLITE-02, full gate status remains **Not Run**.
-**Code revision:** M1 implementation on `feat/p5-m1-device-agent-core`; `inputs.sha256` identifies the tested source snapshot.
+**Code snapshot:** tree `fef6df0476b5aaea754ae66b6792ad8bdbc7e0b8`, created by PR code commit `8cab9002b5eecb683cdfc138cc0201eacd1241d0`. `inputs.sha256` records the tested source hashes.
 **Procedure:** M1 core checks against P4 draft package 0.2.2 and SQLite migrations 001–005.
 **Environment:** Linux x86_64; Rust/Cargo 1.99.1; rusqlite 0.41.1 with bundled SQLite 3.54.0. The contract-CI SQLite WASM 3.54.1 runtime is separate.
 
