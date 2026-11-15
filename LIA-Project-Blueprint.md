@@ -2578,7 +2578,7 @@ Docker Compose remains the initial development and self-host/reference packaging
 
 **1.14.1 — 14 Nov 2026:** Opened P4.1 and translated the approved P2/P3 baselines into draft integration contracts: Protobuf device control, OpenAPI 3.1 API, device IPC, PostgreSQL/SQLite persistence, Temporal workflow boundaries, NATS event delivery, provider-neutral interfaces, security profile, adapter manifests/conformance, runtime and supply-chain requirements. Added the P4 contract package and initial conformance/compatibility matrices. All implementation gates remained Not Run.
 
-**1.14.6 — 15 Nov 2026:** Began P5 M1 device-agent core implementation against P4 package 0.2.2. Added the Rust 1.99.1/rusqlite 0.41.1 pinned crate workspace, SQLite migration 005, command and offline-lease consume-before-effect paths, primitive signature/digest checks, CI and partial evidence. Recorded remaining crash/restore, protocol-interoperability and full-gate work; no conformance gate is marked Passed.
+**1.14.6 — 15 Nov 2026:** Began P5 M1 device-agent core implementation against P4 package 0.2.2. Added the Rust 1.99.1/rusqlite 0.41.1 pinned crate workspace, SQLite migration 005, command and offline-lease consume-before-effect paths, primitive signature/digest checks, backup/restore reconciliation, CI and partial evidence. Recorded remaining process-kill crash, rollback/anti-resurrection, protocol-interoperability and full-gate work; no conformance gate is marked Passed.
 
 **1.14.5 — 15 Nov 2026:** Clarified the owner-required zero-first command sequence rule with SQLite migration 005, preserving migrations 001–004 and requiring later sequences to increase strictly. Updated P4 package revision to 0.2.2 and the M1 evidence plan. No conformance gate is marked Passed.
 

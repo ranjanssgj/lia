@@ -170,6 +170,43 @@ impl AgentStore {
             |r| r.get(0),
         )?)
     }
+    /// Create a transactionally consistent SQLite backup that retains replay ledgers.
+    pub fn backup_to(&self, destination: impl AsRef<Path>) -> Result<(), StoreError> {
+        self.conn.backup(
+            rusqlite::MAIN_DB,
+            destination,
+            None::<fn(rusqlite::backup::Progress)>,
+        )?;
+        Ok(())
+    }
+    /// Restore a backup into this connection. The caller must prevent concurrent writers.
+    pub fn restore_from(&mut self, source: impl AsRef<Path>) -> Result<(), StoreError> {
+        self.conn.restore(
+            rusqlite::MAIN_DB,
+            source,
+            None::<fn(rusqlite::backup::Progress)>,
+        )?;
+        self.conn.pragma_update(None, "foreign_keys", "ON")?;
+        self.conn.pragma_update(None, "journal_mode", "WAL")?;
+        Ok(())
+    }
+    /// On startup after an interrupted process, quarantine all committed in-flight effects.
+    /// It preserves the possible-effect marker and never returns the operation to accepted.
+    pub fn reconcile_uncertain_operations(&mut self, at: &str) -> Result<usize, StoreError> {
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let count = tx.execute(
+            "UPDATE local_operation_journal SET current_status='reconciliation_required',updated_at=?1 WHERE current_status='running' AND side_effect_may_have_occurred=1",
+            [at],
+        )?;
+        tx.execute(
+            "UPDATE local_operation_attempt SET attempt_status='reconciliation_required' WHERE attempt_status='started' AND operation_id IN (SELECT operation_id FROM local_operation_journal WHERE current_status='reconciliation_required' AND side_effect_may_have_occurred=1)",
+            [],
+        )?;
+        tx.commit()?;
+        Ok(count)
+    }
     pub fn insert_operation(&mut self, c: &OperationClaims) -> Result<(), StoreError> {
         self.conn.execute("INSERT INTO local_operation_journal(operation_id,account_id,target_device_id,target_credential_generation,capability_id,capability_schema_version,resource_type,resource_id,resource_generation,arguments_sha256,grant_reference,policy_version,risk_tier,current_status,received_at,expires_at,updated_at,revocation_epoch,purpose,originating_task_id,arguments_schema_uri,expected_resource_revision,resource_observed_at,resource_owning_device_id) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,'accepted',?14,?15,?14,?16,?17,?18,?19,?20,?21,?22)", params![c.operation_id,c.account_id,c.target_device_id,c.target_credential_generation,c.capability_id,c.capability_schema_version,c.resource_type,c.resource_id,c.resource_generation,c.arguments_sha256.as_slice(),c.grant_reference,c.policy_version,c.risk_tier,c.received_at,c.expires_at,c.revocation_epoch,c.purpose,c.originating_task_id,c.arguments_schema_uri,c.expected_resource_revision,c.resource_observed_at,c.resource_owning_device_id])?;
         Ok(())
@@ -388,6 +425,66 @@ mod tests {
         let _ = std::fs::remove_file(&path);
         let _ = std::fs::remove_file(path.with_extension("sqlite-wal"));
         let _ = std::fs::remove_file(path.with_extension("sqlite-shm"));
+    }
+    #[test]
+    fn backup_restore_preserves_replay_barrier_and_restart_reconciles_effects() {
+        let base = std::env::temp_dir().join(format!("lia-agent-recovery-{}", std::process::id()));
+        let source = base.with_extension("source.sqlite");
+        let backup = base.with_extension("backup.sqlite");
+        let restored = base.with_extension("restored.sqlite");
+        for path in [&source, &backup, &restored] {
+            let _ = std::fs::remove_file(path);
+        }
+        {
+            let mut store = AgentStore::open(&source).unwrap();
+            store
+                .open_session("session", "2026-11-15T00:00:00Z", "2099-11-15T00:10:10Z")
+                .unwrap();
+            store.insert_operation(&op("recovery-op")).unwrap();
+            store
+                .consume_command_before_effect(
+                    &op("recovery-op"),
+                    &command("recovery-command", 0),
+                    "recovery-attempt",
+                    1,
+                    1,
+                    "2026-11-15T00:00:02Z",
+                )
+                .unwrap();
+            store.backup_to(&backup).unwrap();
+        }
+        {
+            let mut restore_target = AgentStore::open(&restored).unwrap();
+            restore_target.restore_from(&backup).unwrap();
+            assert_eq!(restore_target.schema_version().unwrap(), 5);
+            assert_eq!(
+                restore_target
+                    .reconcile_uncertain_operations("2026-11-15T00:01:00Z")
+                    .unwrap(),
+                1
+            );
+            let (status, marker): (String, i64) = restore_target.conn.query_row("SELECT current_status,side_effect_may_have_occurred FROM local_operation_journal WHERE operation_id='recovery-op'", [], |r| Ok((r.get(0)?,r.get(1)?))).unwrap();
+            assert_eq!((status.as_str(), marker), ("reconciliation_required", 1));
+            assert!(
+                restore_target
+                    .consume_command_before_effect(
+                        &op("recovery-op"),
+                        &command("new-command", 1),
+                        "new-attempt",
+                        2,
+                        1,
+                        "2026-11-15T00:01:01Z"
+                    )
+                    .is_err()
+            );
+            let attempt_status: String = restore_target.conn.query_row("SELECT attempt_status FROM local_operation_attempt WHERE attempt_id='recovery-attempt'", [], |r| r.get(0)).unwrap();
+            assert_eq!(attempt_status, "reconciliation_required");
+        }
+        for path in [&source, &backup, &restored] {
+            let _ = std::fs::remove_file(path);
+            let _ = std::fs::remove_file(path.with_extension("sqlite-wal"));
+            let _ = std::fs::remove_file(path.with_extension("sqlite-shm"));
+        }
     }
     #[test]
     fn increasing_command_consumes_nonce_and_effect_marker_atomically() {

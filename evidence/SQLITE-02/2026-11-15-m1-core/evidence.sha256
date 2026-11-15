@@ -1,7 +1,7 @@
-a435a97b955b1ff19c470f65d82e02a461f215fd5f4f8e63238f7302280b75cd  evidence/SQLITE-02/2026-11-15-m1-core/README.md
-99f71393b9903dca098310bb446022a4bdee195ea9996f351a787195555210a6  evidence/SQLITE-02/2026-11-15-m1-core/cargo-clippy.txt
-ca2d13f3837f24e433990660a9ba6fbdda95cfa3b69cc320936969d0fd2ecd36  evidence/SQLITE-02/2026-11-15-m1-core/cargo-test.txt
-d78b0ccffa85013bd465cbbfeff8089e790279fdae57e90f8dd96b1cc8c4eb88  evidence/SQLITE-02/2026-11-15-m1-core/inputs.sha256
+d6ea2216b6ed9b184d2d5326c9994e456619c5bb4289470bec20afcadd703cde  evidence/SQLITE-02/2026-11-15-m1-core/README.md
+8c233a54790c4800d3dd585436af679aa838da259bfdb129412e2d51cdb75cdc  evidence/SQLITE-02/2026-11-15-m1-core/cargo-clippy.txt
+07d3cc368063a90060cc21a045c5a0fcaefc6aab97e273f316018e22a469dada  evidence/SQLITE-02/2026-11-15-m1-core/cargo-test.txt
+303a5c9e2c2b1cdbe5a79109f57e5a42037b79259b5d5c014c8f8cbe71a33ddb  evidence/SQLITE-02/2026-11-15-m1-core/inputs.sha256
 ed7eade41fa12edc3e767fc7d1a26e1234db04072a5c1ee4cf8956ee3b76917d  evidence/SQLITE-02/2026-11-15-m1-core/npm-check-openapi.txt
 905c7d49a5282966cbc9944861be8afdf20eebe57fd5e0bd180bf62b6d1abd95  evidence/SQLITE-02/2026-11-15-m1-core/npm-check-proto.txt
 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b  evidence/SQLITE-02/2026-11-15-m1-core/rustfmt.txt

@@ -35,6 +35,6 @@ Sources checked 15 November 2026: [rusqlite 0.41.1](https://docs.rs/crate/rusqli
 
 - Workspace manifest, exact direct dependencies and `Cargo.lock`.
 - Forward SQLite migration 005 and a recorded migration chain through 005.
-- Store/bootstrap/claim/replay code plus tests for migrations, WAL/foreign keys, claim mismatches, nonce replay, zero-first/monotonic sequence behavior, retention, and consume-before-effect atomicity.
+- Store/bootstrap/claim/replay code plus tests for migrations, WAL/foreign keys, claim mismatches, nonce replay, zero-first/monotonic sequence behavior, retention, consume-before-effect atomicity, and backup/restore reconciliation.
 - RFC 8032 and JCS/SHA-256 fixture checks.
 - Redacted run evidence under `evidence/SQLITE-02/<run-id>/` and `evidence/SECURITY-01-local/<run-id>/`; statuses stay Not Run until procedures and review are complete.
