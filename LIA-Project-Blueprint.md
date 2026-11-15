@@ -4,10 +4,10 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.14.7
+> **Version:** 1.14.9
 > **Last updated:** 15 November 2026  
 > **Current phase:** P5 — First Vertical Slice (M0 complete; M1 in progress)
-> **Current workstream:** M1 — Device-agent core (in progress); M2 threat-map planning started in parallel
+> **Current workstream:** M1 — device-agent core follow-up (in progress); M2 — Linux IPC spike (in progress)
 > **Document status:** P5 M0 contract hygiene passed in PR #3; implementation/conformance gates remain Not Run
 
 ------------------------------------------------------------------------
@@ -304,7 +304,7 @@ through controlled change; they do not invalidate earlier requirements.
   P2      Requirements engineering           Complete — baseline approved
   P3      System architecture                Complete — P3.1–P3.8 architecture and reference technology baseline approved
   P4      Integration contracts              In Progress — P4.1 contract package drafted; verification pending
-  P5      First vertical slice               In Progress — M0 complete; M1 device-agent core implementation in progress
+  P5      First vertical slice               In Progress — M0 complete; M1 core merged with proof open; M2 IPC spike in progress
   P6      Companion integration              Pending
   P7      Proactive behavior                 Pending
   P8      Expanded autonomy and perception   Pending
@@ -2598,9 +2598,9 @@ Docker Compose remains the initial development and self-host/reference packaging
 **P3.1–P3.8 status:** Complete — architecture and reference technology baseline approved  
 **P4.1 status:** Contract package 0.2.2, including the SQLite sequence-zero correction, is Draft; all contract changes remain subject to owner review
 **P4 implementation status:** No P4 conformance gate is marked Passed. Contract hygiene passed; P4 implementation conformance including interoperability, security, persistence, Temporal, NATS, live adapters and end-to-end integration remains unverified
-**P5 status:** M0 contract-hygiene readiness is complete: PR #3 merged on 15 November 2026, and the contract-hygiene workflow passed on the PR head. M1 device-agent core implementation is in progress on `feat/p5-m1-device-agent-core`; local tests cover migration application, WAL/foreign keys, selected replay and claim-binding behavior, consume-before-effect ordering, and primitive signature/digest vectors. Crash/restore, full protocol interoperability and complete gate procedures remain outstanding. No P5 implementation conformance gate has passed. P5 remains Linux-first and local-first; coordinator infrastructure is outside the baseline
+**P5 status:** M0 contract-hygiene readiness is complete. PR #5 merged to `main` on 15 November 2026 with Rust and contract-hygiene CI green. M1 now includes outcome/evidence/outbox persistence, migrations 001–008, integer-time backfill, and a development filesystem anchor prototype; M1 integration and SQLITE-02/SECURITY-01 procedures remain incomplete. M2 is implementing Linux presentation IPC primitives on a separate branch: bounded framing, strict envelope validation, private Unix socket setup and kernel peer UID checks. IPC-01 remains Not Run pending service lifecycle, restart, malformed-frame, peer-identity and backpressure evidence. No P5 implementation gate has passed. P5 remains Linux-first and local-first; coordinator infrastructure is outside the baseline
 **Overall status:** P0–P3 baselines are approved. P4 contracts remain drafts. P5 M0 provides agent instructions, initial validation pins, CI, fixtures and evidence conventions; a green hygiene check is not a passed implementation gate or production authorization.
-**Next action:** Complete M1 crash/restore, replay and security-vector evidence against the pinned P4 contracts and approved P5-local gate profile. Keep all gates Not Run until the complete procedures and review are finished. Keep the exact Hyprland version and M5 hardware, language, budget and provider choices open for the owner.
+**Next action:** Complete the M2 socket lifecycle and IPC-01 threat matrix while closing the remaining M1 crash/restore, replay and security-vector evidence. Keep all gates Not Run until complete procedures and review are finished. Keep the exact Hyprland version and M5 hardware, language, budget and provider choices open for the owner.
 
 ## Phase 2 exit criteria
 
@@ -8896,8 +8896,10 @@ PostgreSQL migration 003 adds account-consistent foreign keys and a coordinator 
 
 ## 20.14 P5 implementation progress — 15 November 2026
 
-PR #4 (P5 scope decision) is merged to `main`; PR #5 (M1 device-agent core) is open and ready for review against `main`. The M1 store now records attempt completion, verified/unknown outcomes, evidence metadata and local outbox events transactionally; sets and checks SQLite `synchronous=FULL`; and serializes migrations with `BEGIN IMMEDIATE`. SQLite migration 007 adds integer-microsecond timestamp columns and trusted-time retention guards. Local tests cover the full migration chain, outcome/evidence invariants, lease/command replay and claim binding, and startup migration serialization. Local SECURITY-01 vectors now include RFC 8785 number and non-BMP key-order cases plus negative signature cases.
+PR #4 (P5 scope decision) and PR #5 (M1 device-agent core) are merged to `main`. PR #5 CI run [43733004489](https://github.com/ranjanssgj/lia/actions/runs/43733004489) passed the Rust and contract-hygiene jobs. M1 records attempt completion, verified/unknown outcomes, evidence metadata and local outbox events atomically; configures SQLite `synchronous=FULL`; serializes migrations with `BEGIN IMMEDIATE`; backfills legacy RFC3339 time to integer microseconds; and uses migrations 001–008, including a table rebuild that removes floating-point `julianday()` checks. A development filesystem sidecar prototype detects SQLite-only stale restore and observed clock rollback. It is not protected monotonic storage: a crash after sidecar advance but before SQLite commit fails closed, and restoring both files together is not detected.
 
-These are implementation checks, not conformance passes. Local tests now exercise process termination after the consume commit and mid-transaction, two pinned readers with a contending writer, `SQLITE_BUSY`, checkpoint progress and WAL truncation. Extended workload/WAL measurements and stale-backup recovery remain open. The external monotonic integrity/time anchor has been selected but is not implemented or verified; legacy timestamp backfill and removal of floating-point CHECK constraints remain open. Protobuf/ProtoJSON interoperability, OIDC/mTLS, and full security lifecycle checks remain Not Run. The run evidence records these limits and no gate is marked Passed.
+Local M1 checks include 20 Rust tests, Clippy with warnings denied, migration 001–008, consume-before-effect/process-kill windows, WAL contention/checkpoint behavior, replay, sidecar mismatch and clock rollback. Local SECURITY-01 vectors cover RFC 8032, RFC 8785 numeric formatting/key ordering, and selected negative signature cases. These are implementation checks, not conformance passes. Extended workload/WAL measurements, coordinated restore recovery, generated ProtoJSON interoperability, OIDC/mTLS, key lifecycle and live adapters remain open. SQLITE-02, SECURITY-01 and all other implementation gates remain Not Run.
 
-M2 has started in parallel at the planning level. The threat-model-to-test map is at [docs/p5/tasks/M2-threat-model-test-map.md](docs/p5/tasks/M2-threat-model-test-map.md); socket implementation, baseline pinning and IPC-01 execution have not started. M1 remains the active workstream.
+M2 is in progress on `feat/p5-m2-ipc-spike`, using the repository's pinned Ubuntu 24.04 CI environment as the Linux development baseline (not a desktop support commitment). The Rust spike provides bounded length-prefixed framing, duplicate-key/unknown-field/method rejection, deadline validation, private Unix-socket endpoint checks and Linux `SO_PEERCRED` UID/PID checks. Unit tests cover those local primitives. It does not yet implement the full presentation service, session-generation/restart handling, bounded queues/backpressure or complete adversarial IPC-01 procedure. The threat map remains at [docs/p5/tasks/M2-threat-model-test-map.md](docs/p5/tasks/M2-threat-model-test-map.md); IPC-01 remains Not Run.
+
+**1.14.9 — 15 Nov 2026:** Recorded PR #5 merge and M1 follow-up implementation/evidence limits; updated P5 status and began the separate M2 Unix-socket IPC spike. No conformance gate or acceptance condition is marked Passed.

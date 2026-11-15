@@ -11,7 +11,7 @@ use std::{
         Arc,
         atomic::{AtomicU64, Ordering},
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 const MIGRATIONS: &[(i64, &str)] = &[
@@ -48,6 +48,24 @@ const MIGRATIONS: &[(i64, &str)] = &[
         include_str!("../../../docs/p4/sql/sqlite/008-integer-time-table-rebuild.sql"),
     ),
 ];
+
+fn enable_wal_with_retry(conn: &Connection) -> Result<(), StoreError> {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        match conn.pragma_update(None, "journal_mode", "WAL") {
+            Ok(()) => return Ok(()),
+            Err(rusqlite::Error::SqliteFailure(error, _))
+                if matches!(
+                    error.code,
+                    rusqlite::ErrorCode::DatabaseBusy | rusqlite::ErrorCode::DatabaseLocked
+                ) && Instant::now() < deadline =>
+            {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            Err(error) => return Err(error.into()),
+        }
+    }
+}
 
 fn backfill_integer_times(tx: &Transaction<'_>) -> Result<(), StoreError> {
     let maps: &[(&str, &[(&str, &str)])] = &[
@@ -486,7 +504,7 @@ impl AgentStore {
     ) -> Result<Self, StoreError> {
         conn.busy_timeout(Duration::from_secs(5))?;
         conn.pragma_update(None, "foreign_keys", "ON")?;
-        conn.pragma_update(None, "journal_mode", "WAL")?;
+        enable_wal_with_retry(&conn)?;
         conn.pragma_update(None, "synchronous", "FULL")?;
         if conn.query_row("PRAGMA synchronous", [], |r| r.get::<_, i64>(0))? != 2 {
             return Err(StoreError::Invalid(

@@ -19,3 +19,7 @@ The contract-hygiene workflow is structural validation only. It does not complet
 
 - [SQLITE-02 local implementation checks](SQLITE-02/2026-11-15-m1-core/README.md) — migrations 001–005, selected replay/claim tests, WAL and consume-before-effect behavior. The full gate remains Not Run.
 - [SECURITY-01 local primitive checks](SECURITY-01-local/2026-11-15-m1-core/README.md) — RFC 8032, command/lease domain separation, and a simple JCS/SHA-256 vector. The full gate remains Not Run.
+
+## P5 M2 partial implementation checks (15 November 2026)
+
+- [IPC-01 local IPC primitive checks](IPC-01/2026-11-15-m2-spike/README.md) — bounded framing, envelope validation, private Unix socket setup and Linux peer credentials. The full gate remains Not Run.
