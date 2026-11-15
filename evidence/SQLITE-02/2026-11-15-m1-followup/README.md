@@ -6,8 +6,10 @@
 
 ## Executed
 
-- `CARGO_HOME=/tmp/lia-cargo cargo test --locked --workspace` — 20 tests passed, 0 failed. Includes outcomes/evidence/outbox atomicity, verified and unknown outcome states, integer RFC3339 parsing, migration 001–008 startup, `synchronous=FULL`, immediate migration serialization, command/lease replay checks, process termination after consume-before-effect commit and during an uncommitted transaction, two pinned WAL readers, a contending writer with observed `SQLITE_BUSY`, checkpoint progress and WAL truncation.
-- `CARGO_HOME=/tmp/lia-cargo cargo clippy --locked --workspace --all-targets -- -D warnings` — passed.
+**Source commit:** `e0bd50b04daca44c19c1223df0375c9c5ab8444a` (PR head at time of this run).
+
+- `cargo test --locked --workspace` — 20 tests passed, 0 failed. Includes outcomes/evidence/outbox atomicity, verified and unknown outcome states, integer RFC3339 parsing, migration 001–008 startup, `synchronous=FULL`, immediate migration serialization, command/lease replay checks, process termination after consume-before-effect commit and during an uncommitted transaction, two pinned WAL readers, a contending writer with observed `SQLITE_BUSY`, checkpoint progress and WAL truncation.
+- `cargo clippy --locked --workspace --all-targets -- -D warnings` — passed.
 - `npm run check:sqlite` — applied migrations 001–008 under SQLite 3.54.1; zero-first, duplicate/backward sequence and premature deletion checks behaved as expected.
 - Local SECURITY-01 tests cover RFC 8032, JCS number formatting, non-BMP UTF-16 key ordering, wrong payload/domain/key, truncated signature and noncanonical Ed25519 S rejection. See `docs/p4/security/signed-message-canonicalization-v1.md` for the draft field mapping.
 
