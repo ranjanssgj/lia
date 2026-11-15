@@ -257,6 +257,17 @@ impl PrivateSocket {
     pub fn listener(&self) -> &UnixListener {
         &self.listener
     }
+
+    /// Accept a connection only after checking kernel credentials, before a caller
+    /// can read or dispatch any framed message from that stream.
+    pub fn accept_authenticated(
+        &self,
+        expected_uid: u32,
+    ) -> io::Result<(UnixStream, PeerCredentials)> {
+        let (stream, _) = self.listener.accept()?;
+        let peer = require_peer_uid(&stream, expected_uid)?;
+        Ok((stream, peer))
+    }
 }
 
 impl Drop for PrivateSocket {
@@ -479,8 +490,9 @@ mod tests {
             0o600
         );
         let _client = UnixStream::connect(&path).unwrap();
-        let (server, _) = endpoint.listener().accept().unwrap();
-        let peer = require_peer_uid(&server, unsafe { libc::geteuid() }).unwrap();
+        let (server, peer) = endpoint
+            .accept_authenticated(unsafe { libc::geteuid() })
+            .unwrap();
         assert_eq!(peer.pid, std::process::id() as i32);
         assert_eq!(
             require_peer_uid(&server, peer.uid.wrapping_add(1))
