@@ -26,7 +26,7 @@ The contract-hygiene workflow is structural validation only. It does not complet
 
 ## P5 M2 parser and handshake checks (16 November 2026)
 
-- [IPC-01 local parser, handshake and reconnect checks](IPC-01/2026-11-16-m2-parser-edge-cases/README.md) — malformed-frame rejection, UID-authenticated hello/ready exchange, fresh session on reconnect and stale-ready rejection. The full gate remains Not Run.
+- [IPC-01 local parser, handshake and reconnect checks](IPC-01/2026-11-16-m2-parser-edge-cases/README.md) — malformed-frame rejection, UID-authenticated hello/ready exchange, fresh session on reconnect, stale-ready rejection, symlink-path rejection and inode-safe cleanup. The full gate remains Not Run.
 
 ## P5 M1 replay follow-up (15 November 2026)
 
