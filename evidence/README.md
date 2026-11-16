@@ -31,3 +31,9 @@ The contract-hygiene workflow is structural validation only. It does not complet
 ## P5 M1 replay follow-up (15 November 2026)
 
 - [M1 expiry and sequence-order checks](SQLITE-02/2026-11-15-m1-replay-followup/README.md) — additional local test coverage on the M2 branch; SQLITE-02 remains Not Run.
+
+## Repository integrity
+
+- [Blueprint truncation incident and recovery (16 November 2026)](repository-integrity/2026-11-16-blueprint-truncation/README.md) — full content restored from `010202c`; integrity thresholds run in contract-hygiene CI.
+
+- [M2 local UnixStream framing benchmark](IPC-01/2026-11-16-m2-local-socket-benchmark/README.md) — 20,000 local request/response exchanges with latency and point-in-time RSS/FD observations; not end-to-end IPC-01 evidence.

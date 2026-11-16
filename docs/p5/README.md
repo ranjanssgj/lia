@@ -31,7 +31,7 @@ The owner approved this P5-local dependency profile: SQLITE-02, local SECURITY-0
 
 The owner deferred LIA's project license decision. No license is selected or implied, and this plan does not grant redistribution rights. The [dependency/model-weight license register](../../toolchain/LICENSE-REGISTER.md) records locked validation dependencies, including the M1 Rust lockfile, and open artifact reviews. The adopted [provider evaluation policy](provider-evaluation.md) sets egress boundaries without selecting any model/provider.
 
-M1 core implementation is merged through PR #5; M1 follow-up tests and evidence are continuing alongside M2 on the separate IPC branch. Its planned scope and evidence boundaries are recorded in [the task plan](tasks/M1-device-agent-core.md). PR #5 CI passed the Rust and contract-hygiene jobs. M2 is tracked in draft PR #6. No conformance gate or acceptance condition is marked Passed.
+M1 core implementation is merged through PR #5; M1 follow-up tests and evidence are continuing alongside M2 on the separate IPC branch. Its planned scope and evidence boundaries are recorded in [the task plan](tasks/M1-device-agent-core.md). PR #5 CI passed the Rust and contract-hygiene jobs. M2 is tracked in draft PR #6. The local IPC primitive now tests state snapshot delivery and bounded user-event queue backpressure; renderer supervision, accept-loop lifecycle, authorization and full IPC-01 remain open. The [M3 Hyprland task plan](tasks/M3-hyprland-adapter.md) defines the v0.57.2/Lua profile before adapter implementation. No conformance gate or acceptance condition is marked Passed.
 
 ### Open owner decisions
 

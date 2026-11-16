@@ -12,6 +12,7 @@ use std::os::fd::AsRawFd;
 use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
+use std::sync::mpsc::{SyncSender, TrySendError};
 use std::time::{Duration, Instant};
 
 pub const MAX_FRAME_BYTES: usize = 262_144;
@@ -374,6 +375,66 @@ impl PresentationSession {
             self.accept_user_event(&event, trusted_now_us())?;
             Ok(event)
         })();
+        if result.is_err() {
+            let _ = stream.shutdown(std::net::Shutdown::Both);
+        }
+        result
+    }
+
+    /// Send a fresh derived-state replacement after readiness. State delivery is
+    /// server-to-renderer only; this does not grant the renderer an action path.
+    pub fn send_snapshot(
+        &self,
+        stream: &mut UnixStream,
+        snapshot: &Envelope,
+        io_timeout: Duration,
+    ) -> io::Result<()> {
+        if self.phase != SessionPhase::Ready
+            || snapshot.method != "presentation.state.replace"
+            || snapshot.kind != "event"
+            || snapshot.session_id.as_deref() != Some(self.session_id.as_str())
+            || snapshot.session_sequence.is_some()
+        {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "snapshot must be a state.replace event for this ready session",
+            ));
+        }
+        let result = (|| {
+            snapshot.validate()?;
+            let deadline = Instant::now().checked_add(io_timeout).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::InvalidInput, "IPC timeout overflow")
+            })?;
+            write_frame_until(stream, snapshot, deadline)
+        })();
+        if result.is_err() {
+            let _ = stream.shutdown(std::net::Shutdown::Both);
+        }
+        result
+    }
+
+    /// Consume and validate one user event, then put it in a caller-sized bounded
+    /// queue. A full/disconnected queue closes this session so backpressure is
+    /// explicit. The queued envelope remains untrusted and is never dispatched here.
+    pub fn receive_user_event_into(
+        &mut self,
+        stream: &mut UnixStream,
+        trusted_now_us: impl FnMut() -> i64,
+        io_timeout: Duration,
+        queue: &SyncSender<Envelope>,
+    ) -> io::Result<()> {
+        let event = self.receive_user_event(stream, trusted_now_us, io_timeout)?;
+        let result = match queue.try_send(event) {
+            Ok(()) => Ok(()),
+            Err(TrySendError::Full(_)) => Err(io::Error::new(
+                io::ErrorKind::WouldBlock,
+                "presentation event queue is full; session closed for backpressure",
+            )),
+            Err(TrySendError::Disconnected(_)) => Err(io::Error::new(
+                io::ErrorKind::BrokenPipe,
+                "presentation event receiver is unavailable",
+            )),
+        };
         if result.is_err() {
             let _ = stream.shutdown(std::net::Shutdown::Both);
         }
@@ -857,6 +918,56 @@ mod tests {
 
     fn encoded_frame(envelope: &Envelope) -> Vec<u8> {
         frame(&serde_json::to_vec(envelope).unwrap())
+    }
+
+    #[test]
+    fn ready_session_delivers_bound_snapshot() {
+        let id = "00000000-0000-4000-8000-000000000003";
+        let session = PresentationSession::with_id(id.into()).unwrap();
+        let (mut server, mut client) = UnixStream::pair().unwrap();
+        let mut snapshot = envelope();
+        snapshot.kind = "event".into();
+        snapshot.method = "presentation.state.replace".into();
+        snapshot.session_id = Some(id.into());
+        snapshot.body = serde_json::json!({"state_revision": 9, "character_id": "synthetic"});
+        session
+            .send_snapshot(&mut server, &snapshot, Duration::from_secs(1))
+            .unwrap();
+        assert_eq!(read_frame(&mut client).unwrap(), snapshot);
+
+        let mut wrong_session = snapshot;
+        wrong_session.session_id = Some("00000000-0000-4000-8000-000000000004".into());
+        assert_eq!(
+            session
+                .send_snapshot(&mut server, &wrong_session, Duration::from_secs(1))
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::PermissionDenied
+        );
+    }
+
+    #[test]
+    fn full_bounded_user_event_queue_closes_session_without_dispatch() {
+        let id = "00000000-0000-4000-8000-000000000003";
+        let mut session = PresentationSession::with_id(id.into()).unwrap();
+        let (mut client, mut server) = UnixStream::pair().unwrap();
+        write_frame(&mut client, &user_event(id, "0")).unwrap();
+        let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+        let queued_before = user_event(id, "99");
+        sender.send(queued_before.clone()).unwrap();
+        let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+        assert_eq!(
+            session
+                .receive_user_event_into(&mut server, || now_us, Duration::from_secs(1), &sender,)
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::WouldBlock
+        );
+        assert_eq!(receiver.try_recv().unwrap(), queued_before);
+        assert!(matches!(
+            receiver.try_recv(),
+            Err(std::sync::mpsc::TryRecvError::Empty)
+        ));
     }
 
     #[test]

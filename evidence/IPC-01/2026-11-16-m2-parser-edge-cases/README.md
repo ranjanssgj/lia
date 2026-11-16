@@ -15,3 +15,9 @@
 - [CI run 43854174538](https://github.com/ranjanssgj/lia/actions/runs/43854174538) — device-agent Rust and contract-hygiene jobs passed for the framed user-event receive implementation.
 
 These tests cover parser, session, handshake, one-session receive and single-connection accept primitives only. The accept caller must supply an expected UID/PID; actual renderer supervision/process binding is not implemented. The handshake and event receive each use an absolute monotonic timeout. Returned event envelopes remain untrusted and are not dispatched. The procedure does not cover a long-running accept loop, real separate-UID peers, renderer-supervisor integration, dispatch authorization, reply-side disconnect, renderer restart/snapshot lifecycle, slow-reader writes, message-flood/backpressure stress, fuzzing, foreign-owner or concurrent path-race scenarios, or the complete IPC-01 procedure. No acceptance condition or conformance gate is marked Passed.
+
+## Follow-up on 16 November 2026
+
+The IPC primitive now has two additional local checks: a ready-session snapshot send verifies `presentation.state.replace`, event direction and session binding; a bounded synchronous user-event queue reports `WouldBlock` and closes the connection when full without enqueueing or dispatching the new event. `cargo test --locked --workspace` passed 44 tests on Rust 1.99.1, including these checks. The implementation and review commit are recorded by the enclosing PR branch.
+
+This remains partial evidence. The actual renderer supervisor/PID binding, long-running multi-connection service, reply-side disconnect test, separate-UID and foreign-owner/path-race coverage, fuzzing, measured latency/resource bounds and complete IPC-01 procedure are still open. No user-event dispatch handler exists; the queue carries untrusted intents only.
