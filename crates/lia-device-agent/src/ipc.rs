@@ -738,6 +738,7 @@ mod tests {
     use std::io::Cursor;
     use std::os::unix::fs::PermissionsExt;
     use std::os::unix::net::UnixStream;
+    use std::process::Command;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn envelope() -> Envelope {
@@ -1297,6 +1298,61 @@ mod tests {
             });
         }
         server.join().unwrap();
+        std::fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
+    fn same_uid_sibling_process_is_rejected_before_frame_parsing() {
+        const SOCKET_ENV: &str = "LIA_IPC_TEST_SOCKET_PATH";
+        if let Some(path) = std::env::var_os(SOCKET_ENV) {
+            let mut client = UnixStream::connect(path).unwrap();
+            client.write_all(b"this is not a frame").unwrap();
+            let mut response = [0_u8; 1];
+            assert!(match client.read(&mut response) {
+                Ok(0) => true,
+                Err(error) => error.kind() == io::ErrorKind::ConnectionReset,
+                Ok(_) => false,
+            });
+            return;
+        }
+
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let directory =
+            std::env::temp_dir().join(format!("lia-ipc-sibling-{}-{nonce}", std::process::id()));
+        std::fs::create_dir(&directory).unwrap();
+        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let path = directory.join("agent.sock");
+        let endpoint = PrivateSocket::bind(&path).unwrap();
+        let executable = std::env::current_exe().unwrap();
+        let child = Command::new(executable)
+            .args([
+                "--exact",
+                "ipc::tests::same_uid_sibling_process_is_rejected_before_frame_parsing",
+                "--nocapture",
+            ])
+            .env(SOCKET_ENV, &path)
+            .spawn()
+            .unwrap();
+
+        let error = endpoint
+            .accept_session(
+                unsafe { libc::geteuid() },
+                std::process::id() as i32,
+                || 1_795_708_800_000_000,
+                Duration::from_secs(2),
+            )
+            .unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
+        let output = child.wait_with_output().unwrap();
+        assert!(
+            output.status.success(),
+            "sibling process test failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        drop(endpoint);
         std::fs::remove_dir(directory).unwrap();
     }
 
