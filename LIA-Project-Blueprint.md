@@ -7,7 +7,7 @@ Total output lines: 8911
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.14.16
+> **Version:** 1.14.17
 > **Last updated:** 16 November 2026
 > **Current phase:** P5 — First Vertical Slice (M0 complete; M1 in progress)
 > **Current workstream:** M1 — device-agent core follow-up (in progress); M2 — Linux IPC spike (in progress)
@@ -1008,3 +1008,5 @@ M2 is in progress on `feat/p5-m2-ipc-spike`, using the repository's pinned Ubunt
 **1.14.15 — 16 Nov 2026:** Records M2 transport hardening: one absolute monotonic deadline spans hello, hello response and ready; a slow-drip peer cannot extend the handshake. Local IPC coverage now includes wrong-UID rejection before parsing, disconnect mid-header/body and timeout-driven connection shutdown, alongside prior framing, handshake, reconnect and socket-path checks. Long-running service lifecycle, same-UID renderer binding, dispatch authorization, reply-side disconnect, renderer restart/snapshot, bounded backpressure and full IPC-01 remain open; no conformance gate is marked Passed.
 
 **1.14.16 — 16 Nov 2026:** Tightens the IPC accept API to require both expected peer UID and PID from its caller, and rejects either mismatch before parsing frames. This check is only as trustworthy as its caller; the renderer supervisor/process binding is not implemented, and same-UID sibling process tests remain open. The absolute monotonic handshake deadline, disconnect and timeout tests remain local implementation checks. IPC-01 remains Not Run.
+
+**1.14.17 — 16 Nov 2026:** Adds a Linux subprocess check showing that a same-UID sibling process is rejected before its frame is parsed when the acceptor expects the supervisor's different PID. This validates the peer-check primitive only; real renderer supervisor integration, separate-UID process testing, dispatch authorization and the complete IPC-01 procedure remain open. No conformance gate is marked Passed.
