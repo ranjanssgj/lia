@@ -2,7 +2,7 @@
 
 **Gate:** IPC-01 remains **Not Run**. This records local implementation checks, not a conformance result.
 
-**Source commit:** `40cc38365856c3cfd4069145ea13bfc2e074b0bb`.
+**Source commit:** `d813f566abddf26c070c4d641592be4d43ee81b2`.
 **Environment:** Linux x86_64, Arch Linux kernel 7.2.14; Rust/Cargo 1.99.1.
 
 ## Executed
