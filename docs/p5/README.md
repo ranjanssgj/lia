@@ -2,7 +2,7 @@
 
 **Status:** M0 readiness complete; M1 core merged with follow-up evidence open; M2 IPC spike in progress.
 **Scope:** The approved first slice in Blueprint §6, on one Linux host, one supported display and one exact Hyprland profile.
-**Authority:** Blueprint v1.14.18 and P4 contract package 0.2.9 (Draft) in this branch.
+**Authority:** Blueprint v1.14.19 and P4 contract package 0.2.9 (Draft) in this branch.
 
 P5 proves one complete interaction path across presentation, conversation, fresh desktop context, current authorization, one same-display window move, truthful outcome reporting and one inspectable/deletable low-sensitivity memory. It does not establish general Linux, Windows, mobile, Home Assistant, cloud, or production-provider support.
 
