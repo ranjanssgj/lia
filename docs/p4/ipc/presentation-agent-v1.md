@@ -112,7 +112,7 @@ Every request/response carries message_id and correlation_id. Logs may include m
 1. Linux peer credentials reject another UID and an unexpected process; endpoint permissions are verified.
 2. Windows named-pipe ACL and client identity reject another user/session.
 3. Oversized, truncated, malformed, invalid-version and unknown-method frames fail closed; duplicate, backward, noncanonical and cross-session user-event sequences are rejected before dispatch.
-4. A renderer restart establishes a new random session UUID and receives a state snapshot; stale frames and replayed/out-of-order user events are ignored. The current Rust session-state primitive tests hello/ready gating and correlation; socket-level restart/snapshot integration remains open.
+4. A renderer restart establishes a new random session UUID and receives a state snapshot; stale frames and replayed/out-of-order user events are ignored. The current Rust tests cover hello/ready gating, response correlation and a Unix-stream handshake exchange; listener restart and snapshot delivery remain open.
 5. A malicious/modified Godot client cannot invoke an OS capability or forge operation evidence.
 6. Backpressure remains bounded; state coalescing does not drop user stop/interruption signals.
 7. Rust agent and Godot can independently restart without stuck sockets, orphaned processes or stale action replay.
