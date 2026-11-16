@@ -153,11 +153,12 @@ fn parse_sequence(value: &str) -> io::Result<u64> {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum SessionPhase {
     AwaitHello,
-    Active,
+    AwaitReady,
+    Ready,
 }
 
 /// Per-connection protocol state. A new instance gets a fresh OS-random session ID;
-/// it becomes active only after accepting hello, and disconnect discards its watermark.
+/// it becomes active only after hello and ready, and disconnect discards its watermark.
 #[derive(Debug)]
 pub struct PresentationSession {
     session_id: String,
@@ -182,7 +183,7 @@ impl PresentationSession {
         Ok(Self {
             session_id,
             last_user_sequence: None,
-            phase: SessionPhase::Active,
+            phase: SessionPhase::Ready,
         })
     }
 
@@ -212,18 +213,39 @@ impl PresentationSession {
             body: serde_json::json!({"protocol_version":"1"}),
         };
         response.validate()?;
-        self.phase = SessionPhase::Active;
+        self.phase = SessionPhase::AwaitReady;
         Ok(response)
+    }
+
+    /// Accept the renderer's readiness report for this session. User events are not
+    /// accepted until this transition, so the caller can publish its fresh snapshot.
+    pub fn accept_ready(&mut self, request: &Envelope, now_us: i64) -> io::Result<()> {
+        request.validate()?;
+        if request.method != "presentation.ready" || request.kind != "request" {
+            return invalid("expected a presentation.ready request");
+        }
+        if self.phase != SessionPhase::AwaitReady {
+            return invalid("presentation.ready is only accepted once after hello");
+        }
+        request.validate_deadline(now_us)?;
+        if request.session_id.as_deref() != Some(self.session_id.as_str()) {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "IPC session ID does not match this connection",
+            ));
+        }
+        self.phase = SessionPhase::Ready;
+        Ok(())
     }
 
     /// Validate and consume a user-event sequence before any handler can dispatch it.
     /// This provides replay ordering only; it does not authenticate renderer authority.
     pub fn accept_user_event(&mut self, envelope: &Envelope, now_us: i64) -> io::Result<()> {
         envelope.validate()?;
-        if self.phase != SessionPhase::Active {
+        if self.phase != SessionPhase::Ready {
             return Err(io::Error::new(
                 io::ErrorKind::PermissionDenied,
-                "IPC hello must complete before requests are accepted",
+                "presentation.ready must complete before user events are accepted",
             ));
         }
         if envelope.method != "presentation.user_event" || envelope.kind != "request" {
@@ -580,6 +602,13 @@ mod tests {
         event
     }
 
+    fn ready_request(session_id: &str) -> Envelope {
+        let mut request = envelope();
+        request.method = "presentation.ready".into();
+        request.session_id = Some(session_id.into());
+        request
+    }
+
     fn frame(payload: &[u8]) -> Vec<u8> {
         let mut bytes = (payload.len() as u32).to_be_bytes().to_vec();
         bytes.extend_from_slice(payload);
@@ -685,7 +714,7 @@ mod tests {
     }
 
     #[test]
-    fn hello_issues_random_session_once_and_activates_connection() {
+    fn hello_issues_random_session_once_and_requires_ready_before_events() {
         let mut first = PresentationSession::new().unwrap();
         let second = PresentationSession::new().unwrap();
         assert!(is_uuid(&first.session_id));
@@ -742,6 +771,45 @@ mod tests {
         );
         assert_eq!(session.phase, SessionPhase::AwaitHello);
         session.accept_hello(&envelope(), before_deadline).unwrap();
+        let event_before_ready = user_event(&session.session_id, "0");
+        assert_eq!(
+            session
+                .accept_user_event(&event_before_ready, before_deadline)
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::PermissionDenied
+        );
+
+        assert_eq!(
+            session
+                .accept_ready(
+                    &ready_request("00000000-0000-4000-8000-000000000004"),
+                    before_deadline
+                )
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::PermissionDenied
+        );
+
+        let mut expired_ready = ready_request(&session.session_id);
+        expired_ready.deadline_at = Some("2026-11-15T00:00:01Z".into());
+        let at_deadline = crate::time::parse_rfc3339_us("2026-11-15T00:00:01Z").unwrap();
+        assert_eq!(
+            session
+                .accept_ready(&expired_ready, at_deadline)
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::TimedOut
+        );
+        assert_eq!(session.phase, SessionPhase::AwaitReady);
+        session
+            .accept_ready(&ready_request(&session.session_id), before_deadline)
+            .unwrap();
+        assert!(
+            session
+                .accept_ready(&ready_request(&session.session_id), before_deadline)
+                .is_err()
+        );
         let active_event = user_event(&session.session_id, "0");
         session
             .accept_user_event(&active_event, before_deadline)
