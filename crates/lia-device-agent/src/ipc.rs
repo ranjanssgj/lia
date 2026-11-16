@@ -498,6 +498,26 @@ impl PrivateSocket {
         let peer = require_peer_uid(&stream, expected_uid)?;
         Ok((stream, peer))
     }
+
+    /// Accept a UID-authenticated peer, then complete a fresh hello/ready exchange.
+    /// Each call creates a new session; callers must drop the stream/session together.
+    pub fn accept_session(
+        &self,
+        expected_uid: u32,
+        mut trusted_now_us: impl FnMut() -> i64,
+        io_timeout: Duration,
+    ) -> io::Result<(UnixStream, PeerCredentials, PresentationSession)> {
+        let (mut stream, peer) = self.accept_authenticated(expected_uid)?;
+        let session = match PresentationSession::new() {
+            Ok(session) => session,
+            Err(error) => {
+                let _ = stream.shutdown(std::net::Shutdown::Both);
+                return Err(error);
+            }
+        };
+        let session = session.negotiate(&mut stream, &mut trusted_now_us, io_timeout)?;
+        Ok((stream, peer, session))
+    }
 }
 
 impl Drop for PrivateSocket {
@@ -871,6 +891,60 @@ mod tests {
                 .session_id
                 .expect("hello response has a session ID")
         );
+    }
+
+    #[test]
+    fn authenticated_listener_issues_fresh_session_and_rejects_stale_ready() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let directory =
+            std::env::temp_dir().join(format!("lia-ipc-reconnect-{}-{nonce}", std::process::id()));
+        std::fs::create_dir(&directory).unwrap();
+        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let path = directory.join("agent.sock");
+        let endpoint = PrivateSocket::bind(&path).unwrap();
+        let server_path = path.clone();
+        let server = std::thread::spawn(move || {
+            let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+            let (stream, peer, session) = endpoint
+                .accept_session(
+                    unsafe { libc::geteuid() },
+                    || now_us,
+                    Duration::from_secs(2),
+                )
+                .unwrap();
+            assert_eq!(peer.uid, unsafe { libc::geteuid() });
+            drop(stream);
+            drop(session);
+
+            let result = endpoint.accept_session(
+                unsafe { libc::geteuid() },
+                || now_us,
+                Duration::from_secs(2),
+            );
+            assert_eq!(result.unwrap_err().kind(), io::ErrorKind::PermissionDenied);
+            drop(endpoint);
+            assert!(!server_path.exists());
+        });
+
+        let mut first = UnixStream::connect(&path).unwrap();
+        write_frame(&mut first, &envelope()).unwrap();
+        let first_response = read_frame(&mut first).unwrap();
+        let old_session_id = first_response.session_id.unwrap();
+        write_frame(&mut first, &ready_request(&old_session_id)).unwrap();
+        drop(first);
+
+        let mut second = UnixStream::connect(&path).unwrap();
+        write_frame(&mut second, &envelope()).unwrap();
+        let second_response = read_frame(&mut second).unwrap();
+        let new_session_id = second_response.session_id.unwrap();
+        assert_ne!(new_session_id, old_session_id);
+        write_frame(&mut second, &ready_request(&old_session_id)).unwrap();
+        server.join().unwrap();
+        drop(second);
+        std::fs::remove_dir(directory).unwrap();
     }
 
     #[test]
