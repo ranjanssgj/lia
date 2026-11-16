@@ -27,6 +27,54 @@ const ALLOWED_METHODS: &[&str] = &[
     "presentation.shutdown",
 ];
 
+const MAX_CONTROL_ID_BYTES: usize = 128;
+const MAX_SUBMITTED_TEXT_BYTES: usize = 8_192;
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum UserEventKind {
+    Clicked,
+    Dismissed,
+    TextSubmitted,
+    InterruptionRequested,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct UserEventBody {
+    pub control_id: String,
+    pub event: UserEventKind,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+}
+
+impl UserEventBody {
+    fn validate(value: &Value) -> io::Result<()> {
+        let body: Self = serde_json::from_value(value.clone())
+            .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+        if body.control_id.is_empty()
+            || body.control_id.len() > MAX_CONTROL_ID_BYTES
+            || !body.control_id.bytes().all(|byte| {
+                byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b':' | b'-')
+            })
+        {
+            return invalid("user-event control_id has invalid syntax or length");
+        }
+        match (body.event, body.text) {
+            (UserEventKind::TextSubmitted, Some(text))
+                if text.len() <= MAX_SUBMITTED_TEXT_BYTES =>
+            {
+                Ok(())
+            }
+            (UserEventKind::TextSubmitted, _) => {
+                invalid("text_submitted requires text within the size limit")
+            }
+            (_, None) => Ok(()),
+            (_, Some(_)) => invalid("text is only allowed with text_submitted"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Envelope {
@@ -86,6 +134,10 @@ impl Envelope {
                 {
                     return invalid("user-event request requires a session UUID and sequence");
                 }
+                UserEventBody::validate(&self.body)?;
+            }
+            ("presentation.user_event", _) => {
+                return invalid("presentation.user_event must be a request");
             }
             _ => {
                 if self.session_id.as_deref().is_none_or(|id| !is_uuid(id))
@@ -786,6 +838,7 @@ mod tests {
         event.method = "presentation.user_event".into();
         event.session_id = Some(session_id.into());
         event.session_sequence = Some(sequence.into());
+        event.body = serde_json::json!({"control_id":"control.primary","event":"clicked"});
         event
     }
 
@@ -1284,6 +1337,44 @@ mod tests {
     }
 
     #[test]
+    fn user_event_body_is_typed_bounded_and_cannot_claim_outcomes() {
+        let session_id = "00000000-0000-4000-8000-000000000003";
+        for body in [
+            serde_json::json!({"control_id":"panel.hide","event":"clicked"}),
+            serde_json::json!({"control_id":"chat.input","event":"text_submitted","text":"hello"}),
+            serde_json::json!({"control_id":"chat.stop","event":"interruption_requested"}),
+        ] {
+            let mut event = user_event(session_id, "0");
+            event.body = body;
+            event.validate().unwrap();
+        }
+
+        let invalid_bodies = [
+            serde_json::json!({"control_id":"panel.hide","event":"clicked","outcome":"success"}),
+            serde_json::json!({"control_id":"panel.hide","event":"unknown"}),
+            serde_json::json!({"control_id":"panel.hide","event":"clicked","text":"unexpected"}),
+            serde_json::json!({"control_id":"chat.input","event":"text_submitted"}),
+            serde_json::json!({"control_id":"","event":"clicked"}),
+            serde_json::json!({"control_id":"chat.input","event":"text_submitted","text":"x".repeat(MAX_SUBMITTED_TEXT_BYTES + 1)}),
+        ];
+        for body in invalid_bodies {
+            let mut event = user_event(session_id, "0");
+            event.body = body;
+            assert_eq!(
+                event.validate().unwrap_err().kind(),
+                io::ErrorKind::InvalidData
+            );
+        }
+
+        let mut not_a_request = user_event(session_id, "0");
+        not_a_request.kind = "event".into();
+        assert_eq!(
+            not_a_request.validate().unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+    }
+
+    #[test]
     fn private_socket_checks_directory_mode_and_kernel_peer_credentials() {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -1368,7 +1459,7 @@ mod tests {
         const SOCKET_ENV: &str = "LIA_IPC_TEST_SOCKET_PATH";
         if let Some(path) = std::env::var_os(SOCKET_ENV) {
             let mut client = UnixStream::connect(path).unwrap();
-            client.write_all(b"this is not a frame").unwrap();
+            let _ = client.write_all(b"this is not a frame");
             let mut response = [0_u8; 1];
             assert!(match client.read(&mut response) {
                 Ok(0) => true,
