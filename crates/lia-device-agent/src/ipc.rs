@@ -12,6 +12,7 @@ use std::os::fd::AsRawFd;
 use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 pub const MAX_FRAME_BYTES: usize = 262_144;
 const ALLOWED_METHODS: &[&str] = &[
@@ -215,6 +216,33 @@ impl PresentationSession {
         response.validate()?;
         self.phase = SessionPhase::AwaitReady;
         Ok(response)
+    }
+
+    /// Perform the hello/ready exchange on a peer-authenticated Unix stream. The
+    /// caller must authenticate the peer before calling this method and discard the
+    /// consumed session if any I/O or protocol step fails.
+    pub fn negotiate(
+        mut self,
+        stream: &mut UnixStream,
+        mut trusted_now_us: impl FnMut() -> i64,
+        io_timeout: Duration,
+    ) -> io::Result<Self> {
+        let result = (|| {
+            stream.set_read_timeout(Some(io_timeout))?;
+            stream.set_write_timeout(Some(io_timeout))?;
+
+            let hello = read_frame(stream)?;
+            let response = self.accept_hello(&hello, trusted_now_us())?;
+            write_frame(stream, &response)?;
+
+            let ready = read_frame(stream)?;
+            self.accept_ready(&ready, trusted_now_us())?;
+            Ok(self)
+        })();
+        if result.is_err() {
+            let _ = stream.shutdown(std::net::Shutdown::Both);
+        }
+        result
     }
 
     /// Accept the renderer's readiness report for this session. User events are not
@@ -814,6 +842,35 @@ mod tests {
         session
             .accept_user_event(&active_event, before_deadline)
             .unwrap();
+    }
+
+    #[test]
+    fn unix_stream_negotiates_hello_and_ready_before_returning_session() {
+        let (mut client, mut server) = UnixStream::pair().unwrap();
+        let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+        let server_thread = std::thread::spawn(move || {
+            PresentationSession::new()
+                .unwrap()
+                .negotiate(&mut server, || now_us, Duration::from_secs(2))
+                .unwrap()
+        });
+
+        let hello = envelope();
+        write_frame(&mut client, &hello).unwrap();
+        let response = read_frame(&mut client).unwrap();
+        assert_eq!(response.kind, "response");
+        assert_eq!(response.request_id, hello.request_id);
+        let ready = ready_request(response.session_id.as_deref().unwrap());
+        write_frame(&mut client, &ready).unwrap();
+
+        let session = server_thread.join().unwrap();
+        assert_eq!(session.phase, SessionPhase::Ready);
+        assert_eq!(
+            session.session_id,
+            response
+                .session_id
+                .expect("hello response has a session ID")
+        );
     }
 
     #[test]
