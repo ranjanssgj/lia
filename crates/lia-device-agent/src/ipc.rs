@@ -1442,7 +1442,7 @@ mod tests {
 
         for _ in 0..2 {
             let mut client = UnixStream::connect(&path).unwrap();
-            client.write_all(b"this is not a frame").unwrap();
+            let _ = client.write_all(b"this is not a frame");
             let mut response = [0_u8; 1];
             assert!(match client.read(&mut response) {
                 Ok(0) => true,
