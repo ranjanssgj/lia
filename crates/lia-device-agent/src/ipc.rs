@@ -303,6 +303,30 @@ impl PresentationSession {
         self.last_user_sequence = Some(sequence);
         Ok(())
     }
+
+    /// Read one framed user event from an already-negotiated stream, validate its
+    /// session, deadline and sequence, and return the untrusted intent for caller
+    /// policy checks. This method never dispatches an action. Any malformed,
+    /// expired or replayed frame closes the connection and leaves no reusable session.
+    pub fn receive_user_event(
+        &mut self,
+        stream: &mut UnixStream,
+        mut trusted_now_us: impl FnMut() -> i64,
+        io_timeout: Duration,
+    ) -> io::Result<Envelope> {
+        let result = (|| {
+            let deadline = Instant::now().checked_add(io_timeout).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::InvalidInput, "IPC timeout overflow")
+            })?;
+            let event = read_frame_until(stream, deadline)?;
+            self.accept_user_event(&event, trusted_now_us())?;
+            Ok(event)
+        })();
+        if result.is_err() {
+            let _ = stream.shutdown(std::net::Shutdown::Both);
+        }
+        result
+    }
 }
 
 fn random_uuid_v4() -> io::Result<String> {
@@ -1006,6 +1030,44 @@ mod tests {
                 .session_id
                 .expect("hello response has a session ID")
         );
+    }
+
+    #[test]
+    fn negotiated_stream_reads_one_user_event_then_closes_on_replay() {
+        let (mut client, mut server) = UnixStream::pair().unwrap();
+        let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+        let server_thread = std::thread::spawn(move || {
+            let mut session = PresentationSession::new()
+                .unwrap()
+                .negotiate(&mut server, || now_us, Duration::from_secs(2))
+                .unwrap();
+            let accepted = session
+                .receive_user_event(&mut server, || now_us, Duration::from_secs(2))
+                .unwrap();
+            let replay = session
+                .receive_user_event(&mut server, || now_us, Duration::from_secs(2))
+                .unwrap_err();
+            (accepted.session_sequence, replay.kind())
+        });
+
+        let hello = envelope();
+        write_frame(&mut client, &hello).unwrap();
+        let response = read_frame(&mut client).unwrap();
+        let session_id = response.session_id.unwrap();
+        write_frame(&mut client, &ready_request(&session_id)).unwrap();
+        write_frame(&mut client, &user_event(&session_id, "0")).unwrap();
+        write_frame(&mut client, &user_event(&session_id, "0")).unwrap();
+
+        assert_eq!(
+            server_thread.join().unwrap(),
+            (Some("0".into()), io::ErrorKind::InvalidData)
+        );
+        let mut response = [0_u8; 1];
+        assert!(match client.read(&mut response) {
+            Ok(0) => true,
+            Err(error) => error.kind() == io::ErrorKind::ConnectionReset,
+            Ok(_) => false,
+        });
     }
 
     #[test]
