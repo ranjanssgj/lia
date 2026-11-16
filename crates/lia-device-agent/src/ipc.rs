@@ -150,36 +150,27 @@ fn parse_sequence(value: &str) -> io::Result<u64> {
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
 }
 
-/// Per-connection replay state. A new instance gets a fresh OS-random session ID;
-/// disconnecting discards its watermark, so old frames cannot cross reconnects.
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SessionPhase {
+    AwaitHello,
+    Active,
+}
+
+/// Per-connection protocol state. A new instance gets a fresh OS-random session ID;
+/// it becomes active only after accepting hello, and disconnect discards its watermark.
+#[derive(Debug)]
 pub struct PresentationSession {
     session_id: String,
     last_user_sequence: Option<u64>,
+    phase: SessionPhase,
 }
 
 impl PresentationSession {
     pub fn new() -> io::Result<Self> {
-        let mut bytes = [0_u8; 16];
-        File::open("/dev/urandom")?.read_exact(&mut bytes)?;
-        bytes[6] = (bytes[6] & 0x0f) | 0x40;
-        bytes[8] = (bytes[8] & 0x3f) | 0x80;
-        let hex = bytes
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<Vec<_>>()
-            .join("");
-        let id = format!(
-            "{}-{}-{}-{}-{}",
-            &hex[0..8],
-            &hex[8..12],
-            &hex[12..16],
-            &hex[16..20],
-            &hex[20..32]
-        );
         Ok(Self {
-            session_id: id,
+            session_id: random_uuid_v4()?,
             last_user_sequence: None,
+            phase: SessionPhase::AwaitHello,
         })
     }
 
@@ -191,17 +182,50 @@ impl PresentationSession {
         Ok(Self {
             session_id,
             last_user_sequence: None,
+            phase: SessionPhase::Active,
         })
     }
 
-    pub fn session_id(&self) -> &str {
-        &self.session_id
+    /// Accept the first hello request and produce its correlated session response.
+    /// The connection stays inactive unless the request and response both validate.
+    pub fn accept_hello(&mut self, request: &Envelope, now_us: i64) -> io::Result<Envelope> {
+        request.validate()?;
+        if request.method != "presentation.hello" || request.kind != "request" {
+            return invalid("first IPC request must be presentation.hello");
+        }
+        if self.phase != SessionPhase::AwaitHello {
+            return invalid("presentation hello has already been accepted");
+        }
+        request.validate_deadline(now_us)?;
+
+        let response = Envelope {
+            protocol_version: "1".into(),
+            message_id: random_uuid_v4()?,
+            session_id: Some(self.session_id.clone()),
+            session_sequence: None,
+            request_id: request.request_id.clone(),
+            correlation_id: request.correlation_id.clone(),
+            kind: "response".into(),
+            method: "presentation.hello".into(),
+            sent_at: crate::time::format_rfc3339_us(now_us),
+            deadline_at: None,
+            body: serde_json::json!({"protocol_version":"1"}),
+        };
+        response.validate()?;
+        self.phase = SessionPhase::Active;
+        Ok(response)
     }
 
     /// Validate and consume a user-event sequence before any handler can dispatch it.
     /// This provides replay ordering only; it does not authenticate renderer authority.
     pub fn accept_user_event(&mut self, envelope: &Envelope, now_us: i64) -> io::Result<()> {
         envelope.validate()?;
+        if self.phase != SessionPhase::Active {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "IPC hello must complete before requests are accepted",
+            ));
+        }
         if envelope.method != "presentation.user_event" || envelope.kind != "request" {
             return invalid("only user-event requests use the client sequence");
         }
@@ -228,6 +252,26 @@ impl PresentationSession {
         self.last_user_sequence = Some(sequence);
         Ok(())
     }
+}
+
+fn random_uuid_v4() -> io::Result<String> {
+    let mut bytes = [0_u8; 16];
+    File::open("/dev/urandom")?.read_exact(&mut bytes)?;
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    let hex = bytes
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<Vec<_>>()
+        .join("");
+    Ok(format!(
+        "{}-{}-{}-{}-{}",
+        &hex[0..8],
+        &hex[8..12],
+        &hex[12..16],
+        &hex[16..20],
+        &hex[20..32]
+    ))
 }
 
 fn invalid<T>(message: impl Into<String>) -> io::Result<T> {
@@ -641,21 +685,67 @@ mod tests {
     }
 
     #[test]
-    fn fresh_sessions_use_random_v4_uuids() {
-        let first = PresentationSession::new().unwrap();
+    fn hello_issues_random_session_once_and_activates_connection() {
+        let mut first = PresentationSession::new().unwrap();
         let second = PresentationSession::new().unwrap();
-        assert!(is_uuid(first.session_id()));
-        assert_ne!(first.session_id(), second.session_id());
-        assert_eq!(first.session_id().as_bytes()[14], b'4');
-        let mut hello_response = envelope();
-        hello_response.kind = "response".into();
-        hello_response.session_id = Some(first.session_id().into());
+        assert!(is_uuid(&first.session_id));
+        assert_ne!(first.session_id, second.session_id);
+        assert_eq!(first.session_id.as_bytes()[14], b'4');
+        let request = envelope();
+        let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+        let hello_response = first.accept_hello(&request, now_us).unwrap();
         hello_response.validate().unwrap();
-        hello_response.session_id = None;
+        assert_eq!(hello_response.kind, "response");
+        assert_eq!(hello_response.method, "presentation.hello");
         assert_eq!(
-            hello_response.validate().unwrap_err().kind(),
-            io::ErrorKind::InvalidData
+            hello_response.session_id.as_deref(),
+            Some(first.session_id.as_str())
         );
+        assert_eq!(
+            hello_response.request_id.as_deref(),
+            request.request_id.as_deref()
+        );
+        assert_eq!(hello_response.correlation_id, request.correlation_id);
+        assert!(
+            first
+                .accept_hello(&request, now_us)
+                .unwrap_err()
+                .to_string()
+                .contains("already been accepted")
+        );
+    }
+
+    #[test]
+    fn pending_or_expired_handshake_cannot_accept_user_event() {
+        let mut session = PresentationSession::new().unwrap();
+        let before_deadline = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+        let pending_event = user_event(&session.session_id, "0");
+        assert_eq!(
+            session
+                .accept_user_event(&pending_event, before_deadline)
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::PermissionDenied
+        );
+
+        let mut request = envelope();
+        request.deadline_at = Some("2026-11-15T00:00:01Z".into());
+        assert_eq!(
+            session
+                .accept_hello(
+                    &request,
+                    crate::time::parse_rfc3339_us("2026-11-15T00:00:01Z").unwrap()
+                )
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::TimedOut
+        );
+        assert_eq!(session.phase, SessionPhase::AwaitHello);
+        session.accept_hello(&envelope(), before_deadline).unwrap();
+        let active_event = user_event(&session.session_id, "0");
+        session
+            .accept_user_event(&active_event, before_deadline)
+            .unwrap();
     }
 
     #[test]
