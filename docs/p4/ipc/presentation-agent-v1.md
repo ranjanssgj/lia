@@ -49,9 +49,10 @@ Each frame uses this envelope:
 
 - message_id is unique per frame. request_id correlates a response with its request.
 - A `presentation.hello` request omits `session_id` and `session_sequence`. Its successful response supplies a fresh random UUID `session_id`; the session sequence remains omitted.
-- The first frame on a connection must be a non-expired `presentation.hello` request. Its response has a fresh `message_id`, echoes the request's optional `request_id` and `correlation_id`, and carries the newly issued `session_id`. The connection becomes active only after hello validation; a rejected/expired hello does not activate it.
+- The first frame on a connection must be a non-expired `presentation.hello` request. Its response has a fresh `message_id`, echoes the request's optional `request_id` and `correlation_id`, and carries the newly issued `session_id`. The connection enters an awaiting-ready phase after hello; a rejected/expired hello does not change phase.
 - `message_id` identifies one frame. For a request/response exchange, the response echoes the request's `request_id` unchanged; it does not substitute the request's `message_id` for that correlation value.
 - Every subsequent frame carries that `session_id`. It is scoped to one authenticated connection and discarded on disconnect. A reconnect receives a new ID, so captured frames from the old process generation fail session validation.
+- Before user events are accepted, the renderer must send exactly one non-expired `presentation.ready` request carrying the issued `session_id`. A repeated, expired, or wrong-session ready request does not enter the ready phase. After ready, the agent should publish a fresh snapshot; socket-level ordering and snapshot delivery remain part of IPC-01 integration.
 - A `presentation.user_event` request carries `session_sequence` as a canonical unsigned decimal string to avoid JSON number precision loss. It begins at `"0"`; each later accepted user event must be strictly greater than the last accepted value. Equal, lower, noncanonical, or out-of-range values are rejected. Responses and agent events omit this field.
 - The sequence watermark is per live presentation connection and is consumed before user-event dispatch. It is a replay/order control, not peer authentication, a permission grant, or proof that a UI action is allowed.
 - correlation_id links a presentation update to the originating conversation, turn, or operation without including the full content.
@@ -94,7 +95,7 @@ The snapshot is derived state. Godot cannot edit canonical personality, emotiona
 ## 6. Backpressure, cancellation and lifecycle
 
 - One connection is active for one presentation process generation. A new process generation gets a new random session ID and invalidates the prior IPC session. The sequence watermark exists only for that live connection; no old user event is replayed after reconnect.
-- A connection accepts no user event before one successful hello, and hello cannot activate the same connection twice. The receiver checks a user event's deadline against its trusted integer clock sample before consuming its sequence.
+- A connection accepts no user event before one successful hello and one matching ready request. Hello and ready cannot be repeated to reset connection state. The receiver checks user-event deadlines against its trusted integer clock sample before consuming sequence.
 - State replacement may coalesce older unsent snapshots. User interaction events, shutdown, and operation cancellation signals are not silently coalesced.
 - Every request has a deadline and bounded response. There is no unbounded queue.
 - Renderer restart does not replay old user actions. The Rust agent sends a fresh snapshot after a successful hello/ready exchange.
@@ -111,7 +112,7 @@ Every request/response carries message_id and correlation_id. Logs may include m
 1. Linux peer credentials reject another UID and an unexpected process; endpoint permissions are verified.
 2. Windows named-pipe ACL and client identity reject another user/session.
 3. Oversized, truncated, malformed, invalid-version and unknown-method frames fail closed; duplicate, backward, noncanonical and cross-session user-event sequences are rejected before dispatch.
-4. A renderer restart establishes a new random session UUID and receives a state snapshot; stale frames and replayed/out-of-order user events are ignored. The current Rust session-state primitive tests hello gating and correlation; socket-level restart/snapshot integration remains open.
+4. A renderer restart establishes a new random session UUID and receives a state snapshot; stale frames and replayed/out-of-order user events are ignored. The current Rust session-state primitive tests hello/ready gating and correlation; socket-level restart/snapshot integration remains open.
 5. A malicious/modified Godot client cannot invoke an OS capability or forge operation evidence.
 6. Backpressure remains bounded; state coalescing does not drop user stop/interruption signals.
 7. Rust agent and Godot can independently restart without stuck sockets, orphaned processes or stale action replay.

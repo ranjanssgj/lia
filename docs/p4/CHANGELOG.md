@@ -1,3 +1,10 @@
+## 0.2.9 — 16 November 2026
+
+**Baseline:** Blueprint v1.14.13. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Requires one matching, non-expired `presentation.ready` request after hello and before user-event acceptance. Repeated, expired, pre-hello, and wrong-session readiness messages do not activate user controls.
+- Adds an in-memory hello → ready session phase transition. User-event sequencing remains replay protection only; renderer identity binding, state snapshot delivery, dispatch authorization and the socket service remain open.
+
 ## 0.2.8 — 16 November 2026
 
 **Baseline:** Blueprint v1.14.12. The package remains Draft; no implementation conformance gate is marked Passed.
