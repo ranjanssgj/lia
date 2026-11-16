@@ -1,6 +1,7 @@
 # Presentation ↔ Device Agent IPC Contract
 
 **Protocol:** presentation-agent/1  
+**Contract revision:** P4 package 0.3.1
 **Status:** Draft — IPC-01 proof pending  
 **Consumers:** Godot presentation process and Rust/Tokio local agent
 
@@ -75,7 +76,15 @@ Each frame uses this envelope:
 | presentation.health | Bidirectional | Health, frame-budget and asset-load telemetry |
 | presentation.shutdown | Rust → Godot | Graceful renderer shutdown |
 
-A user_event identifies a UI control ID and a typed event (clicked, dismissed, text submitted, interruption requested). It does not contain a free-form tool name or arbitrary command. The Rust agent first validates the live session ID and strictly increasing client sequence, then resolves the control ID against the current UI action registry and applies authentication, policy, resource and permission checks. Same-UID `SO_PEERCRED` does not identify a specific renderer; until the agent has a verified renderer-session binding, the IPC layer must not dispatch user events to state-changing handlers.
+A `presentation.user_event` request body has exactly these fields:
+
+~~~json
+{"control_id":"chat.input","event":"text_submitted","text":"hello"}
+~~~
+
+`control_id` is 1–128 ASCII bytes matching `[A-Za-z0-9._:-]+`. `event` is one of `clicked`, `dismissed`, `text_submitted`, or `interruption_requested`. Only `text_submitted` may include `text`; it must include a string of at most 8,192 UTF-8 bytes. Empty text is transport-valid and may be rejected by current UI policy. Unknown fields, unknown event names, other message kinds, missing required fields, invalid control IDs and oversized text are rejected. In particular, the body cannot carry an operation outcome or success claim.
+
+A user_event identifies a UI control ID and a typed event. It does not contain a free-form tool name or arbitrary command. The Rust agent first validates the live session ID and strictly increasing client sequence, then resolves the control ID against the current UI action registry and applies authentication, policy, resource and permission checks. Same-UID `SO_PEERCRED` does not identify a specific renderer; until the agent has a verified renderer-session binding, the IPC layer must not dispatch user events to state-changing handlers.
 
 No method is defined for shell execution, arbitrary process launch, filesystem reads/writes, key injection, global pointer control, browser automation, provider API calls, memory mutation, or permission changes.
 

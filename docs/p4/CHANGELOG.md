@@ -1,9 +1,10 @@
-## 0.2.9 — 16 November 2026
+## 0.3.1 — 16 November 2026
 
-**Baseline:** Blueprint v1.14.13. The package remains Draft; no implementation conformance gate is marked Passed.
+**Baseline:** Blueprint v1.14.20. The package remains Draft; no implementation conformance gate is marked Passed.
 
-- Requires one matching, non-expired `presentation.ready` request after hello and before user-event acceptance. Repeated, expired, pre-hello, and wrong-session readiness messages do not activate user controls.
-- Adds an in-memory hello → ready session phase transition, bounded-timeout Unix-stream handshake, and authenticated listener session-accept helper. User-event sequencing remains replay protection only; renderer identity binding, state snapshot delivery, dispatch authorization, accept-loop lifecycle and full socket service remain open.
+- Defines a strict `presentation.user_event` body with bounded control IDs, four typed event names and up to 8,192 UTF-8 bytes for text submission only.
+- Rejects unknown fields, unsupported event kinds and fabricated operation outcomes at the IPC contract boundary. Events remain untrusted intents for caller policy checks.
+- Records the framed receive primitive and its parser vectors; it does not implement authorization dispatch or complete IPC-01.
 
 ## 0.3.0 — 16 November 2026
 
@@ -11,6 +12,13 @@
 
 - Extends local IPC endpoint tests to reject symlink parents/endpoints and verify cleanup preserves a replacement inode. Foreign-owner and concurrent path-race tests remain open.
 - Adds a peer-authenticated single-connection accept helper with reconnect coverage; this does not complete the service lifecycle, renderer identity binding or authorization dispatch.
+
+## 0.2.9 — 16 November 2026
+
+**Baseline:** Blueprint v1.14.13. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Requires one matching, non-expired `presentation.ready` request after hello and before user-event acceptance. Repeated, expired, pre-hello, and wrong-session readiness messages do not activate user controls.
+- Adds an in-memory hello → ready session phase transition, bounded-timeout Unix-stream handshake, and authenticated listener session-accept helper. User-event sequencing remains replay protection only; renderer identity binding, state snapshot delivery, dispatch authorization, accept-loop lifecycle and full socket service remain open.
 
 ## 0.2.8 — 16 November 2026
 
