@@ -12,6 +12,8 @@ use std::os::fd::AsRawFd;
 use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
+use std::process::{Child, Command};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{SyncSender, TrySendError};
 use std::time::{Duration, Instant};
 
@@ -218,6 +220,42 @@ pub struct PresentationSession {
     session_id: String,
     last_user_sequence: Option<u64>,
     phase: SessionPhase,
+}
+
+/// Single-slot mailbox for replaceable presentation snapshots. Producers may
+/// coalesce an unsent older snapshot, but cannot publish a stale revision. Keep
+/// user events in a separate lossless bounded queue.
+#[derive(Debug, Default)]
+pub struct SnapshotMailbox<T> {
+    latest: Option<(u64, T)>,
+    highest_revision: Option<u64>,
+}
+
+pub struct IpcRunControl<'a> {
+    pub io_timeout: Duration,
+    pub stop: &'a AtomicBool,
+}
+
+impl<T> SnapshotMailbox<T> {
+    pub fn publish(&mut self, revision: u64, snapshot: T) -> io::Result<()> {
+        if self
+            .highest_revision
+            .is_some_and(|highest| revision <= highest)
+        {
+            return invalid("snapshot revision must strictly increase");
+        }
+        self.highest_revision = Some(revision);
+        self.latest = Some((revision, snapshot));
+        Ok(())
+    }
+
+    pub fn take(&mut self) -> Option<(u64, T)> {
+        self.latest.take()
+    }
+
+    pub fn pending(&self) -> bool {
+        self.latest.is_some()
+    }
 }
 
 impl PresentationSession {
@@ -621,6 +659,79 @@ pub struct PeerCredentials {
     pub gid: u32,
 }
 
+/// Owns the renderer child and binds socket authentication to that exact launched
+/// process. `Command` executes a program directly; callers must not configure a
+/// shell wrapper or an untrusted executable as the renderer.
+pub struct RendererSupervisor {
+    command: Command,
+    child: Option<Child>,
+    expected_uid: u32,
+    expected_pid: i32,
+    restart_count: u8,
+    next_restart_at: Option<Instant>,
+}
+
+const MAX_RENDERER_RESTARTS: u8 = 3;
+
+impl RendererSupervisor {
+    pub fn launch(mut command: Command) -> io::Result<Self> {
+        let expected_uid = unsafe { libc::geteuid() };
+        let child = command.spawn()?;
+        let expected_pid = i32::try_from(child.id())
+            .map_err(|_| io::Error::other("renderer PID exceeds kernel credential range"))?;
+        Ok(Self {
+            command,
+            child: Some(child),
+            expected_uid,
+            expected_pid,
+            restart_count: 0,
+            next_restart_at: None,
+        })
+    }
+
+    pub fn expected_peer(&self) -> (u32, i32) {
+        (self.expected_uid, self.expected_pid)
+    }
+
+    /// Reap and relaunch an exited renderer, updating the expected PID before the
+    /// accept loop handles another connection. Returns true when a new child starts.
+    pub fn restart_if_exited(&mut self) -> io::Result<bool> {
+        let Some(child) = self.child.as_mut() else {
+            return Err(io::Error::other("renderer supervisor has no child"));
+        };
+        if child.try_wait()?.is_none() {
+            return Ok(false);
+        }
+        if self.restart_count >= MAX_RENDERER_RESTARTS {
+            return Err(io::Error::other("renderer restart limit exceeded"));
+        }
+        let exponent = u32::from(self.restart_count.min(5));
+        let delay = Duration::from_millis(50_u64.saturating_mul(1_u64 << exponent));
+        let restart_at = *self
+            .next_restart_at
+            .get_or_insert_with(|| Instant::now() + delay);
+        if Instant::now() < restart_at {
+            return Ok(false);
+        }
+        let child = self.command.spawn()?;
+        self.expected_pid = i32::try_from(child.id())
+            .map_err(|_| io::Error::other("renderer PID exceeds kernel credential range"))?;
+        self.child = Some(child);
+        self.restart_count += 1;
+        self.next_restart_at = None;
+        Ok(true)
+    }
+}
+
+impl Drop for RendererSupervisor {
+    fn drop(&mut self) {
+        if let Some(child) = self.child.as_mut() {
+            let _ = child.kill();
+            let _ = child.wait();
+        }
+    }
+}
+
 pub fn peer_credentials(stream: &UnixStream) -> io::Result<PeerCredentials> {
     let mut credentials = std::mem::MaybeUninit::<libc::ucred>::uninit();
     let mut length = std::mem::size_of::<libc::ucred>() as libc::socklen_t;
@@ -768,6 +879,122 @@ impl PrivateSocket {
         };
         let session = session.negotiate(&mut stream, &mut trusted_now_us, io_timeout)?;
         Ok((stream, peer, session))
+    }
+
+    /// Serve sequential connections from one supervised renderer process. Each
+    /// successful hello/ready receives a fresh snapshot; disconnects and invalid
+    /// sessions return to accept. Valid user events enter only the bounded intent
+    /// queue and are never authorized or dispatched by this transport loop.
+    pub fn run_accept_loop<F>(
+        &mut self,
+        expected_uid: u32,
+        expected_pid: i32,
+        snapshot_for_session: F,
+        queue: &SyncSender<Envelope>,
+        trusted_now_us: impl FnMut() -> i64,
+        control: IpcRunControl<'_>,
+    ) -> io::Result<()>
+    where
+        F: FnMut(&str) -> io::Result<Envelope>,
+    {
+        self.run_accept_loop_using(
+            || Ok((expected_uid, expected_pid)),
+            snapshot_for_session,
+            queue,
+            trusted_now_us,
+            control.io_timeout,
+            control.stop,
+        )
+    }
+
+    /// Serve connections using the live PID from a renderer supervisor. If the
+    /// child exits, the supervisor relaunches it and the new PID is required for
+    /// subsequent accepted connections.
+    pub fn run_supervised_accept_loop<F>(
+        &mut self,
+        supervisor: &mut RendererSupervisor,
+        snapshot_for_session: F,
+        queue: &SyncSender<Envelope>,
+        trusted_now_us: impl FnMut() -> i64,
+        io_timeout: Duration,
+        stop: &AtomicBool,
+    ) -> io::Result<()>
+    where
+        F: FnMut(&str) -> io::Result<Envelope>,
+    {
+        self.run_accept_loop_using(
+            || {
+                supervisor.restart_if_exited()?;
+                Ok(supervisor.expected_peer())
+            },
+            snapshot_for_session,
+            queue,
+            trusted_now_us,
+            io_timeout,
+            stop,
+        )
+    }
+
+    fn run_accept_loop_using<F, P>(
+        &mut self,
+        mut peer_binding: P,
+        mut snapshot_for_session: F,
+        queue: &SyncSender<Envelope>,
+        mut trusted_now_us: impl FnMut() -> i64,
+        io_timeout: Duration,
+        stop: &AtomicBool,
+    ) -> io::Result<()>
+    where
+        F: FnMut(&str) -> io::Result<Envelope>,
+        P: FnMut() -> io::Result<(u32, i32)>,
+    {
+        self.listener.set_nonblocking(true)?;
+        let result = (|| {
+            while !stop.load(Ordering::Acquire) {
+                let (expected_uid, expected_pid) = peer_binding()?;
+                let (mut stream, _) = match self.accept_authenticated(expected_uid, expected_pid) {
+                    Ok(accepted) => accepted,
+                    Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                        std::thread::sleep(Duration::from_millis(10));
+                        continue;
+                    }
+                    Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+                    Err(error) if error.kind() == io::ErrorKind::PermissionDenied => continue,
+                    Err(error) => return Err(error),
+                };
+
+                let session = PresentationSession::new()?;
+                let mut session =
+                    match session.negotiate(&mut stream, &mut trusted_now_us, io_timeout) {
+                        Ok(session) => session,
+                        Err(_) => continue,
+                    };
+                let snapshot = snapshot_for_session(&session.session_id)?;
+                if session
+                    .send_snapshot(&mut stream, &snapshot, io_timeout)
+                    .is_err()
+                {
+                    continue;
+                }
+                while !stop.load(Ordering::Acquire) {
+                    match session.receive_user_event_into(
+                        &mut stream,
+                        &mut trusted_now_us,
+                        io_timeout,
+                        queue,
+                    ) {
+                        Ok(()) => {}
+                        Err(error) if error.kind() == io::ErrorKind::BrokenPipe => {
+                            return Err(error);
+                        }
+                        Err(_) => break,
+                    }
+                }
+            }
+            Ok(())
+        })();
+        let restore = self.listener.set_nonblocking(false);
+        result.and(restore)
     }
 }
 
@@ -921,6 +1148,24 @@ mod tests {
     }
 
     #[test]
+    fn snapshot_mailbox_is_single_slot_coalesces_and_rejects_stale_revision() {
+        let mut mailbox = SnapshotMailbox::default();
+        mailbox.publish(4, "older").unwrap();
+        mailbox.publish(5, "newer").unwrap();
+        assert!(mailbox.pending());
+        assert_eq!(mailbox.take(), Some((5, "newer")));
+        assert!(!mailbox.pending());
+        assert_eq!(
+            mailbox.publish(5, "duplicate").unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+        assert_eq!(
+            mailbox.publish(3, "stale").unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+    }
+
+    #[test]
     fn ready_session_delivers_bound_snapshot() {
         let id = "00000000-0000-4000-8000-000000000003";
         let session = PresentationSession::with_id(id.into()).unwrap();
@@ -935,7 +1180,7 @@ mod tests {
             .unwrap();
         assert_eq!(read_frame(&mut client).unwrap(), snapshot);
 
-        let mut wrong_session = snapshot;
+        let mut wrong_session = snapshot.clone();
         wrong_session.session_id = Some("00000000-0000-4000-8000-000000000004".into());
         assert_eq!(
             session
@@ -944,6 +1189,16 @@ mod tests {
                 .kind(),
             io::ErrorKind::PermissionDenied
         );
+
+        let (mut server, client) = UnixStream::pair().unwrap();
+        client.shutdown(std::net::Shutdown::Both).unwrap();
+        let disconnected = session
+            .send_snapshot(&mut server, &snapshot, Duration::from_secs(1))
+            .unwrap_err();
+        assert!(matches!(
+            disconnected.kind(),
+            io::ErrorKind::BrokenPipe | io::ErrorKind::ConnectionReset
+        ));
     }
 
     #[test]
@@ -1344,6 +1599,145 @@ mod tests {
         write_frame(&mut second, &ready_request(&old_session_id)).unwrap();
         server.join().unwrap();
         drop(second);
+        std::fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
+    fn accept_loop_serves_reconnect_with_fresh_session_and_snapshot() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let directory = std::env::temp_dir().join(format!(
+            "lia-ipc-accept-loop-{}-{nonce}",
+            std::process::id()
+        ));
+        std::fs::create_dir(&directory).unwrap();
+        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let path = directory.join("agent.sock");
+        let mut endpoint = PrivateSocket::bind(&path).unwrap();
+        let stop = std::sync::Arc::new(AtomicBool::new(false));
+        let thread_stop = std::sync::Arc::clone(&stop);
+        let (events, _received_events) = std::sync::mpsc::sync_channel(4);
+        let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+        let server = std::thread::spawn(move || {
+            let mut revision = 0_u64;
+            endpoint.run_accept_loop(
+                unsafe { libc::geteuid() },
+                std::process::id() as i32,
+                |session_id| {
+                    revision += 1;
+                    let mut snapshot = envelope();
+                    snapshot.kind = "event".into();
+                    snapshot.method = "presentation.state.replace".into();
+                    snapshot.session_id = Some(session_id.into());
+                    snapshot.body = serde_json::json!({"state_revision":revision});
+                    Ok(snapshot)
+                },
+                &events,
+                || now_us,
+                IpcRunControl {
+                    io_timeout: Duration::from_secs(2),
+                    stop: &thread_stop,
+                },
+            )
+        });
+
+        let mut session_ids = Vec::new();
+        for _ in 0..2 {
+            let mut client = UnixStream::connect(&path).unwrap();
+            write_frame(&mut client, &envelope()).unwrap();
+            let hello = read_frame(&mut client).unwrap();
+            let session_id = hello.session_id.unwrap();
+            write_frame(&mut client, &ready_request(&session_id)).unwrap();
+            let snapshot = read_frame(&mut client).unwrap();
+            assert_eq!(snapshot.method, "presentation.state.replace");
+            assert_eq!(snapshot.session_id.as_deref(), Some(session_id.as_str()));
+            session_ids.push(session_id);
+        }
+        assert_ne!(session_ids[0], session_ids[1]);
+        stop.store(true, Ordering::Release);
+        server.join().unwrap().unwrap();
+        std::fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
+    fn renderer_supervisor_binds_and_refreshes_launched_process_pid() {
+        const RENDERER_ENV: &str = "LIA_IPC_TEST_RENDERER_PATH";
+        if let Some(path) = std::env::var_os(RENDERER_ENV) {
+            let mut client = UnixStream::connect(path).unwrap();
+            write_frame(&mut client, &envelope()).unwrap();
+            let hello = read_frame(&mut client).unwrap();
+            let session_id = hello.session_id.unwrap();
+            write_frame(&mut client, &ready_request(&session_id)).unwrap();
+            let snapshot = read_frame(&mut client).unwrap();
+            assert_eq!(snapshot.method, "presentation.state.replace");
+            return;
+        }
+
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let directory =
+            std::env::temp_dir().join(format!("lia-ipc-supervisor-{}-{nonce}", std::process::id()));
+        std::fs::create_dir(&directory).unwrap();
+        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let path = directory.join("agent.sock");
+        let endpoint = PrivateSocket::bind(&path).unwrap();
+        let mut command = Command::new(std::env::current_exe().unwrap());
+        command
+            .args([
+                "--exact",
+                "ipc::tests::renderer_supervisor_binds_and_refreshes_launched_process_pid",
+                "--nocapture",
+            ])
+            .env(RENDERER_ENV, &path);
+        let mut supervisor = RendererSupervisor::launch(command).unwrap();
+        let (uid, pid) = supervisor.expected_peer();
+        let (mut stream, peer, session) = endpoint
+            .accept_session(uid, pid, || 1_795_708_800_000_000, Duration::from_secs(3))
+            .unwrap();
+        assert_eq!(peer.uid, uid);
+        assert_eq!(peer.pid, pid);
+        let mut snapshot = envelope();
+        snapshot.kind = "event".into();
+        snapshot.method = "presentation.state.replace".into();
+        snapshot.session_id = Some(session.session_id.clone());
+        snapshot.body = serde_json::json!({"state_revision": 1});
+        session
+            .send_snapshot(&mut stream, &snapshot, Duration::from_secs(2))
+            .unwrap();
+
+        let deadline = Instant::now() + Duration::from_secs(3);
+        while !supervisor.restart_if_exited().unwrap() {
+            assert!(
+                Instant::now() < deadline,
+                "renderer child did not exit for restart"
+            );
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let (restart_uid, restart_pid) = supervisor.expected_peer();
+        assert_eq!(restart_uid, uid);
+        let (mut stream, peer, session) = endpoint
+            .accept_session(
+                restart_uid,
+                restart_pid,
+                || 1_795_708_800_000_000,
+                Duration::from_secs(3),
+            )
+            .unwrap();
+        assert_eq!(peer.pid, restart_pid);
+        let mut snapshot = envelope();
+        snapshot.kind = "event".into();
+        snapshot.method = "presentation.state.replace".into();
+        snapshot.session_id = Some(session.session_id.clone());
+        snapshot.body = serde_json::json!({"state_revision": 2});
+        session
+            .send_snapshot(&mut stream, &snapshot, Duration::from_secs(2))
+            .unwrap();
+        drop(supervisor);
+        drop(endpoint);
         std::fs::remove_dir(directory).unwrap();
     }
 

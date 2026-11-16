@@ -16,8 +16,11 @@
 
 These tests cover parser, session, handshake, one-session receive and single-connection accept primitives only. The accept caller must supply an expected UID/PID; actual renderer supervision/process binding is not implemented. The handshake and event receive each use an absolute monotonic timeout. Returned event envelopes remain untrusted and are not dispatched. The procedure does not cover a long-running accept loop, real separate-UID peers, renderer-supervisor integration, dispatch authorization, reply-side disconnect, renderer restart/snapshot lifecycle, slow-reader writes, message-flood/backpressure stress, fuzzing, foreign-owner or concurrent path-race scenarios, or the complete IPC-01 procedure. No acceptance condition or conformance gate is marked Passed.
 
-## Follow-up on 16 November 2026
+## Initial follow-up on 16 November 2026 (before accept-loop/supervisor increment)
 
 The IPC primitive now has two additional local checks: a ready-session snapshot send verifies `presentation.state.replace`, event direction and session binding; a bounded synchronous user-event queue reports `WouldBlock` and closes the connection when full without enqueueing or dispatching the new event. `cargo test --locked --workspace` passed 44 tests on Rust 1.99.1, including these checks. The implementation and review commit are recorded by the enclosing PR branch.
 
-This remains partial evidence. The actual renderer supervisor/PID binding, long-running multi-connection service, reply-side disconnect test, separate-UID and foreign-owner/path-race coverage, fuzzing, measured latency/resource bounds and complete IPC-01 procedure are still open. No user-event dispatch handler exists; the queue carries untrusted intents only.
+This remains partial evidence. The actual renderer supervisor/PID binding, long-running multi-connection service, reply-side disconnect test, separate-UID and foreign-owner/path-race coverage, fuzzing, service-level resource high-water measurements and the complete IPC-01 procedure are still open; a local framing baseline is retained separately. No user-event dispatch handler exists; the queue carries untrusted intents only.
+
+
+A further local follow-up adds the multi-connection accept loop, monotonic one-slot snapshot coalescing, and a renderer supervisor that binds peer credentials to a launched child and refreshes the expected PID after restart with bounded attempts and backoff. Snapshot send after a peer disconnect is also covered. The full Rust workspace now has 47 passing tests (26 IPC tests). The supervisor test launches the test harness as a synthetic renderer; Godot integration and full renderer reply-flow integration remain open.

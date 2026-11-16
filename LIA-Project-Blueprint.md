@@ -4,7 +4,7 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.14.21
+> **Version:** 1.14.22
 > **Last updated:** 16 November 2026
 > **Current phase:** P5 — First Vertical Slice (M0 complete; M1 in progress)
 > **Current workstream:** M1 — device-agent core follow-up (in progress); M2 — Linux IPC spike (in progress)
@@ -8924,3 +8924,6 @@ M2 is in progress on `feat/p5-m2-ipc-spike`, using the repository's pinned Ubunt
 
 
 **1.14.21 — 16 Nov 2026:** Adds ready-session snapshot delivery and a bounded synchronous user-event queue with explicit disconnect on backpressure to the M2 IPC spike; 23 local IPC tests now cover these primitives. User-event dispatch remains disabled; renderer supervision, multi-connection service lifecycle, reply-side disconnect, separate-UID/path-race coverage, fuzzing, service-level/resource high-water measurements and complete IPC-01 remain open; a scoped local framing benchmark is retained under evidence/IPC-01. Adds the M3 Hyprland v0.57.2/Lua task plan before adapter implementation. Restores the full Blueprint body after the truncation incident and adds an automated integrity check; see repository-integrity evidence.
+
+
+**1.14.22 — 16 Nov 2026:** Extends M2 with a supervised renderer child PID binding with bounded restart/backoff, a repeat-connection accept loop, a monotonic coalescing snapshot mailbox, and bounded untrusted user-event ingress. Reply-side snapshot disconnect is checked. The full workspace now has 47 local tests, including 26 IPC checks. Dispatch remains disabled; Godot launch integration, full renderer reply flow, separate-UID/foreign-owner/path-race, fuzz and service resource high-water evidence remain open. IPC-01 remains Not Run.
