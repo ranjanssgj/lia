@@ -24,6 +24,10 @@ The contract-hygiene workflow is structural validation only. It does not complet
 
 - [IPC-01 local IPC primitive checks](IPC-01/2026-11-15-m2-spike/README.md) — bounded framing, envelope/session validation, private Unix socket setup and Linux peer credentials. The full gate remains Not Run.
 
+## P5 M2 parser edge-case checks (16 November 2026)
+
+- [IPC-01 local parser checks](IPC-01/2026-11-16-m2-parser-edge-cases/README.md) — truncated headers, trailing JSON, invalid envelope fields and sequence overflow. The full gate remains Not Run.
+
 ## P5 M1 replay follow-up (15 November 2026)
 
 - [M1 expiry and sequence-order checks](SQLITE-02/2026-11-15-m1-replay-followup/README.md) — additional local test coverage on the M2 branch; SQLITE-02 remains Not Run.
