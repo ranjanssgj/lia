@@ -1103,4 +1103,68 @@ mod tests {
         std::fs::remove_file(path).unwrap();
         std::fs::remove_dir(directory).unwrap();
     }
+
+    #[test]
+    fn refuses_symlink_parent_and_endpoint_without_touching_targets() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root =
+            std::env::temp_dir().join(format!("lia-ipc-symlink-{}-{nonce}", std::process::id()));
+        let real_directory = root.join("real");
+        std::fs::create_dir_all(&real_directory).unwrap();
+        std::fs::set_permissions(&real_directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let symlink_directory = root.join("linked");
+        std::os::unix::fs::symlink(&real_directory, &symlink_directory).unwrap();
+        assert_eq!(
+            PrivateSocket::bind(symlink_directory.join("agent.sock"))
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::PermissionDenied
+        );
+        assert!(!real_directory.join("agent.sock").exists());
+
+        let target = real_directory.join("target");
+        std::fs::write(&target, b"keep").unwrap();
+        let endpoint = real_directory.join("agent.sock");
+        std::os::unix::fs::symlink(&target, &endpoint).unwrap();
+        assert_eq!(
+            PrivateSocket::bind(&endpoint).unwrap_err().kind(),
+            io::ErrorKind::AlreadyExists
+        );
+        assert_eq!(std::fs::read(&target).unwrap(), b"keep");
+
+        std::fs::remove_file(endpoint).unwrap();
+        std::fs::remove_file(target).unwrap();
+        std::fs::remove_file(symlink_directory).unwrap();
+        std::fs::remove_dir(real_directory).unwrap();
+        std::fs::remove_dir(root).unwrap();
+    }
+
+    #[test]
+    fn socket_drop_does_not_unlink_a_replacement_inode() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let directory =
+            std::env::temp_dir().join(format!("lia-ipc-inode-{}-{nonce}", std::process::id()));
+        std::fs::create_dir(&directory).unwrap();
+        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let path = directory.join("agent.sock");
+        let endpoint = PrivateSocket::bind(&path).unwrap();
+        std::fs::remove_file(&path).unwrap();
+        let replacement = UnixListener::bind(&path).unwrap();
+        drop(endpoint);
+        assert!(
+            std::fs::symlink_metadata(&path)
+                .unwrap()
+                .file_type()
+                .is_socket()
+        );
+        drop(replacement);
+        std::fs::remove_file(path).unwrap();
+        std::fs::remove_dir(directory).unwrap();
+    }
 }
