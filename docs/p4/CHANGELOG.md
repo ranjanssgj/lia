@@ -1,3 +1,11 @@
+## 0.2.8 — 16 November 2026
+
+**Baseline:** Blueprint v1.14.12. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Defines hello as the required first, non-expired request on a connection; the successful response supplies a fresh connection-scoped session UUID and echoes the request's optional request/correlation IDs.
+- Defines one-time hello activation and deadline checking before user-event sequence consumption. Expired hello leaves the connection inactive; expired user events do not advance the replay watermark.
+- Adds a Rust session handshake state machine and parser/lifecycle unit checks. Socket-level service, renderer identity binding, dispatch policy, restart/backpressure integration and IPC-01 remain Not Run.
+
 ## 0.2.7 — 15 November 2026
 
 **Baseline:** Blueprint v1.14.11. The package remains Draft; no implementation conformance gate is marked Passed.
