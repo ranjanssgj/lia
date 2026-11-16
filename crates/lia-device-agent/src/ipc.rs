@@ -200,11 +200,12 @@ impl PresentationSession {
 
     /// Validate and consume a user-event sequence before any handler can dispatch it.
     /// This provides replay ordering only; it does not authenticate renderer authority.
-    pub fn accept_user_event(&mut self, envelope: &Envelope) -> io::Result<()> {
+    pub fn accept_user_event(&mut self, envelope: &Envelope, now_us: i64) -> io::Result<()> {
         envelope.validate()?;
         if envelope.method != "presentation.user_event" || envelope.kind != "request" {
             return invalid("only user-event requests use the client sequence");
         }
+        envelope.validate_deadline(now_us)?;
         if envelope.session_id.as_deref() != Some(self.session_id.as_str()) {
             return Err(io::Error::new(
                 io::ErrorKind::PermissionDenied,
@@ -541,6 +542,10 @@ mod tests {
         bytes
     }
 
+    fn encoded_frame(envelope: &Envelope) -> Vec<u8> {
+        frame(&serde_json::to_vec(envelope).unwrap())
+    }
+
     #[test]
     fn frame_roundtrip_and_allowlist_validation() {
         let original = envelope();
@@ -575,37 +580,64 @@ mod tests {
     #[test]
     fn presentation_session_rejects_replays_reordering_and_cross_session_frames() {
         let id = "00000000-0000-4000-8000-000000000003";
+        let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
         let mut session = PresentationSession::with_id(id.into()).unwrap();
-        session.accept_user_event(&user_event(id, "0")).unwrap();
+        session
+            .accept_user_event(&user_event(id, "0"), now_us)
+            .unwrap();
         assert_eq!(
             session
-                .accept_user_event(&user_event(id, "0"))
+                .accept_user_event(&user_event(id, "0"), now_us)
                 .unwrap_err()
                 .kind(),
             io::ErrorKind::InvalidData
         );
-        session.accept_user_event(&user_event(id, "2")).unwrap();
+        session
+            .accept_user_event(&user_event(id, "2"), now_us)
+            .unwrap();
         assert_eq!(
             session
-                .accept_user_event(&user_event(id, "1"))
+                .accept_user_event(&user_event(id, "1"), now_us)
                 .unwrap_err()
                 .kind(),
             io::ErrorKind::InvalidData
         );
         assert_eq!(
             session
-                .accept_user_event(&user_event("00000000-0000-4000-8000-000000000004", "3"))
+                .accept_user_event(
+                    &user_event("00000000-0000-4000-8000-000000000004", "3"),
+                    now_us
+                )
                 .unwrap_err()
                 .kind(),
             io::ErrorKind::PermissionDenied
         );
         assert_eq!(
             session
-                .accept_user_event(&user_event(id, "03"))
+                .accept_user_event(&user_event(id, "03"), now_us)
                 .unwrap_err()
                 .kind(),
             io::ErrorKind::InvalidData
         );
+    }
+
+    #[test]
+    fn expired_user_event_does_not_consume_sequence() {
+        let id = "00000000-0000-4000-8000-000000000003";
+        let before_deadline = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+        let at_deadline = crate::time::parse_rfc3339_us("2026-11-15T00:00:01Z").unwrap();
+        let mut session = PresentationSession::with_id(id.into()).unwrap();
+        let mut event = user_event(id, "0");
+        event.deadline_at = Some("2026-11-15T00:00:01Z".into());
+
+        assert_eq!(
+            session
+                .accept_user_event(&event, at_deadline)
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::TimedOut
+        );
+        session.accept_user_event(&event, before_deadline).unwrap();
     }
 
     #[test]
@@ -628,6 +660,12 @@ mod tests {
 
     #[test]
     fn rejects_zero_oversized_truncated_utf8_and_malformed_frames() {
+        assert_eq!(
+            read_frame(&mut Cursor::new([0_u8, 0, 0]))
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::UnexpectedEof
+        );
         assert_eq!(
             read_frame(&mut Cursor::new(0_u32.to_be_bytes()))
                 .unwrap_err()
@@ -656,6 +694,46 @@ mod tests {
         );
         assert_eq!(
             read_frame(&mut Cursor::new(frame(b"not-json")))
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::InvalidData
+        );
+        assert_eq!(
+            read_frame(&mut Cursor::new(frame(b"{} {}")))
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::InvalidData
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_version_kind_method_and_sequence_overflow() {
+        let mut cases = Vec::new();
+        let mut bad_version = envelope();
+        bad_version.protocol_version = "2".into();
+        cases.push(bad_version);
+        let mut bad_kind = envelope();
+        bad_kind.kind = "unknown".into();
+        cases.push(bad_kind);
+        let mut bad_method = envelope();
+        bad_method.method = "system.execute".into();
+        cases.push(bad_method);
+
+        for invalid_envelope in cases {
+            assert_eq!(
+                read_frame(&mut Cursor::new(encoded_frame(&invalid_envelope)))
+                    .unwrap_err()
+                    .kind(),
+                io::ErrorKind::InvalidData
+            );
+        }
+
+        let overflow = user_event(
+            "00000000-0000-4000-8000-000000000003",
+            "18446744073709551616",
+        );
+        assert_eq!(
+            read_frame(&mut Cursor::new(encoded_frame(&overflow)))
                 .unwrap_err()
                 .kind(),
             io::ErrorKind::InvalidData
