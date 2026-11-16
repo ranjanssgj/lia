@@ -12,7 +12,7 @@ use std::os::fd::AsRawFd;
 use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 pub const MAX_FRAME_BYTES: usize = 262_144;
 const ALLOWED_METHODS: &[&str] = &[
@@ -228,14 +228,15 @@ impl PresentationSession {
         io_timeout: Duration,
     ) -> io::Result<Self> {
         let result = (|| {
-            stream.set_read_timeout(Some(io_timeout))?;
-            stream.set_write_timeout(Some(io_timeout))?;
+            let deadline = Instant::now().checked_add(io_timeout).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::InvalidInput, "IPC timeout overflow")
+            })?;
 
-            let hello = read_frame(stream)?;
+            let hello = read_frame_until(stream, deadline)?;
             let response = self.accept_hello(&hello, trusted_now_us())?;
-            write_frame(stream, &response)?;
+            write_frame_until(stream, &response, deadline)?;
 
-            let ready = read_frame(stream)?;
+            let ready = read_frame_until(stream, deadline)?;
             self.accept_ready(&ready, trusted_now_us())?;
             Ok(self)
         })();
@@ -326,6 +327,113 @@ fn random_uuid_v4() -> io::Result<String> {
 
 fn invalid<T>(message: impl Into<String>) -> io::Result<T> {
     Err(io::Error::new(io::ErrorKind::InvalidData, message.into()))
+}
+
+fn remaining_until(deadline: Instant) -> io::Result<Duration> {
+    let remaining = deadline.saturating_duration_since(Instant::now());
+    if remaining.is_zero() {
+        return Err(io::Error::new(
+            io::ErrorKind::TimedOut,
+            "IPC handshake deadline has expired",
+        ));
+    }
+    Ok(remaining)
+}
+
+fn read_exact_until(
+    stream: &mut UnixStream,
+    mut buffer: &mut [u8],
+    deadline: Instant,
+) -> io::Result<()> {
+    while !buffer.is_empty() {
+        stream.set_read_timeout(Some(remaining_until(deadline)?))?;
+        match stream.read(buffer) {
+            Ok(0) => return Err(io::Error::from(io::ErrorKind::UnexpectedEof)),
+            Ok(read) => buffer = &mut buffer[read..],
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::TimedOut | io::ErrorKind::WouldBlock
+                ) =>
+            {
+                return Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    "IPC handshake read deadline has expired",
+                ));
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    Ok(())
+}
+
+fn write_all_until(
+    stream: &mut UnixStream,
+    mut buffer: &[u8],
+    deadline: Instant,
+) -> io::Result<()> {
+    while !buffer.is_empty() {
+        stream.set_write_timeout(Some(remaining_until(deadline)?))?;
+        match stream.write(buffer) {
+            Ok(0) => return Err(io::Error::from(io::ErrorKind::WriteZero)),
+            Ok(written) => buffer = &buffer[written..],
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::TimedOut | io::ErrorKind::WouldBlock
+                ) =>
+            {
+                return Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    "IPC handshake write deadline has expired",
+                ));
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    Ok(())
+}
+
+fn read_frame_until(stream: &mut UnixStream, deadline: Instant) -> io::Result<Envelope> {
+    let mut header = [0_u8; 4];
+    read_exact_until(stream, &mut header, deadline)?;
+    let length = u32::from_be_bytes(header) as usize;
+    if length == 0 || length > MAX_FRAME_BYTES {
+        return invalid("IPC frame length is zero or exceeds the maximum");
+    }
+    let mut payload = vec![0; length];
+    read_exact_until(stream, &mut payload, deadline)?;
+    let text = std::str::from_utf8(&payload)
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+    let mut deserializer = serde_json::Deserializer::from_str(text);
+    let unique = UniqueValue::deserialize(&mut deserializer)
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+    deserializer
+        .end()
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+    let envelope: Envelope = serde_json::from_value(unique.into_json())
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+    envelope.validate()?;
+    Ok(envelope)
+}
+
+fn write_frame_until(
+    stream: &mut UnixStream,
+    envelope: &Envelope,
+    deadline: Instant,
+) -> io::Result<()> {
+    envelope.validate()?;
+    let payload = serde_json::to_vec(envelope)
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+    if payload.is_empty() || payload.len() > MAX_FRAME_BYTES {
+        return invalid("IPC frame length is zero or exceeds the maximum");
+    }
+    let length = u32::try_from(payload.len())
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+    write_all_until(stream, &length.to_be_bytes(), deadline)?;
+    write_all_until(stream, &payload, deadline)
 }
 
 /// Parse one 4-byte big-endian length-prefixed UTF-8 JSON envelope.
@@ -894,6 +1002,63 @@ mod tests {
     }
 
     #[test]
+    fn unix_stream_disconnect_mid_header_or_body_is_reported_as_eof() {
+        for bytes in [vec![0, 0], vec![0, 0, 0, 3, b'{']] {
+            let (mut client, mut server) = UnixStream::pair().unwrap();
+            client.write_all(&bytes).unwrap();
+            drop(client);
+            assert_eq!(
+                read_frame(&mut server).unwrap_err().kind(),
+                io::ErrorKind::UnexpectedEof
+            );
+        }
+    }
+
+    #[test]
+    fn hello_read_timeout_shuts_down_the_unfinished_connection() {
+        let (mut client, mut server) = UnixStream::pair().unwrap();
+        let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+        let server_thread = std::thread::spawn(move || {
+            PresentationSession::new()
+                .unwrap()
+                .negotiate(&mut server, || now_us, Duration::from_millis(100))
+                .unwrap_err()
+        });
+
+        assert!(matches!(
+            server_thread.join().unwrap().kind(),
+            io::ErrorKind::TimedOut | io::ErrorKind::WouldBlock
+        ));
+        let mut response = [0_u8; 1];
+        assert!(match client.read(&mut response) {
+            Ok(0) => true,
+            Err(error) => error.kind() == io::ErrorKind::ConnectionReset,
+            Ok(_) => false,
+        });
+    }
+
+    #[test]
+    fn slow_drip_cannot_extend_the_absolute_handshake_deadline() {
+        let (mut client, mut server) = UnixStream::pair().unwrap();
+        let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+        let started = Instant::now();
+        let server_thread = std::thread::spawn(move || {
+            PresentationSession::new()
+                .unwrap()
+                .negotiate(&mut server, || now_us, Duration::from_millis(300))
+                .unwrap_err()
+        });
+
+        for byte in [0_u8, 0, 0] {
+            client.write_all(&[byte]).unwrap();
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        let error = server_thread.join().unwrap();
+        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+        assert!(started.elapsed() < Duration::from_millis(450));
+    }
+
+    #[test]
     fn authenticated_listener_issues_fresh_session_and_rejects_stale_ready() {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -1077,6 +1242,45 @@ mod tests {
         drop(endpoint);
         assert!(!path.exists());
         let _ = std::fs::remove_dir(directory);
+    }
+
+    #[test]
+    fn authenticated_accept_rejects_uid_before_reading_untrusted_frame() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let directory = std::env::temp_dir().join(format!(
+            "lia-ipc-peer-reject-{}-{nonce}",
+            std::process::id()
+        ));
+        std::fs::create_dir(&directory).unwrap();
+        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let path = directory.join("agent.sock");
+        let endpoint = PrivateSocket::bind(&path).unwrap();
+        let server = std::thread::spawn(move || {
+            endpoint
+                .accept_session(
+                    unsafe { libc::geteuid().wrapping_add(1) },
+                    || 1_795_708_800_000_000,
+                    Duration::from_secs(1),
+                )
+                .unwrap_err()
+        });
+
+        let mut client = UnixStream::connect(&path).unwrap();
+        client.write_all(b"this is not a frame").unwrap();
+        assert_eq!(
+            server.join().unwrap().kind(),
+            io::ErrorKind::PermissionDenied
+        );
+        let mut response = [0_u8; 1];
+        assert!(match client.read(&mut response) {
+            Ok(0) => true,
+            Err(error) => error.kind() == io::ErrorKind::ConnectionReset,
+            Ok(_) => false,
+        });
+        std::fs::remove_dir(directory).unwrap();
     }
 
     #[test]
