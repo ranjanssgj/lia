@@ -513,12 +513,16 @@ pub fn peer_credentials(stream: &UnixStream) -> io::Result<PeerCredentials> {
     })
 }
 
-pub fn require_peer_uid(stream: &UnixStream, expected_uid: u32) -> io::Result<PeerCredentials> {
+pub fn require_peer_process(
+    stream: &UnixStream,
+    expected_uid: u32,
+    expected_pid: i32,
+) -> io::Result<PeerCredentials> {
     let peer = peer_credentials(stream)?;
-    if peer.uid != expected_uid || peer.pid <= 0 {
+    if expected_pid <= 0 || peer.uid != expected_uid || peer.pid != expected_pid {
         return Err(io::Error::new(
             io::ErrorKind::PermissionDenied,
-            "Unix socket peer credentials do not match the expected user",
+            "Unix socket peer credentials do not match the expected process",
         ));
     }
     Ok(peer)
@@ -601,9 +605,10 @@ impl PrivateSocket {
     pub fn accept_authenticated(
         &self,
         expected_uid: u32,
+        expected_pid: i32,
     ) -> io::Result<(UnixStream, PeerCredentials)> {
         let (stream, _) = self.listener.accept()?;
-        let peer = require_peer_uid(&stream, expected_uid)?;
+        let peer = require_peer_process(&stream, expected_uid, expected_pid)?;
         Ok((stream, peer))
     }
 
@@ -612,10 +617,11 @@ impl PrivateSocket {
     pub fn accept_session(
         &self,
         expected_uid: u32,
+        expected_pid: i32,
         mut trusted_now_us: impl FnMut() -> i64,
         io_timeout: Duration,
     ) -> io::Result<(UnixStream, PeerCredentials, PresentationSession)> {
-        let (mut stream, peer) = self.accept_authenticated(expected_uid)?;
+        let (mut stream, peer) = self.accept_authenticated(expected_uid, expected_pid)?;
         let session = match PresentationSession::new() {
             Ok(session) => session,
             Err(error) => {
@@ -1076,6 +1082,7 @@ mod tests {
             let (stream, peer, session) = endpoint
                 .accept_session(
                     unsafe { libc::geteuid() },
+                    std::process::id() as i32,
                     || now_us,
                     Duration::from_secs(2),
                 )
@@ -1086,6 +1093,7 @@ mod tests {
 
             let result = endpoint.accept_session(
                 unsafe { libc::geteuid() },
+                std::process::id() as i32,
                 || now_us,
                 Duration::from_secs(2),
             );
@@ -1230,11 +1238,17 @@ mod tests {
         );
         let _client = UnixStream::connect(&path).unwrap();
         let (server, peer) = endpoint
-            .accept_authenticated(unsafe { libc::geteuid() })
+            .accept_authenticated(unsafe { libc::geteuid() }, std::process::id() as i32)
             .unwrap();
         assert_eq!(peer.pid, std::process::id() as i32);
         assert_eq!(
-            require_peer_uid(&server, peer.uid.wrapping_add(1))
+            require_peer_process(&server, peer.uid.wrapping_add(1), peer.pid)
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::PermissionDenied
+        );
+        assert_eq!(
+            require_peer_process(&server, peer.uid, peer.pid + 1)
                 .unwrap_err()
                 .kind(),
             io::ErrorKind::PermissionDenied
@@ -1245,7 +1259,7 @@ mod tests {
     }
 
     #[test]
-    fn authenticated_accept_rejects_uid_before_reading_untrusted_frame() {
+    fn authenticated_accept_rejects_uid_and_pid_before_reading_untrusted_frame() {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
@@ -1258,28 +1272,31 @@ mod tests {
         std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
         let path = directory.join("agent.sock");
         let endpoint = PrivateSocket::bind(&path).unwrap();
+        let expected_uid = unsafe { libc::geteuid() };
+        let expected_pid = std::process::id() as i32;
         let server = std::thread::spawn(move || {
-            endpoint
-                .accept_session(
-                    unsafe { libc::geteuid().wrapping_add(1) },
-                    || 1_795_708_800_000_000,
-                    Duration::from_secs(1),
-                )
-                .unwrap_err()
+            for (uid, pid) in [
+                (expected_uid.wrapping_add(1), expected_pid),
+                (expected_uid, expected_pid + 1),
+            ] {
+                let error = endpoint
+                    .accept_session(uid, pid, || 1_795_708_800_000_000, Duration::from_secs(1))
+                    .unwrap_err();
+                assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
+            }
         });
 
-        let mut client = UnixStream::connect(&path).unwrap();
-        client.write_all(b"this is not a frame").unwrap();
-        assert_eq!(
-            server.join().unwrap().kind(),
-            io::ErrorKind::PermissionDenied
-        );
-        let mut response = [0_u8; 1];
-        assert!(match client.read(&mut response) {
-            Ok(0) => true,
-            Err(error) => error.kind() == io::ErrorKind::ConnectionReset,
-            Ok(_) => false,
-        });
+        for _ in 0..2 {
+            let mut client = UnixStream::connect(&path).unwrap();
+            client.write_all(b"this is not a frame").unwrap();
+            let mut response = [0_u8; 1];
+            assert!(match client.read(&mut response) {
+                Ok(0) => true,
+                Err(error) => error.kind() == io::ErrorKind::ConnectionReset,
+                Ok(_) => false,
+            });
+        }
+        server.join().unwrap();
         std::fs::remove_dir(directory).unwrap();
     }
 
