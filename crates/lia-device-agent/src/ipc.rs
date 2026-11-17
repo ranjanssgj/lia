@@ -168,8 +168,17 @@ pub struct UserEventBody {
     pub text: Option<String>,
 }
 
+/// A validated presentation request stripped of its transport envelope. This is
+/// still untrusted input: it carries no operation outcome or execution authority.
+#[derive(Clone, Debug, PartialEq)]
+pub struct UntrustedUserIntent {
+    pub session_id: String,
+    pub sequence: u64,
+    pub body: UserEventBody,
+}
+
 impl UserEventBody {
-    fn validate(value: &Value) -> io::Result<()> {
+    fn from_value(value: &Value) -> io::Result<Self> {
         let body: Self = serde_json::from_value(value.clone())
             .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
         if body.control_id.is_empty()
@@ -180,18 +189,20 @@ impl UserEventBody {
         {
             return invalid("user-event control_id has invalid syntax or length");
         }
-        match (body.event, body.text) {
+        match (body.event, body.text.as_ref()) {
             (UserEventKind::TextSubmitted, Some(text))
-                if text.len() <= MAX_SUBMITTED_TEXT_BYTES =>
-            {
-                Ok(())
-            }
+                if text.len() <= MAX_SUBMITTED_TEXT_BYTES => {}
             (UserEventKind::TextSubmitted, _) => {
-                invalid("text_submitted requires text within the size limit")
+                return invalid("text_submitted requires text within the size limit");
             }
-            (_, None) => Ok(()),
-            (_, Some(_)) => invalid("text is only allowed with text_submitted"),
+            (_, None) => {}
+            (_, Some(_)) => return invalid("text is only allowed with text_submitted"),
         }
+        Ok(body)
+    }
+
+    fn validate(value: &Value) -> io::Result<()> {
+        Self::from_value(value).map(|_| ())
     }
 }
 
@@ -574,10 +585,28 @@ impl PresentationSession {
         stream: &mut UnixStream,
         trusted_now_us: impl FnMut() -> i64,
         io_timeout: Duration,
-        queue: &SyncSender<Envelope>,
+        queue: &SyncSender<UntrustedUserIntent>,
     ) -> io::Result<()> {
-        let event = self.receive_user_event(stream, trusted_now_us, io_timeout)?;
-        let result = match queue.try_send(event) {
+        let envelope = self.receive_user_event(stream, trusted_now_us, io_timeout)?;
+        let intent = (|| {
+            Ok(UntrustedUserIntent {
+                session_id: envelope.session_id.clone().ok_or_else(|| {
+                    io::Error::new(io::ErrorKind::InvalidData, "validated event lacks session")
+                })?,
+                sequence: parse_sequence(envelope.session_sequence.as_deref().ok_or_else(
+                    || io::Error::new(io::ErrorKind::InvalidData, "validated event lacks sequence"),
+                )?)?,
+                body: UserEventBody::from_value(&envelope.body)?,
+            })
+        })();
+        let intent = match intent {
+            Ok(intent) => intent,
+            Err(error) => {
+                let _ = stream.shutdown(std::net::Shutdown::Both);
+                return Err(error);
+            }
+        };
+        let result = match queue.try_send(intent) {
             Ok(()) => Ok(()),
             Err(TrySendError::Full(_)) => Err(io::Error::new(
                 io::ErrorKind::WouldBlock,
@@ -1044,7 +1073,7 @@ impl PrivateSocket {
         expected_uid: u32,
         expected_pid: i32,
         snapshot_for_session: F,
-        queue: &SyncSender<Envelope>,
+        queue: &SyncSender<UntrustedUserIntent>,
         trusted_now_us: impl FnMut() -> i64,
         control: IpcRunControl<'_>,
     ) -> io::Result<()>
@@ -1068,7 +1097,7 @@ impl PrivateSocket {
         &mut self,
         supervisor: &mut RendererSupervisor,
         snapshot_for_session: F,
-        queue: &SyncSender<Envelope>,
+        queue: &SyncSender<UntrustedUserIntent>,
         trusted_now_us: impl FnMut() -> i64,
         io_timeout: Duration,
         stop: &AtomicBool,
@@ -1093,7 +1122,7 @@ impl PrivateSocket {
         &mut self,
         mut peer_binding: P,
         mut snapshot_for_session: F,
-        queue: &SyncSender<Envelope>,
+        queue: &SyncSender<UntrustedUserIntent>,
         mut trusted_now_us: impl FnMut() -> i64,
         io_timeout: Duration,
         stop: &AtomicBool,
@@ -1503,7 +1532,14 @@ mod tests {
         let (mut client, mut server) = UnixStream::pair().unwrap();
         write_frame(&mut client, &user_event(id, "0")).unwrap();
         let (sender, receiver) = std::sync::mpsc::sync_channel(1);
-        let queued_before = user_event(id, "99");
+        let queued_before = UntrustedUserIntent {
+            session_id: id.into(),
+            sequence: 99,
+            body: UserEventBody::from_value(&serde_json::json!({
+                "control_id": "close", "event": "dismissed"
+            }))
+            .unwrap(),
+        };
         sender.send(queued_before.clone()).unwrap();
         let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
         assert_eq!(
@@ -1555,7 +1591,12 @@ mod tests {
             io::ErrorKind::WouldBlock,
             "full ingress queue must close the session"
         );
-        assert_eq!(receiver.try_iter().count(), 2);
+        let intents: Vec<_> = receiver.try_iter().collect();
+        assert_eq!(intents.len(), 2);
+        assert_eq!(intents[0].session_id, id);
+        assert_eq!(intents[0].sequence, 0);
+        assert_eq!(intents[0].body.control_id, "control.primary");
+        assert_eq!(intents[0].body.event, UserEventKind::Clicked);
         let mut closed = [0_u8; 1];
         assert_eq!(client.read(&mut closed).unwrap_or(0), 0);
     }

@@ -1,0 +1,29 @@
+Partial M2 typed-intent ingress evidence
+Capture date: 2026-11-17
+Branch: feat/p5-m2-ipc-spike
+Base commit: 7a32804 (working tree; this capture precedes the focused implementation commit)
+Contract: P4 IPC package 0.3.2 Draft
+Host: Linux-7.2.14-arch1-1-x86_64-with-glibc2.44
+Rust: rustc 1.99.1 (58cf8f9c3 2026-10-13) (Arch Linux rust 1:1.99.1-1)
+Cargo: cargo 1.99.1 (5f94df478 2026-08-27) (Arch Linux rust 1:1.99.1-1)
+
+Source hashes at evidence capture:
+b57d29f5fcd2c70cca15acd2d54a4b70038d8015ae3de1c9d42a09094695ec08  crates/lia-device-agent/src/ipc.rs
+8452c103315b7bdd9d1aef31204f60b5afdaad2f71fc3e9528d5785e0cc14020  docs/p5/tasks/M2-threat-model-test-map.md
+bbd766e377c22cd6b3945c139338429960fc6b66801bae7f04313359482754c0  LIA-Project-Blueprint.md
+
+Commands and results:
+$ cargo fmt --all -- --check
+PASS
+$ cargo test --locked --workspace
+PASS: 53 passed, 0 failed, 1 ignored (namespace-only)
+$ cargo clippy --locked --workspace --all-targets -- -D warnings
+PASS
+$ python3 scripts/check-blueprint-integrity.py
+PASS: Blueprint integrity OK: 738631 bytes, 8942 lines, 696 headings
+$ python3 scripts/test_blueprint_integrity.py
+PASS: 6 tests
+$ unshare --map-auto -Ur cargo test --locked -p lia-device-agent ipc::tests::namespace_rejects_foreign_owner_and_separate_uid -- --ignored --exact --nocapture
+PASS: separate_uid_connected=true; 1 namespace test passed
+
+The bounded ingress queue now stores UntrustedUserIntent (session ID, parsed sequence and validated typed body), rather than an Envelope. The flood test verifies the queued intent fields and verifies the third event hits the capacity-two queue and closes the session. The intent type contains no operation outcome field and is not an authorization result.

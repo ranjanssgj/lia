@@ -15,7 +15,7 @@ Evidence must use synthetic identities and redacted output. Do not commit creden
 
 The contract-hygiene workflow is structural validation only. It does not complete API authorization, adapter, IPC, security, replay, restore, provider, workflow, live compositor or end-to-end conformance procedures.
 
-Partial M2 implementation evidence (not a conformance run): [accept-loop readiness stress](IPC-01/2026-11-17-m2-accept-poll/README.md) and [pre-optimization accept-loop stress](IPC-01/2026-11-17-m2-accept-loop-stress/README.md).
+Partial M2 implementation evidence (not a conformance run): [typed untrusted-intent queue](IPC-01/2026-11-17-m2-typed-intents/README.md), [accept-loop readiness stress](IPC-01/2026-11-17-m2-accept-poll/README.md), and [pre-optimization accept-loop stress](IPC-01/2026-11-17-m2-accept-loop-stress/README.md).
 
 ## P5 M1 partial implementation checks (15 November 2026)
 
