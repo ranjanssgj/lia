@@ -1,0 +1,5 @@
+[toolchain]
+channel = "nightly-2026-11-17"
+profile = "minimal"
+components = ["llvm-tools-preview"]
+targets = ["x86_64-unknown-linux-gnu"]
