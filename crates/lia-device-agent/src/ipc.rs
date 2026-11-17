@@ -1488,6 +1488,46 @@ mod tests {
     }
 
     #[test]
+    fn user_event_flood_stops_at_the_bounded_queue_capacity() {
+        let id = "00000000-0000-4000-8000-000000000003";
+        let (mut client, mut server) = UnixStream::pair().unwrap();
+        let mut session = PresentationSession::with_id(id.into()).unwrap();
+        let (sender, receiver) = std::sync::mpsc::sync_channel(2);
+        let mut writer_stream = client.try_clone().unwrap();
+        let writer = std::thread::spawn(move || {
+            for sequence in 0..64 {
+                if write_frame(&mut writer_stream, &user_event(id, &sequence.to_string())).is_err()
+                {
+                    break;
+                }
+            }
+        });
+
+        let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+        let mut queue_error = None;
+        for _ in 0..64 {
+            if let Err(error) = session.receive_user_event_into(
+                &mut server,
+                || now_us,
+                Duration::from_secs(1),
+                &sender,
+            ) {
+                queue_error = Some(error);
+                break;
+            }
+        }
+        writer.join().unwrap();
+        assert_eq!(
+            queue_error.unwrap().kind(),
+            io::ErrorKind::WouldBlock,
+            "full ingress queue must close the session"
+        );
+        assert_eq!(receiver.try_iter().count(), 2);
+        let mut closed = [0_u8; 1];
+        assert_eq!(client.read(&mut closed).unwrap_or(0), 0);
+    }
+
+    #[test]
     fn frame_roundtrip_and_allowlist_validation() {
         let original = envelope();
         let mut bytes = Vec::new();

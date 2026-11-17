@@ -1,4 +1,4 @@
-//! Deterministic mutation fuzz smoke for the bounded IPC frame decoder.
+//! Deterministic mutation smoke for the bounded IPC frame decoder and schemas.
 //! This is reproducible parser stress, not coverage-guided fuzzing or IPC-01.
 use lia_device_agent::ipc::{Envelope, read_frame};
 use std::io::Cursor;
@@ -75,12 +75,12 @@ fn seed_corpus() -> Vec<Vec<u8>> {
     hello.method = "presentation.hello".into();
     hello.kind = "request".into();
     hello.session_id = None;
-    hello.body = serde_json::json!({"renderer_build":"synthetic"});
+    hello.body = serde_json::json!({"protocol_version":"1"});
 
     let mut ready = base();
     ready.method = "presentation.ready".into();
     ready.kind = "request".into();
-    ready.body = serde_json::json!({});
+    ready.body = serde_json::json!({"ready":true});
 
     let mut event = base();
     event.method = "presentation.user_event".into();
@@ -88,10 +88,23 @@ fn seed_corpus() -> Vec<Vec<u8>> {
     event.session_sequence = Some("0".into());
     event.body = serde_json::json!({"control_id":"panel.hide","event":"clicked"});
 
+    let mut snapshot = base();
+    snapshot.method = "presentation.state.replace".into();
+    snapshot.body = serde_json::json!({
+        "state_revision": 1,
+        "character_id": "synthetic",
+        "emotion": {"id":"neutral", "intensity":0.0},
+        "pose_id": "idle",
+        "speaking": false,
+        "listening": false,
+        "paused": false
+    });
+
     vec![
         serde_json::to_vec(&hello).unwrap(),
         serde_json::to_vec(&ready).unwrap(),
         serde_json::to_vec(&event).unwrap(),
+        serde_json::to_vec(&snapshot).unwrap(),
         b"{}".to_vec(),
         vec![0xff, 0xfe, 0xfd],
         b"{\"protocol_version\":\"1\",\"protocol_version\":\"1\"}".to_vec(),
