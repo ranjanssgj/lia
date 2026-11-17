@@ -1,3 +1,10 @@
+# 0.3.3 — 17 November 2026
+
+**Baseline:** Blueprint v1.14.30. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Pins the IPC transport I/O ceiling at one second for the hello/ready exchange and each frame read/write; shorter caller timeouts remain valid.
+- Specifies immediate connection close on the first malformed or truncated frame, matching the Rust implementation's fail-closed behavior. IPC-01 remains Not Run.
+
 # 0.3.2 — 17 November 2026
 
 **Baseline:** Blueprint v1.14.23. The package remains Draft; no implementation conformance gate is marked Passed.

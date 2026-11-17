@@ -1,7 +1,7 @@
 # Presentation ↔ Device Agent IPC Contract
 
 **Protocol:** presentation-agent/1  
-**Contract revision:** P4 package 0.3.2
+**Contract revision:** P4 package 0.3.3
 **Status:** Draft — IPC-01 proof pending  
 **Consumers:** Godot presentation process and Rust/Tokio local agent
 
@@ -28,7 +28,9 @@ The final transport implementation remains gated by IPC-01. This document select
 
 ## 3. Framing and message envelope
 
-Transport is a full-duplex byte stream. Each frame is a 4-byte unsigned big-endian payload length followed by exactly that many UTF-8 bytes containing one JSON object. The length prefix is not included in the JSON. Maximum frame size is 262,144 bytes. A zero-length, oversized, truncated, invalid UTF-8, malformed JSON, or structurally invalid frame is rejected and counted. The connection is closed after repeated malformed frames; the threshold is a runtime policy value to be pinned in IPC-01.
+Transport is a full-duplex byte stream. Each frame is a 4-byte unsigned big-endian payload length followed by exactly that many UTF-8 bytes containing one JSON object. The length prefix is not included in the JSON. Maximum frame size is 262,144 bytes. A zero-length, oversized, truncated, invalid UTF-8, malformed JSON, or structurally invalid frame is rejected and the connection closes on the first invalid frame. The receiver keeps no retry allowance for malformed frames.
+
+Each hello/ready exchange and each subsequent frame read or write uses one absolute monotonic I/O deadline. The caller may request a shorter timeout, but the receiver caps every such deadline at one second. An incomplete frame or non-reading peer is disconnected when that deadline expires. This transport ceiling is a hard maximum; it does not replace the message-level `deadline_at` check.
 
 Each frame uses this envelope:
 
@@ -139,6 +141,7 @@ The snapshot is derived state. Godot cannot edit canonical personality, emotiona
 - A connection accepts no user event before one successful hello and one matching ready request. Hello and ready cannot be repeated to reset connection state. The receiver checks user-event deadlines against its trusted integer clock sample before consuming sequence.
 - State replacement may coalesce older unsent snapshots. User interaction events, shutdown, and operation cancellation signals are not silently coalesced.
 - Every request has a deadline and bounded response. There is no unbounded queue.
+- Handshake and per-frame socket I/O timeouts are capped at one second, even if a caller requests a longer duration; shorter caller timeouts remain in effect. A malformed/truncated frame closes the connection immediately.
 - Renderer restart does not replay old user actions. The Rust agent sends a fresh snapshot after a successful hello/ready exchange.
 - Disconnecting the renderer does not terminate an OS operation or workflow; it only removes presentation. User interruption/stop is delivered separately to the Rust authority.
 - A stale response is ignored by request_id and process generation. A stale user event is rejected by session ID or monotonic session sequence before dispatch.

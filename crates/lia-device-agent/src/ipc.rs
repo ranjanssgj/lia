@@ -19,6 +19,7 @@ use std::sync::mpsc::{SyncSender, TrySendError};
 use std::time::{Duration, Instant};
 
 pub const MAX_FRAME_BYTES: usize = 262_144;
+const MAX_IO_TIMEOUT: Duration = Duration::from_secs(1);
 const ALLOWED_METHODS: &[&str] = &[
     "presentation.hello",
     "presentation.ready",
@@ -445,9 +446,7 @@ impl PresentationSession {
         io_timeout: Duration,
     ) -> io::Result<Self> {
         let result = (|| {
-            let deadline = Instant::now().checked_add(io_timeout).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::InvalidInput, "IPC timeout overflow")
-            })?;
+            let deadline = io_deadline(io_timeout)?;
 
             let hello = read_frame_until(stream, deadline)?;
             let response = self.accept_hello(&hello, trusted_now_us())?;
@@ -532,9 +531,7 @@ impl PresentationSession {
         io_timeout: Duration,
     ) -> io::Result<Envelope> {
         let result = (|| {
-            let deadline = Instant::now().checked_add(io_timeout).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::InvalidInput, "IPC timeout overflow")
-            })?;
+            let deadline = io_deadline(io_timeout)?;
             let event = read_frame_until(stream, deadline)?;
             self.accept_user_event(&event, trusted_now_us())?;
             Ok(event)
@@ -566,9 +563,7 @@ impl PresentationSession {
         }
         let result = (|| {
             snapshot.validate()?;
-            let deadline = Instant::now().checked_add(io_timeout).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::InvalidInput, "IPC timeout overflow")
-            })?;
+            let deadline = io_deadline(io_timeout)?;
             write_frame_until(stream, snapshot, deadline)
         })();
         if result.is_err() {
@@ -657,6 +652,12 @@ fn remaining_until(deadline: Instant) -> io::Result<Duration> {
         ));
     }
     Ok(remaining)
+}
+
+fn io_deadline(timeout: Duration) -> io::Result<Instant> {
+    Instant::now()
+        .checked_add(timeout.min(MAX_IO_TIMEOUT))
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "IPC timeout overflow"))
 }
 
 fn read_exact_until(
@@ -1893,6 +1894,31 @@ mod tests {
             server_thread.join().unwrap().kind(),
             io::ErrorKind::TimedOut | io::ErrorKind::WouldBlock
         ));
+        let mut response = [0_u8; 1];
+        assert!(match client.read(&mut response) {
+            Ok(0) => true,
+            Err(error) => error.kind() == io::ErrorKind::ConnectionReset,
+            Ok(_) => false,
+        });
+    }
+
+    #[test]
+    fn requested_long_hello_timeout_is_capped() {
+        let (mut client, mut server) = UnixStream::pair().unwrap();
+        let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+        let started = Instant::now();
+        let server_thread = std::thread::spawn(move || {
+            let result = PresentationSession::new().unwrap().negotiate(
+                &mut server,
+                || now_us,
+                Duration::from_secs(3_600),
+            );
+            (result.unwrap_err().kind(), started.elapsed())
+        });
+
+        let (error, elapsed) = server_thread.join().unwrap();
+        assert_eq!(error, io::ErrorKind::TimedOut);
+        assert!(elapsed <= MAX_IO_TIMEOUT + Duration::from_millis(500));
         let mut response = [0_u8; 1];
         assert!(match client.read(&mut response) {
             Ok(0) => true,

@@ -1,9 +1,9 @@
 # P4 — Integration Contracts
 
 **Contract package:** P4.1  
-**Revision:** 0.3.2
+**Revision:** 0.3.3
 **Status:** Draft — review and conformance evidence required  
-**Baseline:** LIA Project Blueprint v1.14.29 (P4 in progress)
+**Baseline:** LIA Project Blueprint v1.14.30 (P4 in progress)
 **Date:** 17 November 2026
 
 ## Purpose
