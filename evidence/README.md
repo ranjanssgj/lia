@@ -41,3 +41,7 @@ The contract-hygiene workflow is structural validation only. It does not complet
 ## P5 M2 adversarial checks (17 November 2026)
 
 - [Namespace ownership, parent-swap and parser mutation checks](IPC-01/2026-11-17-m2-adversarial-checks/README.md) — separate-UID path denial, foreign-owner rejection, deterministic pinned-directory race cleanup and 50,000 deterministic parser mutations. IPC-01 remains Not Run.
+
+## Repository integrity review (17 November 2026)
+
+- [Blueprint target-heading superset check and PR #6 self-review notes](repository-integrity/2026-11-17-heading-superset/README.md) — preserves every `origin/main` heading occurrence and records the local checks plus CI run 44020201485. This is not a conformance-gate result.
