@@ -1,0 +1,117 @@
+ipc_source_sha256: fadddf84558d1fa7d68136c0d73a7da4bc77605f3b7f0cf2cd0cc29fd9922e2f
+threat_map_sha256: 50908663d63bbd5bd3f257b3565d6e6e12558c095a040ed05746cfcfbb7993d3
+
+base_commit: 69934587b193491ee15d96faf6ea9d300f2a0498
+branch: feat/p5-m2-ipc-spike
+system: Linux archlinux 7.2.14-arch1-1 #1 SMP PREEMPT_DYNAMIC Fri, 30 Oct 2026 14:32:40 +0000 x86_64 GNU/Linux
+rustc 1.99.1 (58cf8f9c3 2026-10-13) (Arch Linux rust 1:1.99.1-1)
+cargo 1.99.1 (5f94df478 2026-08-27) (Arch Linux rust 1:1.99.1-1)
+
+$ cargo fmt --all -- --check
+
+$ unshare --map-auto -Ur cargo test --locked -p lia-device-agent ipc::tests::namespace_rejects_foreign_owner_and_separate_uid -- --ignored --exact --nocapture
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 1 test
+
+running 1 test
+separate_uid_connected=true
+test ipc::tests::namespace_rejects_foreign_owner_and_separate_uid ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 51 filtered out; finished in 0.00s
+
+test ipc::tests::namespace_rejects_foreign_owner_and_separate_uid ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 51 filtered out; finished in 0.00s
+
+
+$ cargo test --locked --workspace
+   Compiling lia-device-agent v0.1.0 (/home/ice/Documents/Codex/2026-11-17/continue-development-of-lia-in-https/work/lia/crates/lia-device-agent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 52 tests
+test ipc::tests::namespace_rejects_foreign_owner_and_separate_uid ... ignored, requires user-namespace mappings for a distinct UID; run under unshare --map-auto -Ur
+test ipc::tests::bind_rejects_parent_swap_race_and_cleans_pinned_directory ... ok
+test ipc::tests::bind_never_chmods_raced_symlink_target ... ok
+test ipc::tests::method_direction_mismatches_are_rejected ... ok
+test ipc::tests::expired_user_event_does_not_consume_sequence ... ok
+test ipc::tests::handshake_and_snapshot_bodies_reject_unknown_or_invalid_fields ... ok
+test ipc::tests::frame_roundtrip_and_allowlist_validation ... ok
+test ipc::tests::private_socket_checks_directory_mode_and_kernel_peer_credentials ... ok
+test ipc::tests::hello_issues_random_session_once_and_requires_ready_before_events ... ok
+test ipc::tests::full_bounded_user_event_queue_closes_session_without_dispatch ... ok
+test ipc::tests::refuses_preexisting_socket_path_and_non_private_directory ... ok
+test ipc::tests::refuses_symlink_parent_and_endpoint_without_touching_targets ... ok
+test ipc::tests::pending_or_expired_handshake_cannot_accept_user_event ... ok
+test ipc::tests::rejects_duplicate_keys_and_unknown_envelope_fields ... ok
+test ipc::tests::rejects_zero_oversized_truncated_utf8_and_malformed_frames ... ok
+test ipc::tests::authenticated_accept_rejects_uid_and_pid_before_reading_untrusted_frame ... ok
+test ipc::tests::presentation_session_rejects_replays_reordering_and_cross_session_frames ... ok
+test ipc::tests::ready_session_delivers_bound_snapshot ... ok
+test ipc::tests::rejects_invalid_version_kind_method_and_sequence_overflow ... ok
+test ipc::tests::snapshot_mailbox_is_single_slot_coalesces_and_rejects_stale_revision ... ok
+test ipc::tests::unix_stream_disconnect_mid_header_or_body_is_reported_as_eof ... ok
+test ipc::tests::socket_drop_does_not_unlink_a_replacement_inode ... ok
+test signatures::tests::canonicalizes_json_and_hashes_bytes ... ok
+test ipc::tests::user_event_body_is_typed_bounded_and_cannot_claim_outcomes ... ok
+test signatures::tests::jcs_number_format_and_utf16_key_order_vectors ... ok
+test ipc::tests::negotiated_stream_reads_one_user_event_then_closes_on_replay ... ok
+test ipc::tests::unix_stream_negotiates_hello_and_ready_before_returning_session ... ok
+test ipc::tests::authenticated_listener_issues_fresh_session_and_rejects_stale_ready ... ok
+test ipc::tests::accept_loop_serves_reconnect_with_fresh_session_and_snapshot ... ok
+
+running 1 test
+
+running 1 test
+test ipc::tests::same_uid_sibling_process_is_rejected_before_frame_parsing ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 51 filtered out; finished in 0.00s
+
+test ipc::tests::same_uid_sibling_process_is_rejected_before_frame_parsing ... ok
+test ipc::tests::renderer_supervisor_binds_and_refreshes_launched_process_pid ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 51 filtered out; finished in 0.00s
+
+test signatures::tests::signature_rejects_wrong_payload_key_domain_truncation_and_noncanonical_s ... ok
+test signatures::tests::rfc8032_test_vector_1_and_domain_separation ... ok
+
+running 1 test
+
+running 1 test
+test ipc::tests::renderer_supervisor_binds_and_refreshes_launched_process_pid ... ok
+test ipc::tests::hello_read_timeout_shuts_down_the_unfinished_connection ... ok
+test ipc::tests::slow_drip_cannot_extend_the_absolute_handshake_deadline ... ok
+test store::tests::increasing_command_consumes_nonce_and_effect_marker_atomically ... ok
+test time::tests::rfc3339_round_trips_and_normalizes_offsets_with_integer_precision ... ok
+test store::tests::migration_008_backfills_legacy_microseconds_and_removes_julianday_checks ... ok
+test store::tests::finish_attempt_records_verified_and_unknown_outcomes_atomically ... ok
+test store::tests::command_nonce_replay_is_rejected_even_in_a_new_session ... ok
+test store::tests::lease_claim_binding_and_consume_before_effect ... ok
+test store::tests::file_database_uses_wal_and_applies_entire_migration_chain ... ok
+test store::tests::failed_attempt_insert_rolls_back_nonce_watermark_and_effect_marker ... ok
+test store::tests::command_rejects_expiry_and_out_of_order_replay ... ok
+test store::tests::external_clock_high_water_rejects_rollback ... ok
+test store::tests::migrations_wal_foreign_keys_and_first_zero_once ... ok
+test store::tests::sequence_zero_update_then_monotonic_and_retention_immutable ... ok
+test store::tests::concurrent_first_open_serializes_migrations ... ok
+
+running 1 test
+test store::tests::process_kill_recovery_windows ... ok
+test store::tests::stale_database_restore_is_rejected_by_external_anchor ... ok
+test store::tests::wal_readers_contending_writers_busy_and_checkpoint_progress ... ok
+test store::tests::backup_restore_preserves_replay_barrier_and_restart_reconciles_effects ... ok
+
+test result: ok. 51 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.68s
+
+   Doc-tests lia_device_agent
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+$ cargo clippy --locked --workspace --all-targets -- -D warnings
+    Checking lia-device-agent v0.1.0 (/home/ice/Documents/Codex/2026-11-17/continue-development-of-lia-in-https/work/lia/crates/lia-device-agent)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.29s

@@ -42,6 +42,7 @@ The contract-hygiene workflow is structural validation only. It does not complet
 
 - [Namespace ownership, parent-swap and parser mutation checks](IPC-01/2026-11-17-m2-adversarial-checks/README.md) — separate-UID path denial, foreign-owner rejection, deterministic pinned-directory race cleanup and 50,000 deterministic parser mutations. IPC-01 remains Not Run.
 - [Strict presentation body-schema checks (17 November 2026)](IPC-01/2026-11-17-m2-body-schemas/README.md) — strict hello, ready and state-replacement body validation; workspace test and lint output. IPC-01 remains Not Run.
+- [Reachable separate-UID peer-auth check (17 November 2026)](IPC-01/2026-11-17-m2-peer-credentials/README.md) — mapped-user-namespace client reaches the test accept boundary and is rejected by kernel credentials before parsing; production permissions remain private. IPC-01 remains Not Run.
 
 ## Repository integrity review (17 November 2026)
 

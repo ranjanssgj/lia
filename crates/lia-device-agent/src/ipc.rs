@@ -2008,10 +2008,9 @@ mod tests {
     fn namespace_rejects_foreign_owner_and_separate_uid() {
         const SOCKET_ENV: &str = "LIA_IPC_TEST_SEPARATE_UID_SOCKET";
         if let Some(path) = std::env::var_os(SOCKET_ENV) {
-            assert_eq!(
-                UnixStream::connect(path).unwrap_err().kind(),
-                io::ErrorKind::PermissionDenied
-            );
+            let mut stream = UnixStream::connect(path).expect("test socket should be reachable");
+            stream.write_all(b"probe").unwrap();
+            println!("separate_uid_connected=true");
             return;
         }
 
@@ -2056,20 +2055,36 @@ mod tests {
             .unwrap();
         let socket_path = private_directory.join("agent.sock");
         let endpoint = PrivateSocket::bind(&socket_path).unwrap();
+        // Relax only this disposable test endpoint so the distinct UID reaches
+        // accept(); the production endpoint remains parent 0700/socket 0600.
+        std::fs::set_permissions(&private_directory, std::fs::Permissions::from_mode(0o711))
+            .unwrap();
+        std::fs::set_permissions(&socket_path, std::fs::Permissions::from_mode(0o666)).unwrap();
         let mut command = Command::new("setpriv");
         command
             .args(["--reuid=65534", "--regid=65534", "--clear-groups", "--"])
             .arg(std::env::current_exe().unwrap())
             .args([
+                "--ignored",
                 "--exact",
                 "ipc::tests::namespace_rejects_foreign_owner_and_separate_uid",
                 "--nocapture",
             ])
             .env(SOCKET_ENV, &socket_path);
-        let output = command.output().unwrap();
+        let child = command.spawn().unwrap();
+        let expected_uid = unsafe { libc::geteuid() } as u32;
+        let expected_pid = child.id() as i32;
+        assert_eq!(
+            endpoint
+                .accept_authenticated(expected_uid, expected_pid)
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::PermissionDenied
+        );
+        let output = child.wait_with_output().unwrap();
         assert!(
             output.status.success(),
-            "separate-UID client did not fail closed: {}",
+            "separate-UID client did not reach the socket: {}",
             String::from_utf8_lossy(&output.stderr)
         );
         drop(endpoint);
