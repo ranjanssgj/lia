@@ -6,7 +6,7 @@
 
 ## Contract inputs and dependencies
 
-- P4 package revision 0.3.2 Draft: [presentation IPC](../../p4/ipc/presentation-agent-v1.md), [P4 conformance matrix](../../p4/conformance/p4-conformance-matrix.md), and the relevant Blueprint lifecycle and presentation requirements.
+- P4 package revision 0.3.3 Draft: [presentation IPC](../../p4/ipc/presentation-agent-v1.md), [P4 conformance matrix](../../p4/conformance/p4-conformance-matrix.md), and the relevant Blueprint lifecycle and presentation requirements.
 - M2 must define versioned snapshot/state bodies and control mappings, bind the expected renderer process, and enforce authorized event handling before any state-changing control is connected. Until then, develop only against a local mock Unix socket and synthetic fixtures. Do not enable action dispatch.
 - M3 adapter behavior is represented through the mock boundary until the owner supplies the exact Hyprland v0.57.2 build and verifiable provenance. Do not use a live compositor as an integration dependency for this task.
 - Godot engine, export-template, plugin and asset versions/hashes must be selected or confirmed by the owner and pinned before implementation. The P4 Godot 4.7.2 reference is a planning input, not evidence that it is installed or approved for the build.

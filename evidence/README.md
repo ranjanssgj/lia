@@ -55,3 +55,5 @@ Partial M2 implementation evidence (not a conformance run): [bounded I/O timeout
 - [Coverage-guided IPC frame parser fuzzing (17 November 2026)](IPC-01/2026-11-17-m2-coverage-guided-fuzz/README.md) — bounded 60-second run over synthetic seeds; supplemental parser evidence only; IPC-01 remains Not Run.
 
 - [Renderer supervisor restart-budget check (17 November 2026)](IPC-01/2026-11-17-m2-renderer-restart-budget/README.md) — synthetic child processes verify three bounded restarts and fail-closed exhaustion; IPC-01 remains Not Run.
+
+- [Presentation authorization-boundary adapter (17 November 2026)](IPC-01/2026-11-17-m2-authorization-boundary/README.md) — synthetic registry and policy prove unknown-control rejection and deny-by-default handling; no action dispatch; IPC-01 remains Not Run.

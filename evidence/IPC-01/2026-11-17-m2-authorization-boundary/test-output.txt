@@ -1,0 +1,10 @@
+   Compiling lia-device-agent v0.1.0 (/home/ice/Documents/Codex/2026-11-17/continue-development-of-lia-in-https/work/lia/crates/lia-device-agent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.80s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 3 tests
+test presentation_policy::tests::registry_match_cannot_override_policy_denial ... ok
+test presentation_policy::tests::registry_resolution_and_policy_are_both_required ... ok
+test presentation_policy::tests::unknown_control_is_rejected_before_policy_evaluation ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 57 filtered out; finished in 0.00s

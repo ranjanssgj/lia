@@ -3,6 +3,8 @@
 
 #[cfg(target_os = "linux")]
 pub mod ipc;
+#[cfg(target_os = "linux")]
+pub mod presentation_policy;
 pub mod signatures;
 mod store;
 mod time;
