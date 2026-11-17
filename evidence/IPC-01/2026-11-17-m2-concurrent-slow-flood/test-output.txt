@@ -1,0 +1,44 @@
+=== run 1; exit 0 ===
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 1 test
+test ipc::tests::slow_handshakes_and_event_flood_preserve_queue_bound_and_reconnect ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.51s
+
+=== run 2; exit 0 ===
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 1 test
+test ipc::tests::slow_handshakes_and_event_flood_preserve_queue_bound_and_reconnect ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.51s
+
+=== run 3; exit 0 ===
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 1 test
+test ipc::tests::slow_handshakes_and_event_flood_preserve_queue_bound_and_reconnect ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.51s
+
+=== run 4; exit 0 ===
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 1 test
+test ipc::tests::slow_handshakes_and_event_flood_preserve_queue_bound_and_reconnect ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.51s
+
+=== run 5; exit 0 ===
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 1 test
+test ipc::tests::slow_handshakes_and_event_flood_preserve_queue_bound_and_reconnect ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.51s

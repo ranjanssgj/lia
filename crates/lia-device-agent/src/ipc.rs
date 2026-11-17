@@ -2064,6 +2064,103 @@ mod tests {
     }
 
     #[test]
+    fn slow_handshakes_and_event_flood_preserve_queue_bound_and_reconnect() {
+        use std::sync::{Arc, Barrier, mpsc};
+
+        const SLOW_PEERS: usize = 8;
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let directory =
+            std::env::temp_dir().join(format!("lia-ipc-slow-flood-{}-{nonce}", std::process::id()));
+        std::fs::create_dir(&directory).unwrap();
+        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let path = directory.join("agent.sock");
+        let mut endpoint = PrivateSocket::bind(&path).unwrap();
+        let stop = Arc::new(AtomicBool::new(false));
+        let thread_stop = Arc::clone(&stop);
+        let (events, received_events) = mpsc::sync_channel(2);
+        let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+        let server = std::thread::spawn(move || {
+            endpoint.run_accept_loop(
+                unsafe { libc::geteuid() },
+                std::process::id() as i32,
+                |session_id| {
+                    let mut snapshot = envelope();
+                    snapshot.kind = "event".into();
+                    snapshot.method = "presentation.state.replace".into();
+                    snapshot.session_id = Some(session_id.into());
+                    snapshot.body = snapshot_body(1);
+                    Ok(snapshot)
+                },
+                &events,
+                || now_us,
+                IpcRunControl {
+                    io_timeout: Duration::from_millis(50),
+                    stop: &thread_stop,
+                },
+            )
+        });
+
+        let ready = Arc::new(Barrier::new(SLOW_PEERS + 1));
+        let release = Arc::new(Barrier::new(SLOW_PEERS + 1));
+        let mut slow_clients = Vec::with_capacity(SLOW_PEERS);
+        for _ in 0..SLOW_PEERS {
+            let client_path = path.clone();
+            let client_ready = Arc::clone(&ready);
+            let client_release = Arc::clone(&release);
+            slow_clients.push(std::thread::spawn(move || {
+                let mut client = UnixStream::connect(client_path).unwrap();
+                client.write_all(&[0, 0]).unwrap(); // Incomplete frame length.
+                client_ready.wait();
+                client_release.wait();
+                drop(client);
+            }));
+        }
+        ready.wait();
+
+        let started = Instant::now();
+        let mut healthy = UnixStream::connect(&path).unwrap();
+        write_frame(&mut healthy, &envelope()).unwrap();
+        let hello = read_frame(&mut healthy).unwrap();
+        let session_id = hello
+            .session_id
+            .expect("agent should issue a fresh session");
+        write_frame(&mut healthy, &ready_request(&session_id)).unwrap();
+        let snapshot = read_frame(&mut healthy).unwrap();
+        assert_eq!(snapshot.method, "presentation.state.replace");
+        assert_eq!(snapshot.session_id.as_deref(), Some(session_id.as_str()));
+        assert!(started.elapsed() < Duration::from_secs(2));
+
+        for sequence in 0..=2 {
+            write_frame(
+                &mut healthy,
+                &user_event(&session_id, &sequence.to_string()),
+            )
+            .unwrap();
+        }
+        let mut response = [0_u8; 1];
+        assert_eq!(healthy.read(&mut response).unwrap(), 0);
+
+        let first = received_events.try_recv().unwrap();
+        let second = received_events.try_recv().unwrap();
+        assert_eq!([first.sequence, second.sequence], [0, 1]);
+        assert!(matches!(
+            received_events.try_recv(),
+            Err(mpsc::TryRecvError::Empty)
+        ));
+
+        release.wait();
+        for client in slow_clients {
+            client.join().unwrap();
+        }
+        stop.store(true, Ordering::Release);
+        server.join().unwrap().unwrap();
+        std::fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
     fn agent_endpoint_restart_rebinds_and_rejects_old_session_event() {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)

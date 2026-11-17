@@ -57,3 +57,5 @@ Partial M2 implementation evidence (not a conformance run): [bounded I/O timeout
 - [Renderer supervisor restart-budget check (17 November 2026)](IPC-01/2026-11-17-m2-renderer-restart-budget/README.md) — synthetic child processes verify three bounded restarts and fail-closed exhaustion; IPC-01 remains Not Run.
 
 - [Presentation authorization-boundary adapter (17 November 2026)](IPC-01/2026-11-17-m2-authorization-boundary/README.md) — synthetic registry and policy prove unknown-control rejection and deny-by-default handling; no action dispatch; IPC-01 remains Not Run.
+
+- [Concurrent slow-handshake and event-flood check (17 November 2026)](IPC-01/2026-11-17-m2-concurrent-slow-flood/README.md) — five runs combine eight partial-frame peers, a healthy reconnect, and a capacity-two queue; resource-budget evidence remains open and IPC-01 remains Not Run.
