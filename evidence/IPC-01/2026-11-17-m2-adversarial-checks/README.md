@@ -4,6 +4,8 @@
 
 **Base commit:** `82b90b4415dd0eb905865a0472e86edbb70e7bb0`; exact working-source SHA-256 hashes, environment, commands and raw output are in `raw.txt` and `raw.sha256`.
 
+**Hosted validation:** The corrected branch revision `c9e7a5c5b84c4c30cbe84ce6d4d4a93e94e023e5` passed both the contract-hygiene and device-agent Rust jobs in [GitHub Actions run 44018541606](https://github.com/ranjanssgj/lia/actions/runs/44018541606).
+
 ## Results
 
 - The regular workspace suite passed 49 tests; one user-namespace test is deliberately ignored in the ordinary run. Clippy passed with warnings denied.
