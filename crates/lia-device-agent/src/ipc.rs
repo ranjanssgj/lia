@@ -2038,6 +2038,80 @@ mod tests {
     }
 
     #[test]
+    fn agent_endpoint_restart_rebinds_and_rejects_old_session_event() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let directory = std::env::temp_dir().join(format!(
+            "lia-ipc-agent-restart-{}-{nonce}",
+            std::process::id()
+        ));
+        std::fs::create_dir(&directory).unwrap();
+        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let path = directory.join("agent.sock");
+        let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+
+        let first_endpoint = PrivateSocket::bind(&path).unwrap();
+        let first_server = std::thread::spawn(move || {
+            let (stream, _, session) = first_endpoint
+                .accept_session(
+                    unsafe { libc::geteuid() },
+                    std::process::id() as i32,
+                    || now_us,
+                    Duration::from_secs(1),
+                )
+                .unwrap();
+            let id = session.session_id.clone();
+            drop(stream);
+            drop(session);
+            drop(first_endpoint);
+            id
+        });
+        let mut first_client = UnixStream::connect(&path).unwrap();
+        write_frame(&mut first_client, &envelope()).unwrap();
+        let old_session_id = read_frame(&mut first_client).unwrap().session_id.unwrap();
+        write_frame(&mut first_client, &ready_request(&old_session_id)).unwrap();
+        assert_eq!(first_server.join().unwrap(), old_session_id);
+        drop(first_client);
+        assert!(!path.exists(), "old endpoint should be removed on shutdown");
+
+        let second_endpoint = PrivateSocket::bind(&path).unwrap();
+        let second_server = std::thread::spawn(move || {
+            let (mut stream, _, mut session) = second_endpoint
+                .accept_session(
+                    unsafe { libc::geteuid() },
+                    std::process::id() as i32,
+                    || now_us,
+                    Duration::from_secs(1),
+                )
+                .unwrap();
+            let new_session_id = session.session_id.clone();
+            let stale = session
+                .receive_user_event(&mut stream, || now_us, Duration::from_secs(1))
+                .unwrap_err();
+            assert_eq!(stale.kind(), io::ErrorKind::PermissionDenied);
+            drop(stream);
+            drop(session);
+            drop(second_endpoint);
+            new_session_id
+        });
+        let mut second_client = UnixStream::connect(&path).unwrap();
+        write_frame(&mut second_client, &envelope()).unwrap();
+        let new_session_id = read_frame(&mut second_client).unwrap().session_id.unwrap();
+        assert_ne!(new_session_id, old_session_id);
+        write_frame(&mut second_client, &ready_request(&new_session_id)).unwrap();
+        write_frame(&mut second_client, &user_event(&old_session_id, "0")).unwrap();
+        assert_eq!(second_server.join().unwrap(), new_session_id);
+        drop(second_client);
+        assert!(
+            !path.exists(),
+            "restarted endpoint should be removed on shutdown"
+        );
+        std::fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
     fn accept_loop_observes_stop_while_listener_is_idle() {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
