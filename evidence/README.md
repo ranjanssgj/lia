@@ -15,6 +15,8 @@ Evidence must use synthetic identities and redacted output. Do not commit creden
 
 The contract-hygiene workflow is structural validation only. It does not complete API authorization, adapter, IPC, security, replay, restore, provider, workflow, live compositor or end-to-end conformance procedures.
 
+Partial M2 implementation evidence (not a conformance run): [accept-loop readiness stress](IPC-01/2026-11-17-m2-accept-poll/README.md) and [pre-optimization accept-loop stress](IPC-01/2026-11-17-m2-accept-loop-stress/README.md).
+
 ## P5 M1 partial implementation checks (15 November 2026)
 
 - [SQLITE-02 local implementation checks](SQLITE-02/2026-11-15-m1-core/README.md) — migrations 001–005, selected replay/claim tests, WAL and consume-before-effect behavior. The full gate remains Not Run.
@@ -44,6 +46,7 @@ The contract-hygiene workflow is structural validation only. It does not complet
 - [Strict presentation body-schema checks (17 November 2026)](IPC-01/2026-11-17-m2-body-schemas/README.md) — strict hello, ready and state-replacement body validation; workspace test and lint output. IPC-01 remains Not Run.
 - [Reachable separate-UID peer-auth check (17 November 2026)](IPC-01/2026-11-17-m2-peer-credentials/README.md) — mapped-user-namespace client reaches the test accept boundary and is rejected by kernel credentials before parsing; production permissions remain private. IPC-01 remains Not Run.
 - [Bounded queue flood and current-schema mutation smoke (17 November 2026)](IPC-01/2026-11-17-m2-bounded-queue-fuzz/README.md) — 64-frame intent flood stops at queue capacity two; 50,000 deterministic parser mutations use P4 0.3.2 message bodies. IPC-01 remains Not Run.
+- [Accept-loop connection burst and reconnect stress (17 November 2026)](IPC-01/2026-11-17-m2-accept-loop-stress/README.md) — three runs of 64 short-lived connections followed by 128 valid reconnect/snapshot cycles, with sampled FD/RSS and handshake latency. IPC-01 remains Not Run.
 
 ## Repository integrity review (17 November 2026)
 

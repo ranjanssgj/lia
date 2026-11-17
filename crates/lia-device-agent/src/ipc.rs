@@ -1109,7 +1109,7 @@ impl PrivateSocket {
                 let (mut stream, _) = match self.accept_authenticated(expected_uid, expected_pid) {
                     Ok(accepted) => accepted,
                     Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
-                        std::thread::sleep(Duration::from_millis(10));
+                        wait_for_listener(self.listener(), Duration::from_millis(100))?;
                         continue;
                     }
                     Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
@@ -1149,6 +1149,39 @@ impl PrivateSocket {
         })();
         let restore = self.listener.set_nonblocking(false);
         result.and(restore)
+    }
+}
+
+fn wait_for_listener(listener: &UnixListener, timeout: Duration) -> io::Result<()> {
+    let timeout_ms = timeout.as_millis().min(i32::MAX as u128) as i32;
+    let mut descriptor = libc::pollfd {
+        fd: listener.as_raw_fd(),
+        events: libc::POLLIN,
+        revents: 0,
+    };
+    loop {
+        // SAFETY: the pollfd points to one initialized descriptor and remains
+        // alive for the duration of this synchronous call.
+        let result = unsafe { libc::poll(&mut descriptor, 1, timeout_ms) };
+        if result == 0 {
+            return Ok(());
+        }
+        if result > 0 {
+            if descriptor.revents & libc::POLLIN != 0 {
+                return Ok(());
+            }
+            if descriptor.revents & (libc::POLLERR | libc::POLLHUP | libc::POLLNVAL) != 0 {
+                return Err(io::Error::new(
+                    io::ErrorKind::BrokenPipe,
+                    "IPC listener became unavailable",
+                ));
+            }
+            return Ok(());
+        }
+        let error = io::Error::last_os_error();
+        if error.kind() != io::ErrorKind::Interrupted {
+            return Err(error);
+        }
     }
 }
 
@@ -1960,6 +1993,44 @@ mod tests {
         assert_ne!(session_ids[0], session_ids[1]);
         stop.store(true, Ordering::Release);
         server.join().unwrap().unwrap();
+        std::fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
+    fn accept_loop_observes_stop_while_listener_is_idle() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let directory =
+            std::env::temp_dir().join(format!("lia-ipc-stop-idle-{}-{nonce}", std::process::id()));
+        std::fs::create_dir(&directory).unwrap();
+        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let path = directory.join("agent.sock");
+        let mut endpoint = PrivateSocket::bind(&path).unwrap();
+        let stop = std::sync::Arc::new(AtomicBool::new(false));
+        let thread_stop = std::sync::Arc::clone(&stop);
+        let (events, _received_events) = std::sync::mpsc::sync_channel(1);
+        let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+        let server = std::thread::spawn(move || {
+            endpoint.run_accept_loop(
+                unsafe { libc::geteuid() },
+                std::process::id() as i32,
+                |_| panic!("snapshot callback must not run without a client"),
+                &events,
+                || now_us,
+                IpcRunControl {
+                    io_timeout: Duration::from_secs(1),
+                    stop: &thread_stop,
+                },
+            )
+        });
+
+        std::thread::sleep(Duration::from_millis(20));
+        let started = Instant::now();
+        stop.store(true, Ordering::Release);
+        server.join().unwrap().unwrap();
+        assert!(started.elapsed() < Duration::from_millis(250));
         std::fs::remove_dir(directory).unwrap();
     }
 
