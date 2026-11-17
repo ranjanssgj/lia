@@ -2256,6 +2256,60 @@ mod tests {
     }
 
     #[test]
+    fn renderer_supervisor_enforces_bounded_restart_budget() {
+        const CRASH_ENV: &str = "LIA_IPC_TEST_RENDERER_CRASH";
+        if std::env::var_os(CRASH_ENV).is_some() {
+            std::process::exit(0);
+        }
+
+        let mut command = Command::new(std::env::current_exe().unwrap());
+        command
+            .args([
+                "--exact",
+                "ipc::tests::renderer_supervisor_enforces_bounded_restart_budget",
+                "--nocapture",
+            ])
+            .env(CRASH_ENV, "1");
+        let mut supervisor = RendererSupervisor::launch(command).unwrap();
+
+        for restart_number in 1..=MAX_RENDERER_RESTARTS {
+            let deadline = Instant::now() + Duration::from_secs(3);
+            let restarted = loop {
+                match supervisor.restart_if_exited() {
+                    Ok(true) => break true,
+                    Ok(false) => {
+                        assert!(
+                            Instant::now() < deadline,
+                            "renderer did not restart within the bounded test deadline"
+                        );
+                        std::thread::sleep(Duration::from_millis(10));
+                    }
+                    Err(error) => panic!("restart {restart_number} unexpectedly failed: {error}"),
+                }
+            };
+            assert!(restarted);
+        }
+
+        let deadline = Instant::now() + Duration::from_secs(3);
+        loop {
+            match supervisor.restart_if_exited() {
+                Ok(false) => {
+                    assert!(
+                        Instant::now() < deadline,
+                        "final renderer child did not exit within the bounded test deadline"
+                    );
+                    std::thread::sleep(Duration::from_millis(10));
+                }
+                Ok(true) => panic!("renderer restarted beyond the configured limit"),
+                Err(error) => {
+                    assert_eq!(error.to_string(), "renderer restart limit exceeded");
+                    break;
+                }
+            }
+        }
+    }
+
+    #[test]
     #[ignore = "requires user-namespace mappings for a distinct UID; run under unshare --map-auto -Ur"]
     fn namespace_rejects_foreign_owner_and_separate_uid() {
         const SOCKET_ENV: &str = "LIA_IPC_TEST_SEPARATE_UID_SOCKET";
