@@ -1,0 +1,9 @@
+Coverage replay (not a fuzz run)
+Command: cargo fuzz coverage ipc_frame <FUZZ_CORPUS> -- -max_len=262148 -timeout=5
+Toolchain: nightly-2026-11-17; cargo-fuzz 0.13.2; libfuzzer-sys 0.4.13
+Instrumented target build: completed successfully with ASan and source line tables.
+Corpus replay: 1,686 fixed inputs were executed by cargo-fuzz coverage and merged into coverage.profdata.
+Tool output: "fuzzing was not performed, you have only executed the target code on a fixed set of inputs."
+Coverage report command: llvm-cov report <instrumented ipc_frame> -instr-profile=<coverage.profdata> --ignore-filename-regex='(/rustc/|/registry/src/)'
+Relevant result: ipc.rs 22.41% line coverage (946 lines; 734 missed), 32.43% functions executed (111 total; 75 missed), 25.05% regions covered (1,018 total; 763 missed).
+Coverage summary retained in coverage-summary.txt. No coverage threshold was specified.

@@ -4,7 +4,7 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.14.34
+> **Version:** 1.14.35
 > **Last updated:** 17 November 2026
 > **Current phase:** P5 — First Vertical Slice (M0 complete; M1 in progress)
 > **Current workstream:** M1 — device-agent core follow-up (in progress); M2 — Linux IPC implementation and contract validation (in progress)
@@ -8956,3 +8956,6 @@ M2 is in progress on `feat/p5-m2-ipc-spike`, using the repository's pinned Ubunt
 
 
 **1.14.34 — 17 Nov 2026:** Adds five synthetic concurrent IPC runs with eight incomplete-header peers alongside a healthy reconnect and a capacity-two intent queue. All runs retain the queue bound and complete the healthy reconnect in 0.51 seconds. The procedure does not measure sustained load, FD/RSS high-water or target resource budgets; these and full IPC-01 remain open. No conformance gate is marked Passed.
+
+
+**1.14.35 — 17 Nov 2026:** Adds a bounded five-minute coverage-guided fuzz run for the production IPC frame parser: 19,261,140 executions, 8,157 new corpus units and 434 MiB peak RSS without a crash artifact. Fixed-corpus coverage replay reports 22.41% line coverage for `ipc.rs`; replay is not fuzzing and no threshold is defined. Parser-only evidence does not establish service behavior, resource limits or IPC-01 conformance. M2 lifecycle binding, production authorization integration, resource high-water procedures, coverage triage and complete IPC-01 remain open. No conformance gate is marked Passed.

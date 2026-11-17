@@ -1,0 +1,10 @@
+Coverage replay command:
+llvm-cov report <instrumented ipc_frame> -instr-profile=<coverage.profdata> --ignore-filename-regex="(/rustc/|/registry/src/)"
+
+Observed local-source coverage (coverage-guided replay over the generated fixed corpus; this is not another fuzz run):
+ipc.rs: 1018 regions, 25.05% region coverage; 111 functions, 32.43% executed; 946 lines, 22.41% line coverage.
+
+Other linked project modules: presentation_policy.rs 0.00% line; signatures.rs 0.00%; store.rs 0.43%; time.rs 57.25%. These figures are incidental because the harness target calls the IPC frame parser only.
+TOTAL linked project modules: 2166 regions, 17.17%; 201 functions, 21.39% executed; 1846 lines, 15.93%.
+
+The coverage tool explicitly reported that fuzzing was not performed during this replay; it executed a fixed corpus. No coverage threshold was specified, so this is descriptive coverage evidence only.
