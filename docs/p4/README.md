@@ -1,10 +1,10 @@
 # P4 — Integration Contracts
 
 **Contract package:** P4.1  
-**Revision:** 0.3.1
+**Revision:** 0.3.2
 **Status:** Draft — review and conformance evidence required  
-**Baseline:** LIA Project Blueprint v1.14.20 (P4 in progress)
-**Date:** 16 November 2026
+**Baseline:** LIA Project Blueprint v1.14.24 (P4 in progress)
+**Date:** 17 November 2026
 
 ## Purpose
 
@@ -39,8 +39,8 @@ This remains a contract design package. P5 M1 now consumes the draft SQLite migr
 | Event subjects | [subjects.yaml](events/subjects.yaml) | lia.v1 | Domain event owner |
 | Temporal boundaries | [temporal-contracts-v1.md](workflows/temporal-contracts-v1.md) | 1 | Temporal workflow authority |
 | Provider interfaces | [provider-interfaces-v1.ts](providers/provider-interfaces-v1.ts) | 1 | LIA model gateway |
-| Changelog | [CHANGELOG.md](CHANGELOG.md) | 0.3.1 | Review history and verification provenance for the P4 contract package |
-| P4 gate matrix | [p4-conformance-matrix.md](conformance/p4-conformance-matrix.md) | 0.3.1 | Procedure, expected evidence and status for architecture proof gates |
+| Changelog | [CHANGELOG.md](CHANGELOG.md) | 0.3.2 | Review history and verification provenance for the P4 contract package |
+| P4 gate matrix | [p4-conformance-matrix.md](conformance/p4-conformance-matrix.md) | 0.3.2 | Procedure, expected evidence and status for architecture proof gates |
 | Adapter contract | [adapter-conformance-v1.md](adapters/adapter-conformance-v1.md) | 1 | Manifest semantics, resource lifecycle, execution checks and 24 common adapter conformance cases |
 | Manifest schema | [capability-manifest-v1.schema.json](adapters/capability-manifest-v1.schema.json) | 1 | Strict JSON Schema for adapter capability manifests |
 | Hyprland fixture | [hyprland-wayland-manifest.example.json](adapters/fixtures/hyprland-wayland-manifest.example.json) | Example | Synthetic first-Linux-profile manifest fixture |

@@ -2,7 +2,7 @@
 
 **Status:** M0 readiness complete; M1 core merged with follow-up evidence open; M2 IPC spike in progress.
 **Scope:** The approved first slice in Blueprint §6, on one Linux host, one supported display and one exact Hyprland profile.
-**Authority:** Blueprint v1.14.23 and P4 contract package 0.3.1 (Draft) in this branch.
+**Authority:** Blueprint v1.14.24 and P4 contract package 0.3.2 (Draft) in this branch.
 
 P5 proves one complete interaction path across presentation, conversation, fresh desktop context, current authorization, one same-display window move, truthful outcome reporting and one inspectable/deletable low-sensitivity memory. It does not establish general Linux, Windows, mobile, Home Assistant, cloud, or production-provider support.
 
@@ -32,6 +32,8 @@ The owner approved this P5-local dependency profile: SQLITE-02, local SECURITY-0
 The owner deferred LIA's project license decision. No license is selected or implied, and this plan does not grant redistribution rights. The [dependency/model-weight license register](../../toolchain/LICENSE-REGISTER.md) records locked validation dependencies, including the M1 Rust lockfile, and open artifact reviews. The adopted [provider evaluation policy](provider-evaluation.md) sets egress boundaries without selecting any model/provider.
 
 M1 core implementation is merged through PR #5; M1 follow-up tests and evidence are continuing alongside M2 on the separate IPC branch. Its planned scope and evidence boundaries are recorded in [the task plan](tasks/M1-device-agent-core.md). PR #5 CI passed the Rust and contract-hygiene jobs. M2 is tracked in draft PR #6. The local IPC primitive now tests a supervised child PID binding with bounded restart/backoff, a multi-connection accept loop, state snapshot delivery/coalescing, and bounded user-event queue backpressure. Godot process integration, policy authorization, direct separate-UID socket-peer testing, probabilistic race/stress and service resource high-water bounds, coverage-guided fuzzing and full IPC-01 remain open. The [17 November M2 adversarial checks](../../evidence/IPC-01/2026-11-17-m2-adversarial-checks/README.md) record the local partial procedures. The [M3 Hyprland task plan](tasks/M3-hyprland-adapter.md) defines the v0.57.2/Lua profile before adapter implementation. No conformance gate or acceptance condition is marked Passed.
+
+M2 follow-up on 17 November adds strict versioned hello, ready and state-replacement body schemas to P4 package 0.3.2 and Rust IPC validation; unknown fields, invalid state ranges and renderer-authored outcome claims fail closed. Workspace tests and Clippy pass in the retained [schema-check evidence](../../evidence/IPC-01/2026-11-17-m2-body-schemas/README.md). The milestone remains in progress: real Godot lifecycle binding, authorization boundary review, reachable separate-UID socket testing, sustained resource/backpressure evidence, coverage-guided fuzzing and complete IPC-01 remain open. M3 has not started because its M2 dependencies are not satisfied.
 
 ### Open owner decisions
 

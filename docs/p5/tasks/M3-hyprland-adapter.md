@@ -10,7 +10,7 @@ This document defines the M3 work before any adapter code is added. It does not 
 
 - Acceptance conditions: AC-003 (fresh active-window context), AC-004 (ambiguous/stale/unsupported target handling), AC-005 (current authorization), AC-006 (same-display move and verified read-back), AC-008 (truthful failure/unknown outcome), AC-011 (declared capability envelope).
 - Gates: ADAPTER-01 cases applicable to the first profile, HYPR-01 discovery/reconnect/freshness, and HYPR-02 move/read-back. The shared P4 matrix remains authoritative; all three gates start Not Run.
-- Contract inputs: P4 package revision 0.3.1 Draft, [adapter conformance v1](../../p4/adapters/adapter-conformance-v1.md), [capability manifest schema](../../p4/adapters/capability-manifest-v1.schema.json), [Hyprland fixture](../../p4/adapters/fixtures/hyprland-wayland-manifest.example.json), and the P4 proto/tool registry. Resolve any contract conflict in a versioned contract change before claiming conformance.
+- Contract inputs: P4 package revision 0.3.2 Draft, [adapter conformance v1](../../p4/adapters/adapter-conformance-v1.md), [capability manifest schema](../../p4/adapters/capability-manifest-v1.schema.json), [Hyprland fixture](../../p4/adapters/fixtures/hyprland-wayland-manifest.example.json), and the P4 proto/tool registry. Resolve any contract conflict in a versioned contract change before claiming conformance.
 - Dependencies: completed M0 pins/environment, M1 operation/attempt/outcome/evidence persistence, and M2 IPC with renderer identity binding and authorized user-event policy. M3 cannot accept a renderer-originated mutation while those M2 controls remain incomplete.
 
 ## In-scope capabilities

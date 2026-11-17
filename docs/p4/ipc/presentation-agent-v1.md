@@ -1,7 +1,7 @@
 # Presentation ↔ Device Agent IPC Contract
 
 **Protocol:** presentation-agent/1  
-**Contract revision:** P4 package 0.3.1
+**Contract revision:** P4 package 0.3.2
 **Status:** Draft — IPC-01 proof pending  
 **Consumers:** Godot presentation process and Rust/Tokio local agent
 
@@ -76,6 +76,38 @@ Each frame uses this envelope:
 | presentation.health | Bidirectional | Health, frame-budget and asset-load telemetry |
 | presentation.shutdown | Rust → Godot | Graceful renderer shutdown |
 
+The `kind` must agree with the method direction: hello permits request and
+response; ready and user_event permit request; state.replace, state.patch,
+action.play, audio.state and shutdown permit event; health permits request
+and response. Unsupported direction/kind pairs fail closed before body
+processing.
+
+### 4.1 Versioned body schemas
+
+All bodies below are JSON objects. These protocol/field definitions are
+versioned with `presentation-agent/1`; unknown properties are rejected.
+
+- `presentation.hello` request and response: exactly
+  `{"protocol_version":"1"}`. The envelope protocol version and body
+  protocol version must agree. The response also carries the newly issued
+  session UUID in the envelope.
+- `presentation.ready` request: exactly `{"ready":true}`. A false or
+  missing value does not activate the connection. The response is not
+  currently defined; readiness is acknowledged by the fresh state snapshot.
+- `presentation.state.replace` event: required fields are
+  `state_revision` (integer in `0..=9007199254740991`), `character_id`,
+  `emotion` (`id` plus finite `intensity` in `0..=1`), `pose_id`, and boolean
+  `speaking`, `listening`, and `paused`. Optional `gaze_target_class` and
+  `attention_cue` are bounded identifiers. Identifiers are 1–128 ASCII
+  bytes matching `[A-Za-z0-9._:-]+`. The base snapshot carries no operation
+  outcome or execution authority. Target labels are omitted until a separate
+  privacy-reviewed field definition exists.
+
+The snapshot is a complete replacement, not a patch. Its state revision is
+monotonic for the publishing agent generation. Receivers reject unknown
+fields and invalid ranges and retain the last valid revision only within the
+current session.
+
 A `presentation.user_event` request body has exactly these fields:
 
 ~~~json
@@ -121,7 +153,7 @@ Every request/response carries message_id and correlation_id. Logs may include m
 1. Linux peer credentials reject another UID and an unexpected process; endpoint permissions are verified.
 2. Windows named-pipe ACL and client identity reject another user/session.
 3. Oversized, truncated, malformed, invalid-version and unknown-method frames fail closed; duplicate, backward, noncanonical and cross-session user-event sequences are rejected before dispatch.
-4. A renderer restart establishes a new random session UUID and receives a state snapshot; stale frames and replayed/out-of-order user events are ignored. The current Rust tests cover hello/ready gating, response correlation, UID-authenticated listener acceptance, a Unix-stream handshake, and stale ready rejection after reconnect; accept-loop restart and snapshot delivery remain open.
+4. A renderer restart establishes a new random session UUID and receives a schema-valid state snapshot; stale frames and replayed/out-of-order user events are ignored.
 5. A malicious/modified Godot client cannot invoke an OS capability or forge operation evidence.
 6. Backpressure remains bounded; state coalescing does not drop user stop/interruption signals.
 7. Rust agent and Godot can independently restart without stuck sockets, orphaned processes or stale action replay.

@@ -6,7 +6,7 @@
 
 ## Contract inputs and dependencies
 
-- P4 package revision 0.3.1 Draft: [provider interfaces](../../p4/providers/provider-interfaces-v1.ts), [synthetic evaluation harness](../../p4/providers/synthetic-evaluation-harness-v1.md), [context package](../../p4/context/context-package-v1.md) and schema, [tool validation pipeline](../../p4/tools/tool-validation-pipeline-v1.md), and the P4 conformance matrix.
+- P4 package revision 0.3.2 Draft: [provider interfaces](../../p4/providers/provider-interfaces-v1.ts), [synthetic evaluation harness](../../p4/providers/synthetic-evaluation-harness-v1.md), [context package](../../p4/context/context-package-v1.md) and schema, [tool validation pipeline](../../p4/tools/tool-validation-pipeline-v1.md), and the P4 conformance matrix.
 - M1 operation/outcome/evidence persistence, local preference provenance and retention/deletion boundaries must be reviewed before persisting user data.
 - M2 must provide the versioned presentation snapshot and typed user-control schemas, renderer-session binding and safe cancellation/stop path before wiring conversation state or controls into Godot. The renderer is never a tool executor.
 - M4 presentation work depends on the reviewed M2 IPC contract and M3 capability profile. Use synthetic context and mock interfaces until those are ready.

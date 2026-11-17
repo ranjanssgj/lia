@@ -1,3 +1,10 @@
+# 0.3.2 — 17 November 2026
+
+**Baseline:** Blueprint v1.14.23. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Defines strict protocol/1 hello, ready and state-replacement body schemas. Snapshot fields, identifier bounds and numeric ranges are explicit; unknown fields and renderer-authored outcome claims are rejected.
+- Implements those schemas and method-direction checks at the Rust IPC envelope boundary and adds malformed-schema/direction regression cases. The transport still does not authorize or dispatch user events; IPC-01 remains Not Run.
+
 ## 0.3.1 — 16 November 2026
 
 **Baseline:** Blueprint v1.14.20. The package remains Draft; no implementation conformance gate is marked Passed.

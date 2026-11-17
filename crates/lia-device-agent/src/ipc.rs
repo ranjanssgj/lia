@@ -33,6 +33,122 @@ const ALLOWED_METHODS: &[&str] = &[
 
 const MAX_CONTROL_ID_BYTES: usize = 128;
 const MAX_SUBMITTED_TEXT_BYTES: usize = 8_192;
+const MAX_PRESENTATION_ID_BYTES: usize = 128;
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct HelloBody {
+    protocol_version: String,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ReadyBody {
+    ready: bool,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct EmotionState {
+    id: String,
+    intensity: f64,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct PresentationSnapshot {
+    state_revision: u64,
+    character_id: String,
+    emotion: EmotionState,
+    pose_id: String,
+    speaking: bool,
+    listening: bool,
+    paused: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    gaze_target_class: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    attention_cue: Option<String>,
+}
+
+fn validate_bounded_identifier(value: &str, label: &str) -> io::Result<()> {
+    if value.is_empty()
+        || value.len() > MAX_PRESENTATION_ID_BYTES
+        || !value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b':' | b'-'))
+    {
+        return invalid(format!("{label} has invalid syntax or length"));
+    }
+    Ok(())
+}
+
+fn validate_method_body(method: &str, kind: &str, body: &Value) -> io::Result<()> {
+    match (method, kind) {
+        ("presentation.hello", "request" | "response") => {
+            let parsed: HelloBody = serde_json::from_value(body.clone())
+                .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+            if parsed.protocol_version != "1" {
+                return invalid("hello body protocol_version must be 1");
+            }
+        }
+        ("presentation.ready", "request") => {
+            let parsed: ReadyBody = serde_json::from_value(body.clone())
+                .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+            if !parsed.ready {
+                return invalid("ready request must report ready=true");
+            }
+        }
+        ("presentation.state.replace", "event") => {
+            let parsed: PresentationSnapshot = serde_json::from_value(body.clone())
+                .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+            if parsed.state_revision > 9_007_199_254_740_991 {
+                return invalid("state_revision exceeds the interoperable JSON integer range");
+            }
+            validate_bounded_identifier(&parsed.character_id, "character_id")?;
+            validate_bounded_identifier(&parsed.emotion.id, "emotion.id")?;
+            validate_bounded_identifier(&parsed.pose_id, "pose_id")?;
+            if !parsed.emotion.intensity.is_finite()
+                || !(0.0..=1.0).contains(&parsed.emotion.intensity)
+            {
+                return invalid("emotion intensity must be finite and within 0..=1");
+            }
+            for (label, value) in [
+                ("gaze_target_class", parsed.gaze_target_class.as_deref()),
+                ("attention_cue", parsed.attention_cue.as_deref()),
+            ] {
+                if let Some(value) = value {
+                    validate_bounded_identifier(value, label)?;
+                }
+            }
+        }
+        ("presentation.user_event", "request") => UserEventBody::validate(body)?,
+        _ => {
+            if !body.is_object() {
+                return invalid("IPC body must be a JSON object");
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_method_kind(method: &str, kind: &str) -> io::Result<()> {
+    let allowed = match method {
+        "presentation.hello" => matches!(kind, "request" | "response"),
+        "presentation.ready" | "presentation.user_event" => kind == "request",
+        "presentation.state.replace"
+        | "presentation.state.patch"
+        | "presentation.action.play"
+        | "presentation.audio.state"
+        | "presentation.shutdown" => kind == "event",
+        "presentation.health" => matches!(kind, "request" | "response"),
+        _ => false,
+    };
+    if allowed {
+        Ok(())
+    } else {
+        invalid("IPC method is not valid with this message kind")
+    }
+}
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -115,6 +231,7 @@ impl Envelope {
         if !ALLOWED_METHODS.contains(&self.method.as_str()) {
             return invalid("IPC method is not allowlisted");
         }
+        validate_method_kind(&self.method, &self.kind)?;
         match (self.method.as_str(), self.kind.as_str()) {
             ("presentation.hello", "request") => {
                 if self.session_id.is_some() || self.session_sequence.is_some() {
@@ -138,7 +255,6 @@ impl Envelope {
                 {
                     return invalid("user-event request requires a session UUID and sequence");
                 }
-                UserEventBody::validate(&self.body)?;
             }
             ("presentation.user_event", _) => {
                 return invalid("presentation.user_event must be a request");
@@ -151,9 +267,7 @@ impl Envelope {
                 }
             }
         }
-        if !self.body.is_object() {
-            return invalid("IPC body must be a JSON object");
-        }
+        validate_method_body(&self.method, &self.kind, &self.body)?;
         crate::time::parse_rfc3339_us(&self.sent_at)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
         if let Some(deadline) = self.deadline_at.as_deref() {
@@ -1195,7 +1309,7 @@ mod tests {
             method: "presentation.hello".into(),
             sent_at: "2026-11-15T00:00:00Z".into(),
             deadline_at: None,
-            body: serde_json::json!({"renderer_build":"test"}),
+            body: serde_json::json!({"protocol_version":"1"}),
         }
     }
 
@@ -1212,7 +1326,20 @@ mod tests {
         let mut request = envelope();
         request.method = "presentation.ready".into();
         request.session_id = Some(session_id.into());
+        request.body = serde_json::json!({"ready":true});
         request
+    }
+
+    fn snapshot_body(state_revision: u64) -> Value {
+        serde_json::json!({
+            "state_revision": state_revision,
+            "character_id": "synthetic",
+            "emotion": {"id":"neutral", "intensity":0.0},
+            "pose_id": "idle",
+            "speaking": false,
+            "listening": false,
+            "paused": false
+        })
     }
 
     fn frame(payload: &[u8]) -> Vec<u8> {
@@ -1244,6 +1371,63 @@ mod tests {
     }
 
     #[test]
+    fn handshake_and_snapshot_bodies_reject_unknown_or_invalid_fields() {
+        let mut hello = envelope();
+        hello.body = serde_json::json!({"protocol_version":"1", "claimed_uid":1000});
+        assert_eq!(
+            hello.validate().unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+
+        let mut ready = ready_request("00000000-0000-4000-8000-000000000004");
+        ready.body = serde_json::json!({"ready":false});
+        assert_eq!(
+            ready.validate().unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+
+        let mut snapshot = envelope();
+        snapshot.kind = "event".into();
+        snapshot.method = "presentation.state.replace".into();
+        snapshot.session_id = Some("00000000-0000-4000-8000-000000000004".into());
+        snapshot.body = snapshot_body(1);
+        snapshot.validate().unwrap();
+
+        let mut forged = snapshot.clone();
+        forged.body["operation_succeeded"] = Value::Bool(true);
+        assert_eq!(
+            forged.validate().unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+        let mut invalid_intensity = snapshot;
+        invalid_intensity.body["emotion"]["intensity"] = Value::from(1.5);
+        assert_eq!(
+            invalid_intensity.validate().unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+    }
+
+    #[test]
+    fn method_direction_mismatches_are_rejected() {
+        let mut renderer_forgery = envelope();
+        renderer_forgery.method = "presentation.state.replace".into();
+        assert_eq!(
+            renderer_forgery.validate().unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+
+        let mut ready_reply = envelope();
+        ready_reply.method = "presentation.ready".into();
+        ready_reply.kind = "response".into();
+        ready_reply.session_id = Some("00000000-0000-4000-8000-000000000004".into());
+        ready_reply.body = serde_json::json!({"ready":true});
+        assert_eq!(
+            ready_reply.validate().unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+    }
+
+    #[test]
     fn ready_session_delivers_bound_snapshot() {
         let id = "00000000-0000-4000-8000-000000000003";
         let session = PresentationSession::with_id(id.into()).unwrap();
@@ -1252,7 +1436,7 @@ mod tests {
         snapshot.kind = "event".into();
         snapshot.method = "presentation.state.replace".into();
         snapshot.session_id = Some(id.into());
-        snapshot.body = serde_json::json!({"state_revision": 9, "character_id": "synthetic"});
+        snapshot.body = snapshot_body(9);
         session
             .send_snapshot(&mut server, &snapshot, Duration::from_secs(1))
             .unwrap();
@@ -1709,7 +1893,7 @@ mod tests {
                     snapshot.kind = "event".into();
                     snapshot.method = "presentation.state.replace".into();
                     snapshot.session_id = Some(session_id.into());
-                    snapshot.body = serde_json::json!({"state_revision":revision});
+                    snapshot.body = snapshot_body(revision);
                     Ok(snapshot)
                 },
                 &events,
@@ -1782,7 +1966,7 @@ mod tests {
         snapshot.kind = "event".into();
         snapshot.method = "presentation.state.replace".into();
         snapshot.session_id = Some(session.session_id.clone());
-        snapshot.body = serde_json::json!({"state_revision": 1});
+        snapshot.body = snapshot_body(1);
         session
             .send_snapshot(&mut stream, &snapshot, Duration::from_secs(2))
             .unwrap();
@@ -1810,7 +1994,7 @@ mod tests {
         snapshot.kind = "event".into();
         snapshot.method = "presentation.state.replace".into();
         snapshot.session_id = Some(session.session_id.clone());
-        snapshot.body = serde_json::json!({"state_revision": 2});
+        snapshot.body = snapshot_body(2);
         session
             .send_snapshot(&mut stream, &snapshot, Duration::from_secs(2))
             .unwrap();
