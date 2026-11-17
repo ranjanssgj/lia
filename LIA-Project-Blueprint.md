@@ -4,7 +4,7 @@
 > **Product identity:** An embodied, autonomous digital companion and
 > OS-native agent\
 > **Document type:** Living project specification\
-> **Version:** 1.14.22
+> **Version:** 1.14.23
 > **Last updated:** 16 November 2026
 > **Current phase:** P5 — First Vertical Slice (M0 complete; M1 in progress)
 > **Current workstream:** M1 — device-agent core follow-up (in progress); M2 — Linux IPC spike (in progress)
@@ -8927,3 +8927,6 @@ M2 is in progress on `feat/p5-m2-ipc-spike`, using the repository's pinned Ubunt
 
 
 **1.14.22 — 16 Nov 2026:** Extends M2 with a supervised renderer child PID binding with bounded restart/backoff, a repeat-connection accept loop, a monotonic coalescing snapshot mailbox, and bounded untrusted user-event ingress. Reply-side snapshot disconnect is checked. The full workspace now has 47 local tests, including 26 IPC checks. Dispatch remains disabled; Godot launch integration, full renderer reply flow, separate-UID/foreign-owner/path-race, fuzz and service resource high-water evidence remain open. IPC-01 remains Not Run.
+
+
+**1.14.23 — 17 Nov 2026:** Hardens private socket creation by pinning the validated parent directory FD, binding and cleaning through the pinned directory, applying permissions with `fchmodat2(AT_SYMLINK_NOFOLLOW)`, and rejecting parent replacement during setup. Adds deterministic parent-directory and endpoint-symlink race coverage, a mapped-user-namespace foreign-owner/separate-UID filesystem denial procedure, and a 50,000-case deterministic parser mutation smoke. The direct separate-UID SO_PEERCRED path, coverage-guided fuzzing, probabilistic race/resource stress, Godot integration and complete IPC-01 remain open; no conformance gate is marked Passed.

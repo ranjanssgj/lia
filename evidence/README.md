@@ -37,3 +37,7 @@ The contract-hygiene workflow is structural validation only. It does not complet
 - [Blueprint truncation incident and recovery (16 November 2026)](repository-integrity/2026-11-16-blueprint-truncation/README.md) — full content restored from `010202c`; integrity thresholds run in contract-hygiene CI.
 
 - [M2 local UnixStream framing benchmark](IPC-01/2026-11-16-m2-local-socket-benchmark/README.md) — 20,000 local request/response exchanges with latency and point-in-time RSS/FD observations; not end-to-end IPC-01 evidence.
+
+## P5 M2 adversarial checks (17 November 2026)
+
+- [Namespace ownership, parent-swap and parser mutation checks](IPC-01/2026-11-17-m2-adversarial-checks/README.md) — separate-UID path denial, foreign-owner rejection, deterministic pinned-directory race cleanup and 50,000 deterministic parser mutations. IPC-01 remains Not Run.

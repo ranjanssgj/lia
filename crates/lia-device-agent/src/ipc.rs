@@ -6,10 +6,11 @@ use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{Map, Number, Value};
 use std::collections::BTreeSet;
 use std::fmt;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::os::fd::AsRawFd;
-use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
+use std::os::unix::ffi::OsStrExt;
+use std::os::unix::fs::{FileTypeExt, MetadataExt, OpenOptionsExt, PermissionsExt};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
@@ -782,29 +783,64 @@ pub fn require_peer_process(
 pub struct PrivateSocket {
     listener: UnixListener,
     path: PathBuf,
+    _parent_directory: File,
     device: u64,
     inode: u64,
 }
 
 impl PrivateSocket {
+    /// Bind through a pinned directory FD so renaming/replacing the parent cannot
+    /// redirect creation or cleanup. The parent must remain at its original path
+    /// through the bind and permission checks; Linux procfs must be mounted.
     pub fn bind(path: impl AsRef<Path>) -> io::Result<Self> {
+        Self::bind_with_hooks(path, || {}, || {})
+    }
+
+    fn bind_with_hooks(
+        path: impl AsRef<Path>,
+        after_parent_validation: impl FnOnce(),
+        after_endpoint_bind: impl FnOnce(),
+    ) -> io::Result<Self> {
         let path = path.as_ref().to_path_buf();
         let parent = path
             .parent()
             .filter(|p| !p.as_os_str().is_empty())
-            .unwrap_or(Path::new("."));
-        let metadata = std::fs::symlink_metadata(parent)?;
-        if metadata.file_type().is_symlink()
-            || !metadata.is_dir()
+            .unwrap_or(Path::new("."))
+            .to_path_buf();
+        let name = path.file_name().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "socket path must have a filename",
+            )
+        })?;
+        let parent_lstat = std::fs::symlink_metadata(&parent)?;
+        if parent_lstat.file_type().is_symlink() {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "socket directory must not be a symlink",
+            ));
+        }
+        let parent_directory = OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC)
+            .open(&parent)?;
+        let metadata = parent_directory.metadata()?;
+        if !metadata.is_dir()
+            || metadata.dev() != parent_lstat.dev()
+            || metadata.ino() != parent_lstat.ino()
             || metadata.uid() != unsafe { libc::geteuid() }
             || metadata.permissions().mode() & 0o777 != 0o700
         {
             return Err(io::Error::new(
                 io::ErrorKind::PermissionDenied,
-                "socket directory must be a non-symlink directory owned by this user with mode 0700",
+                "socket directory must be a stable, owner-controlled directory with mode 0700",
             ));
         }
-        match std::fs::symlink_metadata(&path) {
+        after_parent_validation();
+        let anchored_path = Path::new("/proc/self/fd")
+            .join(parent_directory.as_raw_fd().to_string())
+            .join(name);
+        match std::fs::symlink_metadata(&anchored_path) {
             Ok(_) => {
                 return Err(io::Error::new(
                     io::ErrorKind::AlreadyExists,
@@ -814,11 +850,12 @@ impl PrivateSocket {
             Err(error) if error.kind() == io::ErrorKind::NotFound => {}
             Err(error) => return Err(error),
         }
-        let listener = UnixListener::bind(&path)?;
-        let metadata = std::fs::symlink_metadata(&path)?;
+        let listener = UnixListener::bind(&anchored_path)?;
+        let metadata = std::fs::symlink_metadata(&anchored_path)?;
         let endpoint = Self {
             listener,
-            path: path.clone(),
+            path: anchored_path.clone(),
+            _parent_directory: parent_directory,
             device: metadata.dev(),
             inode: metadata.ino(),
         };
@@ -828,8 +865,10 @@ impl PrivateSocket {
                 "bound endpoint identity changed unexpectedly",
             ));
         }
-        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600))?;
-        let after = std::fs::symlink_metadata(&path)?;
+        ensure_parent_path_matches(&parent, &endpoint._parent_directory)?;
+        after_endpoint_bind();
+        set_socket_mode_nofollow(&endpoint._parent_directory, name)?;
+        let after = std::fs::symlink_metadata(&anchored_path)?;
         if !after.file_type().is_socket()
             || after.uid() != metadata.uid()
             || after.dev() != metadata.dev()
@@ -841,6 +880,7 @@ impl PrivateSocket {
                 "socket path changed while applying endpoint permissions",
             ));
         }
+        ensure_parent_path_matches(&parent, &endpoint._parent_directory)?;
         Ok(endpoint)
     }
 
@@ -996,6 +1036,44 @@ impl PrivateSocket {
         let restore = self.listener.set_nonblocking(false);
         result.and(restore)
     }
+}
+
+fn set_socket_mode_nofollow(parent_directory: &File, name: &std::ffi::OsStr) -> io::Result<()> {
+    let name = std::ffi::CString::new(name.as_bytes())
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "socket name contains NUL"))?;
+    // SAFETY: the directory FD is live; `name` is NUL-terminated and relative to
+    // that FD; fchmodat2 with AT_SYMLINK_NOFOLLOW never follows a raced symlink.
+    let result = unsafe {
+        libc::syscall(
+            libc::SYS_fchmodat2,
+            parent_directory.as_raw_fd(),
+            name.as_ptr(),
+            0o600,
+            libc::AT_SYMLINK_NOFOLLOW,
+        )
+    };
+    if result == -1 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(())
+}
+
+fn ensure_parent_path_matches(parent: &Path, pinned_directory: &File) -> io::Result<()> {
+    let pinned = pinned_directory.metadata()?;
+    let current = std::fs::symlink_metadata(parent)?;
+    if current.file_type().is_symlink()
+        || !current.is_dir()
+        || current.dev() != pinned.dev()
+        || current.ino() != pinned.ino()
+        || current.uid() != unsafe { libc::geteuid() }
+        || current.permissions().mode() & 0o777 != 0o700
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "socket directory changed while binding the endpoint",
+        ));
+    }
+    Ok(())
 }
 
 impl Drop for PrivateSocket {
@@ -1742,6 +1820,79 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires user-namespace mappings for a distinct UID; run under unshare --map-auto -Ur"]
+    fn namespace_rejects_foreign_owner_and_separate_uid() {
+        const SOCKET_ENV: &str = "LIA_IPC_TEST_SEPARATE_UID_SOCKET";
+        if let Some(path) = std::env::var_os(SOCKET_ENV) {
+            assert_eq!(
+                UnixStream::connect(path).unwrap_err().kind(),
+                io::ErrorKind::PermissionDenied
+            );
+            return;
+        }
+
+        assert_eq!(
+            unsafe { libc::geteuid() },
+            0,
+            "run this test in a mapped user namespace"
+        );
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let foreign_directory = std::env::temp_dir().join(format!(
+            "lia-ipc-foreign-owner-{}-{nonce}",
+            std::process::id()
+        ));
+        std::fs::create_dir(&foreign_directory).unwrap();
+        std::fs::set_permissions(&foreign_directory, std::fs::Permissions::from_mode(0o700))
+            .unwrap();
+        let foreign_cstring =
+            std::ffi::CString::new(foreign_directory.as_os_str().as_encoded_bytes()).unwrap();
+        // UID 65534 is mapped by `unshare --map-auto`; GID 0 remains the namespace owner.
+        assert_eq!(
+            unsafe { libc::chown(foreign_cstring.as_ptr(), 65_534, 0) },
+            0
+        );
+        assert_eq!(
+            PrivateSocket::bind(foreign_directory.join("agent.sock"))
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::PermissionDenied
+        );
+        assert_eq!(unsafe { libc::chown(foreign_cstring.as_ptr(), 0, 0) }, 0);
+        std::fs::remove_dir(&foreign_directory).unwrap();
+
+        let private_directory = std::env::temp_dir().join(format!(
+            "lia-ipc-separate-uid-{}-{nonce}",
+            std::process::id()
+        ));
+        std::fs::create_dir(&private_directory).unwrap();
+        std::fs::set_permissions(&private_directory, std::fs::Permissions::from_mode(0o700))
+            .unwrap();
+        let socket_path = private_directory.join("agent.sock");
+        let endpoint = PrivateSocket::bind(&socket_path).unwrap();
+        let mut command = Command::new("setpriv");
+        command
+            .args(["--reuid=65534", "--regid=65534", "--clear-groups", "--"])
+            .arg(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "ipc::tests::namespace_rejects_foreign_owner_and_separate_uid",
+                "--nocapture",
+            ])
+            .env(SOCKET_ENV, &socket_path);
+        let output = command.output().unwrap();
+        assert!(
+            output.status.success(),
+            "separate-UID client did not fail closed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        drop(endpoint);
+        std::fs::remove_dir(private_directory).unwrap();
+    }
+
+    #[test]
     fn rejects_zero_oversized_truncated_utf8_and_malformed_frames() {
         assert_eq!(
             read_frame(&mut Cursor::new([0_u8, 0, 0]))
@@ -2075,6 +2226,90 @@ mod tests {
         std::fs::remove_file(symlink_directory).unwrap();
         std::fs::remove_dir(real_directory).unwrap();
         std::fs::remove_dir(root).unwrap();
+    }
+
+    #[test]
+    fn bind_rejects_parent_swap_race_and_cleans_pinned_directory() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "lia-ipc-parent-race-{}-{nonce}",
+            std::process::id()
+        ));
+        let parent = root.join("runtime");
+        let moved_parent = root.join("runtime-moved");
+        std::fs::create_dir_all(&parent).unwrap();
+        std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
+        std::fs::set_permissions(&parent, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let socket_path = parent.join("agent.sock");
+        let race_parent = parent.clone();
+        let race_moved_parent = moved_parent.clone();
+        let error = PrivateSocket::bind_with_hooks(
+            &socket_path,
+            move || {
+                std::fs::rename(&race_parent, &race_moved_parent).unwrap();
+                std::fs::create_dir(&race_parent).unwrap();
+                std::fs::set_permissions(&race_parent, std::fs::Permissions::from_mode(0o700))
+                    .unwrap();
+            },
+            || {},
+        )
+        .unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
+        assert_eq!(std::fs::read_dir(&parent).unwrap().count(), 0);
+        assert_eq!(std::fs::read_dir(&moved_parent).unwrap().count(), 0);
+        std::fs::remove_dir(parent).unwrap();
+        std::fs::remove_dir(moved_parent).unwrap();
+        std::fs::remove_dir(root).unwrap();
+    }
+
+    #[test]
+    fn bind_never_chmods_raced_symlink_target() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let directory = std::env::temp_dir().join(format!(
+            "lia-ipc-endpoint-race-{}-{nonce}",
+            std::process::id()
+        ));
+        std::fs::create_dir(&directory).unwrap();
+        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let socket_path = directory.join("agent.sock");
+        let target = directory.join("sentinel");
+        std::fs::write(&target, b"preserve mode and contents").unwrap();
+        std::fs::set_permissions(&target, std::fs::Permissions::from_mode(0o644)).unwrap();
+        let race_path = socket_path.clone();
+        let race_target = target.clone();
+        let error = PrivateSocket::bind_with_hooks(
+            &socket_path,
+            || {},
+            move || {
+                std::fs::remove_file(&race_path).unwrap();
+                std::os::unix::fs::symlink(&race_target, &race_path).unwrap();
+            },
+        )
+        .unwrap_err();
+        assert_ne!(error.kind(), io::ErrorKind::NotFound);
+        assert!(
+            std::fs::symlink_metadata(&socket_path)
+                .unwrap()
+                .file_type()
+                .is_symlink()
+        );
+        assert_eq!(
+            std::fs::metadata(&target).unwrap().permissions().mode() & 0o777,
+            0o644
+        );
+        assert_eq!(
+            std::fs::read(&target).unwrap(),
+            b"preserve mode and contents"
+        );
+        std::fs::remove_file(socket_path).unwrap();
+        std::fs::remove_file(target).unwrap();
+        std::fs::remove_dir(directory).unwrap();
     }
 
     #[test]

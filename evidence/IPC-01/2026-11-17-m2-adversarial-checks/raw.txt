@@ -1,0 +1,67 @@
+base_commit: 82b90b4415dd0eb905865a0472e86edbb70e7bb0
+branch: feat/p5-m2-ipc-spike
+system: Linux 7.2.14-arch1-1 x86_64 GNU/Linux
+rustc: rustc 1.99.1 (58cf8f9c3 2026-10-13) (Arch Linux rust 1:1.99.1-1)
+cargo: cargo 1.99.1 (5f94df478 2026-08-27) (Arch Linux rust 1:1.99.1-1)
+ipc_source_sha256: b3431842cbfe48c136c87ec1218f5bfa828817d9f5d16ebeca2df9fbd2f4284a
+mutation_fuzzer_sha256: fe1d082e4d475ea1d2a0e1cf47b36c279a20037a92e1f3c5dbde1fb9a5fa77c3
+$ cargo fmt --all -- --check
+$ cargo test --locked --workspace -- --quiet
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 50 tests
+i..........................
+running 1 test
+test ipc::tests::same_uid_sibling_process_is_rejected_before_frame_parsing ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.00s
+
+
+running 1 test
+.test ipc::tests::renderer_supervisor_binds_and_refreshes_launched_process_pid ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.00s
+
+..
+running 1 test
+
+running 1 test
+...............
+running 1 test
+.....
+test result: ok. 49 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.65s
+
+   Doc-tests lia_device_agent
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+$ cargo clippy --locked --workspace --all-targets -- -D warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.06s
+$ unshare --map-auto -Ur cargo test --locked -p lia-device-agent ipc::tests::namespace_rejects_foreign_owner_and_separate_uid -- --ignored --exact --nocapture
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 1 test
+test ipc::tests::namespace_rejects_foreign_owner_and_separate_uid ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.00s
+
+$ cargo run --locked --release -p lia-device-agent --example ipc_parser_mutation_fuzz
+    Finished `release` profile [optimized] target(s) in 0.02s
+     Running `target/release/examples/ipc_parser_mutation_fuzz`
+seed=0x8f315a27d4c9b601
+iterations=50000
+accepted=73
+rejected=49927
+largest_payload_bytes=354
+$ python3 scripts/check-blueprint-integrity.py
+Blueprint integrity OK: 735063 bytes, 8932 lines, 696 headings
+$ python3 scripts/test_blueprint_integrity.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.065s
+
+OK
