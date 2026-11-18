@@ -1,0 +1,15 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 8 tests
+test hyprland::tests::command_filter_validates_hex_addresses_and_disallowed_queries ... ok
+test hyprland::tests::inspect_active_window_fails_when_absent_or_unmapped ... ok
+test hyprland::tests::inspect_active_window_redacts_title_and_enforces_freshness ... ok
+test hyprland::tests::inspect_work_area_computes_reserved_margins ... ok
+test hyprland::tests::execute_same_display_move_verified_success_path ... ok
+test hyprland::tests::execute_move_read_back_contradiction_yields_verified_failure ... ok
+test hyprland::tests::execute_move_dispatch_timeout_yields_unknown_outcome ... ok
+test hyprland::tests::execute_move_rejects_expired_reference ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 70 filtered out; finished in 0.10s
+

@@ -2,6 +2,8 @@
 //! This crate is not a complete protobuf verifier or production security boundary.
 
 #[cfg(target_os = "linux")]
+pub mod hyprland;
+#[cfg(target_os = "linux")]
 pub mod ipc;
 #[cfg(target_os = "linux")]
 pub mod presentation_policy;
