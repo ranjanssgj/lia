@@ -35,6 +35,51 @@ Use Lua only for the profile configuration and, if required by the proven v0.57.
 
 A window resource reference is ephemeral. Bind it to the compositor instance/session generation, a LIA generation token, observed window identity, output/workspace identity, observation timestamp and expiry. Never treat a reusable compositor address or title as a durable identifier. Re-discover immediately before an operation and reject if focus/identity/generation/geometry/output/workspace changed, the window disappeared, the display topology changed, or the reference expired.
 
+### Planned Rust adapter interface specifications
+
+```rust
+pub struct WindowIdentity {
+    pub address: String,          // Opaque hex address (e.g. "0x55a8f2c3b1a0")
+    pub generation_token: String, // Ephemeral generation UUID
+    pub workspace_id: i64,        // Workspace identifier
+    pub monitor_id: i64,          // Monitor/display output identifier
+    pub observed_at_us: i64,      // Integer microsecond timestamp
+    pub fresh_until_us: i64,      // Expiration deadline (short-lived, e.g. 10s)
+}
+
+pub struct WindowGeometry {
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+}
+
+pub struct SameDisplayMoveCommand {
+    pub window: WindowIdentity,
+    pub target_x: i32,
+    pub target_y: i32,
+    pub preserved_width: i32,
+    pub preserved_height: i32,
+    pub preserved_workspace: i64,
+}
+
+pub enum MoveOperationResult {
+    VerifiedSuccess {
+        before: WindowGeometry,
+        after: WindowGeometry,
+        attempt_id: String,
+    },
+    VerifiedFailure {
+        reason: String,
+        attempt_id: String,
+    },
+    UnknownOutcome {
+        attempt_id: String,
+        reconciliation_required: bool,
+    },
+}
+```
+
 For an authorized move:
 
 1. Load the exact current manifest and policy decision; validate capability, resource, operation/attempt IDs, arguments and deadline.
