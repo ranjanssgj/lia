@@ -10,6 +10,8 @@
 
 pub mod client;
 pub mod discovery;
+pub mod events;
+pub mod manifest;
 pub mod operations;
 pub mod types;
 
@@ -18,6 +20,8 @@ pub use client::{
     MAX_HYPRLAND_RESPONSE_BYTES,
 };
 pub use discovery::{inspect_active_window, inspect_work_area};
+pub use events::{HyprlandCacheInvalidator, HyprlandEvent, parse_event_line};
+pub use manifest::{HyprlandCapabilityManifest, generate_hyprland_manifest};
 pub use operations::execute_and_record_move;
 pub use types::{
     ActiveWindowSnapshot, DisplayWorkArea, HyprlandError, MoveOperationResult,
@@ -550,5 +554,145 @@ mod tests {
             }
             other => panic!("Expected UnknownOutcome, got: {other:?}"),
         }
+    }
+
+    #[test]
+    fn parse_event_line_redacts_title_and_handles_all_event_types() {
+        // activewindow with title and class -> title MUST be redacted
+        let ev1 = parse_event_line("activewindow>>Private Financial Report,firefox").unwrap();
+        match ev1 {
+            HyprlandEvent::ActiveWindowChanged {
+                address,
+                window_title_redacted,
+            } => {
+                assert_eq!(address, None);
+                assert!(window_title_redacted);
+            }
+            other => panic!("Unexpected event: {other:?}"),
+        }
+
+        // activewindowv2 with address
+        let ev2 = parse_event_line("activewindowv2>>0x55a8f2c3b1a0").unwrap();
+        assert_eq!(
+            ev2,
+            HyprlandEvent::ActiveWindowChanged {
+                address: Some("0x55a8f2c3b1a0".into()),
+                window_title_redacted: true,
+            }
+        );
+
+        // closewindow
+        let ev3 = parse_event_line("closewindow>>0x55a8f2c3b1a0").unwrap();
+        assert_eq!(
+            ev3,
+            HyprlandEvent::WindowClosed {
+                address: "0x55a8f2c3b1a0".into()
+            }
+        );
+
+        // movewindow
+        let ev4 = parse_event_line("movewindow>>0x55a8f2c3b1a0,2").unwrap();
+        assert_eq!(
+            ev4,
+            HyprlandEvent::WindowMoved {
+                address: "0x55a8f2c3b1a0".into()
+            }
+        );
+
+        // monitoradded and monitorremoved
+        assert_eq!(
+            parse_event_line("monitoradded>>DP-2").unwrap(),
+            HyprlandEvent::MonitorAdded {
+                name: "DP-2".into()
+            }
+        );
+        assert_eq!(
+            parse_event_line("monitorremoved>>HDMI-A-1").unwrap(),
+            HyprlandEvent::MonitorRemoved {
+                name: "HDMI-A-1".into()
+            }
+        );
+
+        // workspace
+        assert_eq!(
+            parse_event_line("workspace>>3").unwrap(),
+            HyprlandEvent::WorkspaceChanged { id: 3 }
+        );
+
+        // empty / whitespace line
+        assert_eq!(parse_event_line("   \n"), None);
+    }
+
+    #[test]
+    fn cache_invalidator_advances_epoch_on_relevant_events() {
+        let invalidator = HyprlandCacheInvalidator::new();
+        assert_eq!(invalidator.current_epoch(), 1);
+        assert!(invalidator.is_valid(1));
+
+        // Window change increments epoch
+        let ev = HyprlandEvent::ActiveWindowChanged {
+            address: Some("0x123".into()),
+            window_title_redacted: true,
+        };
+        assert!(invalidator.handle_event(&ev));
+        assert_eq!(invalidator.current_epoch(), 2);
+        assert!(!invalidator.is_valid(1));
+        assert!(invalidator.is_valid(2));
+
+        // Unrecognized event does not invalidate
+        let other = HyprlandEvent::Other("some_custom_event".into());
+        assert!(!invalidator.handle_event(&other));
+        assert_eq!(invalidator.current_epoch(), 2);
+    }
+
+    #[test]
+    fn manifest_generation_conforms_to_contract_v1_and_preserves_privacy() {
+        let snapshot = ActiveWindowSnapshot {
+            identity: WindowIdentity {
+                address: "0x55a8f2c3b1a0".into(),
+                generation_token: "gen-tok-1".into(),
+                workspace_id: 1,
+                monitor_id: 0,
+                observed_at_us: 1_700_000_000_000_000,
+                fresh_until_us: 1_700_000_010_000_000,
+            },
+            geometry: WindowGeometry::new(100, 200, 800, 600),
+            app_class: "foot".into(),
+            title_redacted: true,
+            floating: true,
+        };
+
+        let manifest = generate_hyprland_manifest(
+            "79eab1e0-6e30-4ab5-9f4d-94ca97d3d0e1",
+            "a6d3fc06-9e4d-4c56-b875-f49996cc22d8",
+            1,
+            "2026-11-18T00:00:00Z",
+            "2026-11-18T00:01:00Z",
+            &[snapshot],
+        );
+
+        assert_eq!(manifest.contract_version, "lia.adapter.v1");
+        assert_eq!(manifest.manifest_revision, 1);
+        assert_eq!(manifest.adapter.adapter_id, "desktop.hyprland");
+        assert_eq!(manifest.capabilities.len(), 2);
+        assert_eq!(
+            manifest.capabilities[0].capability_id,
+            "desktop.window.observe_geometry"
+        );
+        assert_eq!(
+            manifest.capabilities[1].capability_id,
+            "desktop.window.move_same_display"
+        );
+
+        // Verify resource declaration
+        assert_eq!(manifest.resources.len(), 1);
+        assert_eq!(manifest.resources[0].resource_id, "0x55a8f2c3b1a0");
+        assert_eq!(manifest.resources[0].display_label, Some("foot".into()));
+        assert_eq!(manifest.resources[0].sensitivity, "S1");
+
+        // Verify serialization does not contain raw title
+        let json_str = serde_json::to_string_pretty(&manifest).unwrap();
+        assert!(!json_str.contains("title"));
+        assert!(json_str.contains("desktop.window.move_same_display"));
     }
 }
