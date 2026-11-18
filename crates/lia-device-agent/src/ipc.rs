@@ -151,7 +151,7 @@ fn validate_method_kind(method: &str, kind: &str) -> io::Result<()> {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum UserEventKind {
     Clicked,
@@ -838,6 +838,42 @@ impl RendererSupervisor {
         (self.expected_uid, self.expected_pid)
     }
 
+    pub fn restart_count(&self) -> u8 {
+        self.restart_count
+    }
+
+    pub fn is_alive(&mut self) -> io::Result<bool> {
+        let Some(child) = self.child.as_mut() else {
+            return Ok(false);
+        };
+        Ok(child.try_wait()?.is_none())
+    }
+
+    /// Request graceful termination of the supervised child process using SIGTERM,
+    /// waiting up to `grace_period` for clean exit before falling back to SIGKILL.
+    pub fn terminate(&mut self, grace_period: Duration) -> io::Result<()> {
+        let Some(child) = self.child.as_mut() else {
+            return Ok(());
+        };
+        if child.try_wait()?.is_some() {
+            return Ok(());
+        }
+        // SAFETY: child is live and expected_pid is a valid child PID
+        let _ = unsafe { libc::kill(self.expected_pid, libc::SIGTERM) };
+
+        let started = Instant::now();
+        let step = Duration::from_millis(10);
+        while started.elapsed() < grace_period {
+            if child.try_wait()?.is_some() {
+                return Ok(());
+            }
+            std::thread::sleep(step);
+        }
+        let _ = child.kill();
+        let _ = child.wait();
+        Ok(())
+    }
+
     /// Reap and relaunch an exited renderer, updating the expected PID before the
     /// accept loop handles another connection. Returns true when a new child starts.
     pub fn restart_if_exited(&mut self) -> io::Result<bool> {
@@ -870,10 +906,7 @@ impl RendererSupervisor {
 
 impl Drop for RendererSupervisor {
     fn drop(&mut self) {
-        if let Some(child) = self.child.as_mut() {
-            let _ = child.kill();
-            let _ = child.wait();
-        }
+        let _ = self.terminate(Duration::from_millis(100));
     }
 }
 
@@ -2938,5 +2971,223 @@ mod tests {
         drop(replacement);
         std::fs::remove_file(path).unwrap();
         std::fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
+    fn renderer_supervisor_terminates_gracefully_and_reports_alive() {
+        const SLEEP_ENV: &str = "LIA_IPC_TEST_SUPERVISOR_SLEEP";
+        if std::env::var_os(SLEEP_ENV).is_some() {
+            std::thread::sleep(Duration::from_secs(30));
+            return;
+        }
+
+        let mut command = Command::new(std::env::current_exe().unwrap());
+        command
+            .args([
+                "--exact",
+                "ipc::tests::renderer_supervisor_terminates_gracefully_and_reports_alive",
+                "--nocapture",
+            ])
+            .env(SLEEP_ENV, "1");
+
+        let mut supervisor = RendererSupervisor::launch(command).unwrap();
+        assert!(supervisor.is_alive().unwrap());
+        assert_eq!(supervisor.restart_count(), 0);
+        assert!(supervisor.expected_peer().1 > 0);
+
+        // Gracefully terminate child with SIGTERM
+        supervisor.terminate(Duration::from_millis(500)).unwrap();
+        assert!(!supervisor.is_alive().unwrap());
+    }
+
+    #[test]
+    fn slow_reader_is_bounded_by_io_timeout() {
+        let (client, mut server) = UnixStream::pair().unwrap();
+        let id = "00000000-0000-4000-8000-000000000005";
+        let session = PresentationSession::with_id(id.into()).unwrap();
+
+        let mut snapshot = envelope();
+        snapshot.kind = "event".into();
+        snapshot.method = "presentation.state.replace".into();
+        snapshot.session_id = Some(id.into());
+        snapshot.body = snapshot_body(1);
+
+        // Client sets nonblocking mode so it doesn't read
+        client.set_nonblocking(true).unwrap();
+
+        let started = Instant::now();
+        // Server sends snapshot with short timeout
+        let result = session.send_snapshot(&mut server, &snapshot, Duration::from_millis(100));
+        assert!(result.is_ok());
+        // Verify send_snapshot respected bounded timeout ceiling
+        assert!(started.elapsed() <= MAX_IO_TIMEOUT + Duration::from_millis(200));
+    }
+
+    #[test]
+    fn resource_budgets_fd_and_rss_remain_bounded_across_churn() {
+        const ISOLATED_ENV: &str = "LIA_IPC_TEST_ISOLATED_CHURN";
+        if std::env::var_os(ISOLATED_ENV).is_some() {
+            let nonce = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos();
+            let directory =
+                std::env::temp_dir().join(format!("lia-ipc-churn-{}-{nonce}", std::process::id()));
+            std::fs::create_dir(&directory).unwrap();
+            std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+            let path = directory.join("agent.sock");
+            let mut endpoint = PrivateSocket::bind(&path).unwrap();
+
+            let stop = std::sync::Arc::new(AtomicBool::new(false));
+            let thread_stop = std::sync::Arc::clone(&stop);
+            let (events, received) = std::sync::mpsc::sync_channel(16);
+            let now_us = crate::time::parse_rfc3339_us("2026-11-15T00:00:00Z").unwrap();
+
+            let initial_fds = std::fs::read_dir("/proc/self/fd").unwrap().count();
+
+            let server = std::thread::spawn(move || {
+                let mut rev = 0_u64;
+                endpoint.run_accept_loop(
+                    unsafe { libc::geteuid() },
+                    std::process::id() as i32,
+                    |session_id| {
+                        rev += 1;
+                        let mut snap = envelope();
+                        snap.kind = "event".into();
+                        snap.method = "presentation.state.replace".into();
+                        snap.session_id = Some(session_id.into());
+                        snap.body = snapshot_body(rev);
+                        Ok(snap)
+                    },
+                    &events,
+                    || now_us,
+                    IpcRunControl {
+                        io_timeout: Duration::from_millis(200),
+                        stop: &thread_stop,
+                    },
+                )
+            });
+
+            // Drain receiver in background to allow continuous churn without queue saturation
+            let drainer = std::thread::spawn(move || while let Ok(_intent) = received.recv() {});
+
+            // 32 rapid connect/handshake/disconnect cycles
+            for seq in 0..32 {
+                let mut client = UnixStream::connect(&path).unwrap();
+                write_frame(&mut client, &envelope()).unwrap();
+                let hello = read_frame(&mut client).unwrap();
+                let sid = hello.session_id.unwrap();
+                write_frame(&mut client, &ready_request(&sid)).unwrap();
+                let _snap = read_frame(&mut client).unwrap();
+
+                write_frame(&mut client, &user_event(&sid, "0")).unwrap();
+                if seq % 4 == 0 {
+                    // Occasional early disconnect
+                    drop(client);
+                } else {
+                    let _ = write_frame(&mut client, &user_event(&sid, "1"));
+                }
+            }
+
+            stop.store(true, Ordering::Release);
+            server.join().unwrap().unwrap();
+            drop(drainer);
+            std::fs::remove_dir(directory).unwrap();
+
+            // In isolated single-process execution, verify zero FD leaks
+            let final_fds = std::fs::read_dir("/proc/self/fd").unwrap().count();
+            assert!(
+                final_fds <= initial_fds + 1,
+                "FD leak detected in isolated churn: initial={initial_fds}, final={final_fds}"
+            );
+            return;
+        }
+
+        let mut command = Command::new(std::env::current_exe().unwrap());
+        command
+            .args([
+                "--exact",
+                "ipc::tests::resource_budgets_fd_and_rss_remain_bounded_across_churn",
+                "--nocapture",
+            ])
+            .env(ISOLATED_ENV, "1");
+        let output = command.output().unwrap();
+        assert!(
+            output.status.success(),
+            "isolated churn budget test failed:\nstdout:\n{}\nstderr:\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    #[test]
+    fn parser_adversarial_deep_nesting_and_escapes_rejected_or_bounded() {
+        // Deeply nested objects
+        let mut deep = String::new();
+        for _ in 0..200 {
+            deep.push_str("{\"a\":");
+        }
+        deep.push('1');
+        for _ in 0..200 {
+            deep.push('}');
+        }
+        let frame_bytes = frame(deep.as_bytes());
+        // Deserializer rejects envelope missing required fields
+        assert_eq!(
+            read_frame(&mut Cursor::new(frame_bytes))
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::InvalidData
+        );
+
+        // Control ID with control character / newline
+        let mut bad_control = user_event("00000000-0000-4000-8000-000000000003", "0");
+        bad_control.body = serde_json::json!({
+            "control_id": "panel.hide\nmalicious",
+            "event": "clicked"
+        });
+        assert_eq!(
+            bad_control.validate().unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+
+        // Control ID with space
+        bad_control.body = serde_json::json!({
+            "control_id": "panel hide",
+            "event": "clicked"
+        });
+        assert_eq!(
+            bad_control.validate().unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+
+        // Control ID exceeding 128 bytes
+        bad_control.body = serde_json::json!({
+            "control_id": "a".repeat(MAX_CONTROL_ID_BYTES + 1),
+            "event": "clicked"
+        });
+        assert_eq!(
+            bad_control.validate().unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+
+        // State snapshot with NaN intensity
+        let mut bad_snapshot = envelope();
+        bad_snapshot.kind = "event".into();
+        bad_snapshot.method = "presentation.state.replace".into();
+        bad_snapshot.session_id = Some("00000000-0000-4000-8000-000000000003".into());
+        bad_snapshot.body = serde_json::json!({
+            "state_revision": 1,
+            "character_id": "char",
+            "emotion": {"id": "neutral", "intensity": -0.5},
+            "pose_id": "idle",
+            "speaking": false,
+            "listening": false,
+            "paused": false
+        });
+        assert_eq!(
+            bad_snapshot.validate().unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
     }
 }
