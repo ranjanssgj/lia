@@ -1,13 +1,14 @@
 # P4 Runtime and Toolchain Compatibility Matrix
 
-**Revision:** 0.1.1
+**Revision:** 0.1.2
 **Status:** Draft — exact lockfile and proof evidence pending  
-**Reference date:** 14 November 2026
+**Reference date:** 15 November 2026
 
 This matrix separates the approved architecture baseline from exact dependency pins. A major line or an upstream support statement is not a reproducible build. P4 may select a candidate for a proof spike, but a production lockfile requires exact version, source, license, target OS/runtime, build result, security review and upgrade/rollback evidence.
 
 | Area | Approved baseline | Exact pin status | Compatibility/proof rule | Gate |
 |---|---|---|---|---|
+| Desktop compositor | Hyprland Wayland | **v0.57.2 stable selected** ([official release](https://github.com/hyprwm/Hyprland/releases/tag/v0.57.2), signed release commit `11cbc6c577b84ffb1edf4df3fc5b6128c3ae6947`; selected 15 Nov 2026) | P5 M3 reference target only. Hyprland 0.57 removes `.conf` support ([official 0.57 announcement](https://hypr.land/news/update57/)), so migrate the test profile to `hyprland.lua`; validate `hyprctl` request/event behavior, Lua configuration and same-display move semantics on the exact build. No general Wayland support is implied | HYPR-01/02 |
 | Godot presentation | Godot 4.7.2 stable; GDScript primary presentation logic | Exact engine release selected; export templates and asset/plugin hashes not pinned | Freeze editor/export-template pair; verify VRM/retarget, transparent window, focus/input, DPI and frame/resource budget | GODOT-01 |
 | Rust device agent | Stable Rust + Tokio | rustc, cargo, target triples, Tokio and crate lock not pinned | rust-toolchain.toml, Cargo.lock, license/advisory review and Linux/Windows compile matrix required | RPC-01, IPC-01 |
 | Rust gRPC | Tonic 0.14.x; P3.8 audit records Tonic 0.14.9 as the released candidate | 0.14.9 is the proof-spike candidate; final Tonic/prost/protoc/plugin lock pending | Generate Rust and TS clients from one proto revision; test unary/streaming, deadline/cancel, message limits, TLS, signature metadata and version skew. Successor grpc crate is not selected unless production client/server and interoperability suite are ready | RPC-01/02 |
@@ -44,7 +45,7 @@ P4 must record:
 
 ## Candidate status
 
-The P3.8 selected families remain unchanged. Tonic 0.14.9 is the initial RPC-01 spike candidate based on the P3.8 upstream audit, not a production lock. Node 24, Godot 4.7.2, PostgreSQL 16, Fastify 5 and protocol major baselines remain as selected. All missing patch-level pins are explicitly **Pending P4 proof** rather than guessed.
+The P3.8 selected families remain unchanged. Tonic 0.14.9 is the initial RPC-01 spike candidate based on the P3.8 upstream audit, not a production lock. Node 24, Godot 4.7.2, PostgreSQL 16, Fastify 5 and protocol major baselines remain as selected. Hyprland v0.57.2 is the selected P5 M3 compositor reference; its build/package provenance and adapter behavior still require proof. Other missing patch-level pins are explicitly **Pending P4 proof** rather than guessed.
 
 A change to an approved P3.8 technology family requires a new ADR including evidence, alternatives, compatibility impact, migration/exit plan and rollback strategy.
 

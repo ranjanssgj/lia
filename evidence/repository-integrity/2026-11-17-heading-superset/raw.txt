@@ -1,0 +1,57 @@
+checked_commit: 936864cd686affc7dd2e0199213a63e756bdc770
+target_main_commit: ea69a00f6a673cdc213a91758de874ccf683141a
+branch: feat/p5-m2-ipc-spike
+system: Linux 7.2.14-arch1-1 x86_64 GNU/Linux
+python: Python 3.14.9
+rustc: rustc 1.99.1 (58cf8f9c3 2026-10-13) (Arch Linux rust 1:1.99.1-1)
+cargo: cargo 1.99.1 (5f94df478 2026-08-27) (Arch Linux rust 1:1.99.1-1)
+blueprint_sha256: c4cecdf3d1c926bac69ff755aa5722720ed8d895b84c32693c89188c2bd6f88c
+integrity_checker_sha256: 2edf96943b8760d33c4349f4a54804dbd4cba4e5d56ed8b20644c26a0d7571fb
+integrity_tests_sha256: 63d63464df214dda4f882b07a82b427e31b01f163eba135eb5098bf3de31b860
+$ python3 scripts/check-blueprint-integrity.py LIA-Project-Blueprint.md --baseline /tmp/lia-blueprint-origin-main.md
+Blueprint integrity OK: 735146 bytes, 8932 lines, 696 headings
+$ python3 scripts/test_blueprint_integrity.py
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.195s
+
+OK
+$ cargo fmt --all -- --check
+$ cargo clippy --locked --workspace --all-targets -- -D warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s
+$ cargo test --locked --workspace -- --quiet
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 50 tests
+i..........................
+running 1 test
+
+running 1 test
+test ipc::tests::same_uid_sibling_process_is_rejected_before_frame_parsing ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.00s
+
+test ipc::tests::renderer_supervisor_binds_and_refreshes_launched_process_pid ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.00s
+
+...
+running 1 test
+
+running 1 test
+...............
+running 1 test
+.....
+test result: ok. 49 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.66s
+
+   Doc-tests lia_device_agent
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+$ git diff --check origin/main...HEAD
+$ git diff --stat origin/main...HEAD -- LIA-Project-Blueprint.md
+ LIA-Project-Blueprint.md | 49 ++++++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 39 insertions(+), 10 deletions(-)

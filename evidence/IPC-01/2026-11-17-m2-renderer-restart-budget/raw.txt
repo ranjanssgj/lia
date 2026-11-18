@@ -1,0 +1,32 @@
+P5 M2 renderer supervisor restart-budget check
+Capture date: 2026-11-17
+Base commit: fdcc44270f86817f4773a7a82456f018cce60c62
+Working tree contains the restart-budget test and documentation updates.
+Host: Linux-7.2.14-arch1-1-x86_64-with-glibc2.44 (x86_64)
+Rust: rustc 1.99.1 (58cf8f9c3 2026-10-13) (Arch Linux rust 1:1.99.1-1)
+Cargo: cargo 1.99.1 (5f94df478 2026-08-27) (Arch Linux rust 1:1.99.1-1)
+Procedure: child test process exits immediately on each launch; supervisor is polled until it restarts three times with its configured 50/100/200 ms backoff, then must stop with the restart-limit error.
+The child is a synthetic Rust test-harness process; this does not validate Godot behavior, production service wiring, or target startup availability.
+
+Source SHA-256:
+8206b8d5c6e93b7442ed1ea1ea35a478cdd909bbeb082810092dd87a9072976e  crates/lia-device-agent/src/ipc.rs
+830bdca39bd3814487b697523ad24b4a921e3575fb8b91863f46b4f93acdb69b  docs/p4/ipc/presentation-agent-v1.md
+f33cc6dc1ad10112ec28cc1b42cb0a17aaa5ae9658d79bf4202bb5c347573d9f  docs/p5/tasks/M2-threat-model-test-map.md
+0b22d0ee8b9639aed064d265c17bd60735a56ebb87b7203253fa46ec2f8e2343  LIA-Project-Blueprint.md
+
+$ cargo test --locked -p lia-device-agent renderer_supervisor_enforces_bounded_restart_budget -- --nocapture
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 1 test
+
+running 1 test
+
+running 1 test
+
+running 1 test
+
+running 1 test
+test ipc::tests::renderer_supervisor_enforces_bounded_restart_budget ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.40s

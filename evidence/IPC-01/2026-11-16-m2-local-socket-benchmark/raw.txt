@@ -1,0 +1,14 @@
+command: cargo run --locked --release -p lia-device-agent --example ipc_local_benchmark
+source_branch: feat/p5-m2-ipc-spike
+base_commit: 84e36b135b9876e571d8d5ed66d93afdb66528ad
+kernel: Linux 7.2.14-arch1-1 x86_64 GNU/Linux
+rustc: rustc 1.99.1 (58cf8f9c3 2026-10-13) (Arch Linux rust 1:1.99.1-1)
+cargo: cargo 1.99.1 (5f94df478 2026-08-27) (Arch Linux rust 1:1.99.1-1)
+benchmark_source_sha256: 3cc534800b125a9c6bbd5e28ae04bb233153cc2187d5796d850b809ea06d417a
+iterations=20000
+round_trip_p50_us=11
+round_trip_p95_us=23
+round_trip_p99_us=33
+round_trip_max_us=243
+process_VmRSS:	    3200 kB
+process_open_fd_count=5

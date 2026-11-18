@@ -1,6 +1,10 @@
 //! Local persistence and cryptographic primitives for the first P5 device-agent slice.
 //! This crate is not a complete protobuf verifier or production security boundary.
 
+#[cfg(target_os = "linux")]
+pub mod ipc;
+#[cfg(target_os = "linux")]
+pub mod presentation_policy;
 pub mod signatures;
 mod store;
 mod time;

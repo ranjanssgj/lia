@@ -1,0 +1,28 @@
+P5 M2 presentation authorization-boundary unit checks
+Capture date: 2026-11-17
+Base commit: 998d62f7178992d8c65914accabdf634f2ee3a01
+Working tree contained the policy adapter and unit tests at capture.
+Host: Linux-7.2.14-arch1-1-x86_64-with-glibc2.44 (x86_64)
+Rust: rustc 1.99.1 (58cf8f9c3 2026-10-13) (Arch Linux rust 1:1.99.1-1)
+Cargo: cargo 1.99.1 (5f94df478 2026-08-27) (Arch Linux rust 1:1.99.1-1)
+Synthetic registry and policy only. No live authorization store, renderer, OS adapter, or action handler is connected.
+Cases: registered control + allow produces an AuthorizedPresentationIntent; unknown control is rejected before policy evaluation; a registered control is rejected when policy denies. The result type is non-cloneable and is not an OS execution permit.
+
+Source SHA-256:
+d17bf441ae93d5f4e989b611b7a3563de9f8a4e64de8aeda11c9bdf03dc389ed  crates/lia-device-agent/src/lib.rs
+99ab5b2723a5a62e1ab38e458e06cdbe8352ca11fca8d5e1d818f252b8759fec  crates/lia-device-agent/src/presentation_policy.rs
+8206b8d5c6e93b7442ed1ea1ea35a478cdd909bbeb082810092dd87a9072976e  crates/lia-device-agent/src/ipc.rs
+830bdca39bd3814487b697523ad24b4a921e3575fb8b91863f46b4f93acdb69b  docs/p4/ipc/presentation-agent-v1.md
+30de171bee191b8f7d0dc5fdd46918035957b04bf2fcdb4b3c010a5a1e2516f6  docs/p5/tasks/M2-threat-model-test-map.md
+
+$ cargo test --locked -p lia-device-agent presentation_policy::tests -- --nocapture
+   Compiling lia-device-agent v0.1.0 (/home/ice/Documents/Codex/2026-11-17/continue-development-of-lia-in-https/work/lia/crates/lia-device-agent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.80s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 3 tests
+test presentation_policy::tests::registry_match_cannot_override_policy_denial ... ok
+test presentation_policy::tests::registry_resolution_and_policy_are_both_required ... ok
+test presentation_policy::tests::unknown_control_is_rejected_before_policy_evaluation ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 57 filtered out; finished in 0.00s

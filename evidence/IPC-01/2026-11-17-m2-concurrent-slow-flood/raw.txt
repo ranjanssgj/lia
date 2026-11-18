@@ -1,0 +1,60 @@
+P5 M2 concurrent slow-handshake and bounded queue stress
+Capture date: 2026-11-17
+Base commit: e99737c46c88c2d1aa7c22e1ee6732fc18efbc38
+Test and evidence changes were uncommitted during capture.
+Host: Linux-7.2.14-arch1-1-x86_64-with-glibc2.44 (x86_64)
+Rust: rustc 1.99.1 (58cf8f9c3 2026-10-13) (Arch Linux rust 1:1.99.1-1)
+Cargo: cargo 1.99.1 (5f94df478 2026-08-27) (Arch Linux rust 1:1.99.1-1)
+Synthetic workload: eight same-process Unix socket clients each send an incomplete two-byte frame header and remain connected while a healthy client performs hello/ready and receives a fresh snapshot. The healthy client then sends three valid ordered events to a capacity-two queue; the session must close and exactly two intents remain queued. Handshake timeout requested by the server: 50 ms.
+Result: five consecutive runs passed; each completed in 0.51 seconds. This is a deterministic bounded synthetic check, not a sustained-load or resource-high-water measurement.
+
+Source SHA-256:
+3d3506383031e3519f1c97003b269d19b736072597b017a5db7e707a63eb3e65  crates/lia-device-agent/src/ipc.rs
+830bdca39bd3814487b697523ad24b4a921e3575fb8b91863f46b4f93acdb69b  docs/p4/ipc/presentation-agent-v1.md
+30de171bee191b8f7d0dc5fdd46918035957b04bf2fcdb4b3c010a5a1e2516f6  docs/p5/tasks/M2-threat-model-test-map.md
+
+$ cargo test --locked -p lia-device-agent ipc::tests::slow_handshakes_and_event_flood_preserve_queue_bound_and_reconnect -- --exact --nocapture (repeated 5 times)
+=== run 1; exit 0 ===
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 1 test
+test ipc::tests::slow_handshakes_and_event_flood_preserve_queue_bound_and_reconnect ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.51s
+
+=== run 2; exit 0 ===
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 1 test
+test ipc::tests::slow_handshakes_and_event_flood_preserve_queue_bound_and_reconnect ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.51s
+
+=== run 3; exit 0 ===
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 1 test
+test ipc::tests::slow_handshakes_and_event_flood_preserve_queue_bound_and_reconnect ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.51s
+
+=== run 4; exit 0 ===
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 1 test
+test ipc::tests::slow_handshakes_and_event_flood_preserve_queue_bound_and_reconnect ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.51s
+
+=== run 5; exit 0 ===
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 1 test
+test ipc::tests::slow_handshakes_and_event_flood_preserve_queue_bound_and_reconnect ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.51s

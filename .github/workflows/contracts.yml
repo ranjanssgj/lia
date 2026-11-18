@@ -31,6 +31,18 @@ jobs:
           --health-retries 12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check Blueprint integrity
+        run: |
+          python3 scripts/check-blueprint-integrity.py
+          python3 scripts/test_blueprint_integrity.py
+      - name: Ensure PR Blueprint retains every target-branch heading
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_REF"
+          git show FETCH_HEAD:LIA-Project-Blueprint.md > "$RUNNER_TEMP/blueprint-target.md"
+          python3 scripts/check-blueprint-integrity.py LIA-Project-Blueprint.md --baseline "$RUNNER_TEMP/blueprint-target.md"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26.13.1

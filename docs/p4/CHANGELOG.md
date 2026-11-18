@@ -1,3 +1,62 @@
+# 0.3.3 — 17 November 2026
+
+**Baseline:** Blueprint v1.14.30. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Pins the IPC transport I/O ceiling at one second for the hello/ready exchange and each frame read/write; shorter caller timeouts remain valid.
+- Specifies immediate connection close on the first malformed or truncated frame, matching the Rust implementation's fail-closed behavior. IPC-01 remains Not Run.
+
+# 0.3.2 — 17 November 2026
+
+**Baseline:** Blueprint v1.14.23. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Defines strict protocol/1 hello, ready and state-replacement body schemas. Snapshot fields, identifier bounds and numeric ranges are explicit; unknown fields and renderer-authored outcome claims are rejected.
+- Implements those schemas and method-direction checks at the Rust IPC envelope boundary and adds malformed-schema/direction regression cases. The transport still does not authorize or dispatch user events; IPC-01 remains Not Run.
+
+## 0.3.1 — 16 November 2026
+
+**Baseline:** Blueprint v1.14.20. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Defines a strict `presentation.user_event` body with bounded control IDs, four typed event names and up to 8,192 UTF-8 bytes for text submission only.
+- Rejects unknown fields, unsupported event kinds and fabricated operation outcomes at the IPC contract boundary. Events remain untrusted intents for caller policy checks.
+- Records the framed receive primitive and its parser vectors; it does not implement authorization dispatch or complete IPC-01.
+
+## 0.3.0 — 16 November 2026
+
+**Baseline:** Blueprint v1.14.14. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Extends local IPC endpoint tests to reject symlink parents/endpoints and verify cleanup preserves a replacement inode. Foreign-owner and concurrent path-race tests remain open.
+- Adds a peer-authenticated single-connection accept helper with reconnect coverage; this does not complete the service lifecycle, renderer identity binding or authorization dispatch.
+
+## 0.2.9 — 16 November 2026
+
+**Baseline:** Blueprint v1.14.13. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Requires one matching, non-expired `presentation.ready` request after hello and before user-event acceptance. Repeated, expired, pre-hello, and wrong-session readiness messages do not activate user controls.
+- Adds an in-memory hello → ready session phase transition, bounded-timeout Unix-stream handshake, and authenticated listener session-accept helper. User-event sequencing remains replay protection only; renderer identity binding, state snapshot delivery, dispatch authorization, accept-loop lifecycle and full socket service remain open.
+
+## 0.2.8 — 16 November 2026
+
+**Baseline:** Blueprint v1.14.12. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Defines hello as the required first, non-expired request on a connection; the successful response supplies a fresh connection-scoped session UUID and echoes the request's optional request/correlation IDs.
+- Defines one-time hello activation and deadline checking before user-event sequence consumption. Expired hello leaves the connection inactive; expired user events do not advance the replay watermark.
+- Adds a Rust session handshake state machine and parser/lifecycle unit checks. Socket-level service, renderer identity binding, dispatch policy, restart/backpressure integration and IPC-01 remain Not Run.
+
+## 0.2.7 — 15 November 2026
+
+**Baseline:** Blueprint v1.14.11. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Resolves the draft IPC replay-field mismatch: a successful hello issues a random connection-scoped session UUID; user-event requests carry canonical decimal session sequences beginning at zero and increasing strictly.
+- Defines disconnect/reconnect to discard the old session and sequence watermark. The sequence is replay control only and does not authenticate the renderer or authorize user events.
+- Adds Rust session UUID issuance and user-event sequence validation primitives; service handshake, same-UID renderer binding, dispatch policy, restart/backpressure integration and IPC-01 remain Not Run.
+
+## 0.2.6 — 15 November 2026
+
+**Baseline:** Blueprint v1.14.10. The package remains Draft; no implementation conformance gate is marked Passed.
+
+- Records the owner-authorized exact P5 M3 Hyprland Wayland baseline as stable v0.57.2 ([official release](https://github.com/hyprwm/Hyprland/releases/tag/v0.57.2), signed release commit `11cbc6c577b84ffb1edf4df3fc5b6128c3ae6947`).
+- Notes the Hyprland 0.57 configuration migration: `.conf` files are unsupported, so the test profile must use Lua configuration. HYPR-01/02 remain Not Run; no compositor capability is claimed supported.
+
 ## 0.2.5 — 15 November 2026
 
 **Baseline:** Blueprint v1.14.8. The package remains Draft; no implementation conformance gate is marked Passed.

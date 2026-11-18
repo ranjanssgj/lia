@@ -11,7 +11,7 @@ use std::{
         Arc,
         atomic::{AtomicU64, Ordering},
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 const MIGRATIONS: &[(i64, &str)] = &[
@@ -48,6 +48,24 @@ const MIGRATIONS: &[(i64, &str)] = &[
         include_str!("../../../docs/p4/sql/sqlite/008-integer-time-table-rebuild.sql"),
     ),
 ];
+
+fn enable_wal_with_retry(conn: &Connection) -> Result<(), StoreError> {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        match conn.pragma_update(None, "journal_mode", "WAL") {
+            Ok(()) => return Ok(()),
+            Err(rusqlite::Error::SqliteFailure(error, _))
+                if matches!(
+                    error.code,
+                    rusqlite::ErrorCode::DatabaseBusy | rusqlite::ErrorCode::DatabaseLocked
+                ) && Instant::now() < deadline =>
+            {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            Err(error) => return Err(error.into()),
+        }
+    }
+}
 
 fn backfill_integer_times(tx: &Transaction<'_>) -> Result<(), StoreError> {
     let maps: &[(&str, &[(&str, &str)])] = &[
@@ -486,7 +504,7 @@ impl AgentStore {
     ) -> Result<Self, StoreError> {
         conn.busy_timeout(Duration::from_secs(5))?;
         conn.pragma_update(None, "foreign_keys", "ON")?;
-        conn.pragma_update(None, "journal_mode", "WAL")?;
+        enable_wal_with_retry(&conn)?;
         conn.pragma_update(None, "synchronous", "FULL")?;
         if conn.query_row("PRAGMA synchronous", [], |r| r.get::<_, i64>(0))? != 2 {
             return Err(StoreError::Invalid(
@@ -1387,6 +1405,86 @@ mod tests {
         );
         let (sequence, accepted): (i64, i64) = s.conn.query_row("SELECT last_session_sequence,has_accepted_sequence FROM local_session_sequence WHERE session_id='session-b'", [], |r| Ok((r.get(0)?,r.get(1)?))).unwrap();
         assert_eq!((sequence, accepted), (0, 0));
+    }
+    #[test]
+    fn command_rejects_expiry_and_out_of_order_replay() {
+        let mut s = AgentStore::open_in_memory().unwrap();
+        s.open_session("session", "2026-11-15T00:00:00Z", "2099-11-15T00:10:10Z")
+            .unwrap();
+        for id in ["expired", "first", "later", "out-of-order"] {
+            s.insert_operation(&op(id)).unwrap();
+        }
+
+        let mut expired = command("expired-command", 0);
+        expired.expires_at = "2026-11-15T00:00:02Z".into();
+        expired.nonce_expires_at = "2026-11-15T00:10:00Z".into();
+        assert!(
+            s.consume_command_before_effect(
+                &op("expired"),
+                &expired,
+                "expired-attempt",
+                1,
+                1,
+                "ignored-by-trusted-clock",
+            )
+            .is_err()
+        );
+
+        s.consume_command_before_effect(
+            &op("first"),
+            &command("first-command", 0),
+            "first-attempt",
+            1,
+            1,
+            "ignored-by-trusted-clock",
+        )
+        .unwrap();
+        s.consume_command_before_effect(
+            &op("later"),
+            &command("later-command", 2),
+            "later-attempt",
+            1,
+            1,
+            "ignored-by-trusted-clock",
+        )
+        .unwrap();
+        assert!(
+            s.consume_command_before_effect(
+                &op("out-of-order"),
+                &command("replayed-command", 1),
+                "replay-attempt",
+                1,
+                1,
+                "ignored-by-trusted-clock",
+            )
+            .is_err()
+        );
+
+        let sequence: i64 = s
+            .conn
+            .query_row(
+                "SELECT last_session_sequence FROM local_session_sequence WHERE session_id='session'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(sequence, 2);
+        let status: String = s
+            .conn
+            .query_row(
+                "SELECT current_status FROM local_operation_journal WHERE operation_id='out-of-order'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(status, "accepted");
+        let consumed_nonces: i64 = s
+            .conn
+            .query_row("SELECT count(*) FROM local_consumed_nonce", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(consumed_nonces, 2);
     }
     #[test]
     fn lease_claim_binding_and_consume_before_effect() {

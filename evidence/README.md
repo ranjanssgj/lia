@@ -15,7 +15,52 @@ Evidence must use synthetic identities and redacted output. Do not commit creden
 
 The contract-hygiene workflow is structural validation only. It does not complete API authorization, adapter, IPC, security, replay, restore, provider, workflow, live compositor or end-to-end conformance procedures.
 
+Partial M2 implementation evidence (not a conformance run): [bounded I/O timeout](IPC-01/2026-11-17-m2-io-timeout-cap/README.md), [agent endpoint restart and stale-session rejection](IPC-01/2026-11-17-m2-agent-endpoint-restart/README.md), [typed untrusted-intent queue](IPC-01/2026-11-17-m2-typed-intents/README.md), [accept-loop readiness stress](IPC-01/2026-11-17-m2-accept-poll/README.md), and [pre-optimization accept-loop stress](IPC-01/2026-11-17-m2-accept-loop-stress/README.md).
+
 ## P5 M1 partial implementation checks (15 November 2026)
 
 - [SQLITE-02 local implementation checks](SQLITE-02/2026-11-15-m1-core/README.md) — migrations 001–005, selected replay/claim tests, WAL and consume-before-effect behavior. The full gate remains Not Run.
 - [SECURITY-01 local primitive checks](SECURITY-01-local/2026-11-15-m1-core/README.md) — RFC 8032, command/lease domain separation, and a simple JCS/SHA-256 vector. The full gate remains Not Run.
+
+## P5 M2 partial implementation checks (15 November 2026)
+
+- [IPC-01 local IPC primitive checks](IPC-01/2026-11-15-m2-spike/README.md) — bounded framing, envelope/session validation, private Unix socket setup and Linux peer credentials. The full gate remains Not Run.
+
+## P5 M2 parser and handshake checks (16 November 2026)
+
+- [IPC-01 local parser, handshake and reconnect checks](IPC-01/2026-11-16-m2-parser-edge-cases/README.md) — malformed-frame rejection, UID-authenticated hello/ready exchange, fresh session on reconnect, stale-ready rejection, symlink-path rejection and inode-safe cleanup. The full gate remains Not Run.
+
+## P5 M1 replay follow-up (15 November 2026)
+
+- [M1 expiry and sequence-order checks](SQLITE-02/2026-11-15-m1-replay-followup/README.md) — additional local test coverage on the M2 branch; SQLITE-02 remains Not Run.
+
+## Repository integrity
+
+- [Blueprint truncation incident and recovery (16 November 2026)](repository-integrity/2026-11-16-blueprint-truncation/README.md) — full content restored from `010202c`; integrity thresholds run in contract-hygiene CI.
+
+- [M2 local UnixStream framing benchmark](IPC-01/2026-11-16-m2-local-socket-benchmark/README.md) — 20,000 local request/response exchanges with latency and point-in-time RSS/FD observations; not end-to-end IPC-01 evidence.
+
+## P5 M2 adversarial checks (17 November 2026)
+
+- [Namespace ownership, parent-swap and parser mutation checks](IPC-01/2026-11-17-m2-adversarial-checks/README.md) — separate-UID path denial, foreign-owner rejection, deterministic pinned-directory race cleanup and 50,000 deterministic parser mutations. IPC-01 remains Not Run.
+- [Strict presentation body-schema checks (17 November 2026)](IPC-01/2026-11-17-m2-body-schemas/README.md) — strict hello, ready and state-replacement body validation; workspace test and lint output. IPC-01 remains Not Run.
+- [Reachable separate-UID peer-auth check (17 November 2026)](IPC-01/2026-11-17-m2-peer-credentials/README.md) — mapped-user-namespace client reaches the test accept boundary and is rejected by kernel credentials before parsing; production permissions remain private. IPC-01 remains Not Run.
+- [Bounded queue flood and current-schema mutation smoke (17 November 2026)](IPC-01/2026-11-17-m2-bounded-queue-fuzz/README.md) — 64-frame intent flood stops at queue capacity two; 50,000 deterministic parser mutations use P4 0.3.2 message bodies. IPC-01 remains Not Run.
+- [Accept-loop connection burst and reconnect stress (17 November 2026)](IPC-01/2026-11-17-m2-accept-loop-stress/README.md) — three runs of 64 short-lived connections followed by 128 valid reconnect/snapshot cycles, with sampled FD/RSS and handshake latency. IPC-01 remains Not Run.
+
+## Repository integrity review (17 November 2026)
+
+- [Blueprint target-heading superset check and PR #6 self-review notes](repository-integrity/2026-11-17-heading-superset/README.md) — preserves every `origin/main` heading occurrence and records the local checks plus CI run 44020201485. This is not a conformance-gate result.
+
+- [Coverage-guided IPC frame parser fuzzing (17 November 2026)](IPC-01/2026-11-17-m2-coverage-guided-fuzz/README.md) — bounded 60-second run over synthetic seeds; supplemental parser evidence only; IPC-01 remains Not Run.
+- [Five-minute parser fuzz and fixed-corpus coverage replay (17 November 2026)](IPC-01/2026-11-17-m2-coverage-guided-fuzz-5m/README.md) — 19,261,140 parser fuzz executions and 22.41% ipc.rs line coverage on fixed-corpus replay; supplemental evidence only; IPC-01 remains Not Run.
+
+- [Renderer supervisor restart-budget check (17 November 2026)](IPC-01/2026-11-17-m2-renderer-restart-budget/README.md) — synthetic child processes verify three bounded restarts and fail-closed exhaustion; IPC-01 remains Not Run.
+
+- [Presentation authorization-boundary adapter (17 November 2026)](IPC-01/2026-11-17-m2-authorization-boundary/README.md) — synthetic registry and policy prove unknown-control rejection and deny-by-default handling; no action dispatch; IPC-01 remains Not Run.
+
+- [Concurrent slow-handshake and event-flood check (17 November 2026)](IPC-01/2026-11-17-m2-concurrent-slow-flood/README.md) — five runs combine eight partial-frame peers, a healthy reconnect, and a capacity-two queue; resource-budget evidence remains open and IPC-01 remains Not Run.
+
+## P5 M2 production authorization and lifecycle checks (18 November 2026)
+
+- [Production UI registry, deterministic policy, and supervisor lifecycle (18 November 2026)](IPC-01/2026-11-18-m2-production-authorization-and-lifecycle/README.md) — canonical AC-010 controls with risk tiers, deterministic permission policy, graceful SIGTERM termination, isolated zero-FD-leak churn, and slow reader bounding; IPC-01 remains Not Run.

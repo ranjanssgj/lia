@@ -1,0 +1,357 @@
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.02s
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.02s
+     Running `fuzz/target/x86_64-unknown-linux-gnu/release/ipc_frame -artifact_prefix=<REPO>/crates/lia-device-agent/fuzz/artifacts/ipc_frame/ -max_total_time=300 -max_len=262148 -timeout=5 -rss_limit_mb=700 -verbosity=0 -print_final_stats=1 <FUZZ_CORPUS>`
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO:        4 files found in <FUZZ_CORPUS>
+INFO: seed corpus: files: 4 min: 293b max: 466b total: 1428b rss: 48Mb
+	NEW_FUNC[1/3]: 0x55762a0f2080 in <core::io::error::Error>::new::<alloc::string::String> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/alloc/src/io/error.rs:42
+	NEW_FUNC[2/3]: 0x55762a0f4270 in lia_device_agent::ipc::invalid::<(), &str> <REPO>/crates/lia-device-agent/src/ipc.rs:642
+	NEW_FUNC[1/18]: 0x55762a0bc810 in <serde_json::error::Error>::fix_position::<<serde_json::de::Deserializer<serde_json::read::StrRead>>::fix_position::{closure#0}> <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/error.rs:337
+	NEW_FUNC[2/18]: 0x55762a0c0780 in core::ptr::drop_glue::<alloc::vec::Vec<(alloc::string::String, lia_device_agent::ipc::UniqueValue)>> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/core/src/ptr/mod.rs:853
+	NEW_FUNC[1/7]: 0x55762a0d4930 in <serde_json::error::Error as serde_core::de::Error>::custom::<core::fmt::Arguments> <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/error.rs:435
+	NEW_FUNC[2/7]: 0x55762a0efb00 in <&str as core::fmt::Display>::fmt /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/core/src/fmt/mod.rs:2805
+	NEW_FUNC[1/1]: 0x55762a6c5250 in serde_json::read::error::<serde_json::read::SliceRead, serde_json::read::Reference<str>> <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/read.rs:895
+	NEW_FUNC[1/1]: 0x55762a0f2230 in <core::io::error::Error>::new::<core::str::error::Utf8Error> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/alloc/src/io/error.rs:42
+	NEW_FUNC[1/1]: 0x55762a0d4bd0 in <serde_json::error::Error as serde_core::de::Error>::custom::<&str> <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/error.rs:435
+	NEW_FUNC[1/6]: 0x55762a0fea60 in <alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/alloc/src/raw_vec/mod.rs:683
+	NEW_FUNC[2/6]: 0x55762a110c10 in <lia_device_agent::ipc::Envelope>::validate::{closure#4} <REPO>/crates/lia-device-agent/src/ipc.rs:284
+	NEW_FUNC[1/1]: 0x55762a125f40 in <&str as core::fmt::Display>::fmt /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/core/src/fmt/mod.rs:2805
+	NEW_FUNC[1/1]: 0x55762a0bc8e0 in <alloc::collections::btree::node::NodeRef<alloc::collections::btree::node::marker::Owned, alloc::string::String, alloc::collections::btree::set_val::SetValZST, alloc::collections::btree::node::marker::Internal>>::from_new_internal::<alloc::alloc::Global> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/alloc/src/collections/btree/node.rs:244
+	NEW_FUNC[1/10]: 0x55762a0be360 in <serde_json::value::Value>::invalid_type::<serde_json::error::Error> <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/value/de.rs:1387
+	NEW_FUNC[2/10]: 0x55762a0efbe0 in <<lia_device_agent::ipc::Envelope as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Expected>::fmt <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/de/mod.rs:494
+	NEW_FUNC[1/6]: 0x55762a6c3830 in serde_json::read::parse_escape::<serde_json::read::SliceRead> <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/read.rs:925
+	NEW_FUNC[2/6]: 0x55762a6c4880 in serde_json::read::parse_unicode_escape::<serde_json::read::SliceRead> <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/read.rs:951
+	NEW_FUNC[1/3]: 0x55762a10f860 in <serde_json::error::Error as serde_core::de::Error>::custom::<core::fmt::Arguments> <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/error.rs:435
+	NEW_FUNC[2/3]: 0x55762a117120 in <alloc::collections::btree::node::Handle<alloc::collections::btree::node::NodeRef<alloc::collections::btree::node::marker::Dying, alloc::string::String, serde_json::value::Value, alloc::collections::btree::node::marker::LeafOrInternal>, alloc::collections::btree::node::marker::KV>>::drop_key_val /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/alloc/src/collections/btree/node.rs:1278
+	NEW_FUNC[1/1]: 0x55762a6c57c0 in serde_json::read::error::<serde_json::read::SliceRead, ()> <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/read.rs:895
+	NEW_FUNC[1/1]: 0x55762a6ef260 in <&str as core::fmt::Display>::fmt /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/core/src/fmt/mod.rs:2805
+	NEW_FUNC[1/2]: 0x55762a0f31d0 in <alloc::collections::btree::node::NodeRef<alloc::collections::btree::node::marker::Dying, alloc::string::String, serde_json::value::Value, alloc::collections::btree::node::marker::LeafOrInternal>>::drop_tree::<alloc::alloc::Global> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/alloc/src/collections/btree/navigate.rs:860
+	NEW_FUNC[2/2]: 0x55762a122910 in <<alloc::collections::btree::node::NodeRef<alloc::collections::btree::node::marker::Dying, _, _, alloc::collections::btree::node::marker::LeafOrInternal>>::drop_tree::DropGuard<alloc::string::String, serde_json::value::Value, alloc::alloc::Global> as core::ops::drop::Drop>::drop /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/alloc/src/collections/btree/navigate.rs:867
+	NEW_FUNC[1/7]: 0x55762a6cf230 in serde_json::lexical::rounding::round_to_native::<f64, serde_json::lexical::rounding::round_nearest_tie_even> <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/lexical/rounding.rs:218
+	NEW_FUNC[2/7]: 0x55762a6d0c40 in serde_json::lexical::algorithm::multiply_exponent_extended::<f64> <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/lexical/algorithm.rs:80
+	NEW_FUNC[1/2]: 0x55762a0bfa60 in core::ptr::drop_glue::<alloc::vec::Vec<lia_device_agent::ipc::UniqueValue>> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/core/src/ptr/mod.rs:853
+	NEW_FUNC[2/2]: 0x55762a115b90 in <alloc::raw_vec::RawVec<lia_device_agent::ipc::UniqueValue>>::grow_one /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/alloc/src/raw_vec/mod.rs:196
+	NEW_FUNC[1/1]: 0x55762a0f22d0 in <alloc::collections::btree::node::NodeRef<alloc::collections::btree::node::marker::Owned, alloc::string::String, serde_json::value::Value, alloc::collections::btree::node::marker::Internal>>::from_new_internal::<alloc::alloc::Global> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/alloc/src/collections/btree/node.rs:244
+	NEW_FUNC[1/2]: 0x55762a6d54a0 in <serde_json::de::Deserializer<serde_json::read::StrRead>>::parse_long_exponent <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/de.rs:764
+	NEW_FUNC[2/2]: 0x55762a6d6ad0 in <serde_json::de::Deserializer<serde_json::read::StrRead>>::error <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/de.rs:241
+	NEW_FUNC[1/1]: 0x55762a6c5400 in serde_json::read::error::<serde_json::read::SliceRead, u8> <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/read.rs:895
+	NEW_FUNC[1/1]: 0x55762a6d2dc0 in <serde_json::de::Deserializer<serde_json::read::StrRead>>::parse_long_decimal <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/de.rs:742
+	NEW_FUNC[1/1]: 0x55762a0e5bb0 in <serde_json::de::Deserializer<serde_json::read::StrRead>>::parse_exponent <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/de.rs:567
+	NEW_FUNC[1/1]: 0x55762a6d6010 in <serde_json::de::Deserializer<serde_json::read::StrRead>>::parse_decimal_overflow <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/de.rs:816
+	NEW_FUNC[1/1]: 0x55762a6d2c40 in <serde_json::de::Deserializer<serde_json::read::StrRead>>::peek_error <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/de.rs:248
+	NEW_FUNC[1/1]: 0x55762a1289a0 in <serde_json::error::Error as serde_core::de::Error>::unknown_variant <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/de/mod.rs:252
+	NEW_FUNC[1/6]: 0x55762a6c60d0 in core::ptr::drop_glue::<alloc::vec::drain::Drain<u64>> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/core/src/ptr/mod.rs:853
+	NEW_FUNC[2/6]: 0x55762a6c6760 in core::ptr::drop_glue::<alloc::vec::into_iter::IntoIter<u64>> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/core/src/ptr/mod.rs:853
+	NEW_FUNC[1/3]: 0x55762a6e2800 in <&str as core::fmt::Display>::fmt /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/core/src/fmt/mod.rs:2805
+	NEW_FUNC[2/3]: 0x55762a6eb070 in zmij::to_decimal::<f64, u64> <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/zmij-1.0.23/src/lib.rs:1369
+	NEW_FUNC[1/1]: 0x55762a1226d0 in alloc::fmt::format /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/alloc/src/fmt.rs:652
+	NEW_FUNC[1/1]: 0x55762a6e58f0 in <[u64] as serde_json::lexical::math::Hi64<u64>>::hi64 <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/lexical/math.rs:142
+	NEW_FUNC[1/1]: 0x55762a6d6630 in <serde_json::de::Deserializer<serde_json::read::StrRead>>::parse_exponent_overflow <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/de.rs:859
+	NEW_FUNC[1/2]: 0x55762a0f09d0 in <serde_json::lexical::bignum::Bigint as serde_json::lexical::math::Math>::from_u64 <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/lexical/math.rs:825
+	NEW_FUNC[2/2]: 0x55762a6e09d0 in <serde_json::lexical::bignum::Bigint as core::default::Default>::default <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/lexical/bignum.rs:17
+	NEW_FUNC[1/6]: 0x55762a0c6c50 in core::ptr::drop_glue::<serde_json::value::de::SeqDeserializer> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/core/src/ptr/mod.rs:853
+	NEW_FUNC[2/6]: 0x55762a0efa50 in <&dyn serde_core::de::Expected as core::fmt::Display>::fmt /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/core/src/fmt/mod.rs:2805
+	NEW_FUNC[1/2]: 0x55762a0efbb0 in <serde_core::de::impls::StringVisitor as serde_core::de::Expected>::fmt <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/de/mod.rs:494
+	NEW_FUNC[2/2]: 0x55762a6ef310 in <serde_core::de::impls::StringVisitor as serde_core::de::Visitor>::expecting <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/de/impls.rs:588
+	NEW_FUNC[1/1]: 0x55762a0f14f0 in <[u64] as serde_json::lexical::math::Hi64<u64>>::hi64 <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/lexical/math.rs:142
+	NEW_FUNC[1/3]: 0x55762a0c1940 in core::ptr::drop_glue::<alloc::vec::drain::Drain<u64>> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/core/src/ptr/mod.rs:853
+	NEW_FUNC[2/3]: 0x55762a0c1fd0 in core::ptr::drop_glue::<alloc::vec::into_iter::IntoIter<u64>> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/core/src/ptr/mod.rs:853
+	NEW_FUNC[1/1]: 0x55762a6ef0c0 in <&str as core::fmt::Debug>::fmt /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/core/src/fmt/mod.rs:2805
+	NEW_FUNC[1/1]: 0x55762a6d8540 in serde_json::read::push_wtf8_codepoint <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/read.rs:1029
+	NEW_FUNC[1/1]: 0x55762a6d78b0 in <alloc::raw_vec::RawVec<u64>>::grow_one /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/alloc/src/raw_vec/mod.rs:196
+	NEW_FUNC[1/1]: 0x55762a0bd610 in <alloc::collections::btree::node::NodeRef<alloc::collections::btree::node::marker::Owned, alloc::string::String, serde_json::value::Value, alloc::collections::btree::node::marker::Internal>>::from_new_internal::<alloc::alloc::Global> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/alloc/src/collections/btree/node.rs:244
+	NEW_FUNC[1/2]: 0x55762a0f3020 in <serde_json::value::Value>::invalid_type::<serde_json::error::Error> <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.154/src/value/de.rs:1387
+	NEW_FUNC[2/2]: 0x55762a127380 in <serde_core::de::impls::StringVisitor as serde_core::de::Expected>::fmt <CARGO_HOME>/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/de/mod.rs:494
+	NEW_FUNC[1/2]: 0x55762a0bf230 in core::ptr::drop_glue::<core::option::Option<alloc::string::String>> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/core/src/ptr/mod.rs:853
+	NEW_FUNC[2/2]: 0x55762a0c6100 in core::ptr::drop_glue::<alloc::string::String> /rustc/5df8c02afdf6b882bc301442cea70f026e3d3974/library/core/src/ptr/mod.rs:853
+###### Recommended dictionary. ######
+"session_id" # Uses: 7913
+"\006\353" # Uses: 7867
+"metho`" # Uses: 7833
+"\001\000\000\000" # Uses: 7946
+"megsas" # Uses: 7810
+"listening" # Uses: 7818
+"session_se" # Uses: 7560
+"dead" # Uses: 7837
+"\\\001\000\000" # Uses: 7807
+"\012\000\000\000" # Uses: 7884
+"session" # Uses: 7738
+"method" # Uses: 7674
+"N\001\000\000\000\000\000\000" # Uses: 7602
+"messagm_id" # Uses: 7786
+"\000\000\000\010" # Uses: 7932
+"\376\377\377\371" # Uses: 7610
+" a" # Uses: 7770
+" \001\000\000\000\000\000\000" # Uses: 7849
+"\012\000\000\000\000\000\000\000" # Uses: 7592
+"e " # Uses: 7683
+"mephod" # Uses: 7696
+"charact" # Uses: 7499
+"\001\000\000\000\000\000\0019" # Uses: 7549
+"messag" # Uses: 7571
+"\001\000\000\000\000\000\000\004" # Uses: 7592
+"\013\000\000\000" # Uses: 7635
+"sent_at" # Uses: 7442
+"correlation" # Uses: 7556
+"protocol_v" # Uses: 7594
+"\000\000\000\000" # Uses: 7567
+"correla" # Uses: 7618
+"lation_id" # Uses: 7362
+"\000\000\004\000" # Uses: 7468
+"state_revi" # Uses: 7529
+"pose_id" # Uses: 7473
+"rehhhhhhhh" # Uses: 7445
+"sent_te_re" # Uses: 7401
+":\001\000\000\000\000\000\000" # Uses: 7572
+"\355\000\000\000\000\000\000\000" # Uses: 7421
+"\001\000\000\014" # Uses: 7388
+"\377\377\377\377" # Uses: 7310
+"\012\000" # Uses: 7483
+"Paused" # Uses: 7351
+"\001\000\000\000\000\000\000\000" # Uses: 7391
+"\000\012" # Uses: 7480
+"correlat" # Uses: 7294
+"\000\000\000\001" # Uses: 7520
+"request_i" # Uses: 7493
+"6\000" # Uses: 7304
+"emotio" # Uses: 7352
+"\003\000" # Uses: 7192
+"pr" # Uses: 7400
+"message" # Uses: 7403
+"request_id" # Uses: 7416
+"\000\000\000\000\000\000\000\001" # Uses: 7351
+"mes{age_i" # Uses: 7294
+"\000\000\000\000\000\000\0019" # Uses: 7230
+"mesc" # Uses: 7387
+"listeni" # Uses: 7331
+"\373\377\377\377" # Uses: 7255
+"mession_id" # Uses: 7291
+"\002\000\000\000\000\000\000\000" # Uses: 7126
+"prot\177col" # Uses: 7281
+"corr" # Uses: 7226
+",\001\000\000\000\000\000\000" # Uses: 7322
+"\000\000\000\000\000\000\000\012" # Uses: 7204
+"\317\000\000\000\000\000\000\000" # Uses: 7260
+"\223\273\352\271\201\273\305\345" # Uses: 7265
+"session_sequence" # Uses: 7048
+"kind" # Uses: 7280
+"S\000\000\000" # Uses: 7150
+"emotion" # Uses: 7242
+"ssesion_id" # Uses: 7238
+"\000\000\000\000\000\000\000\000" # Uses: 7290
+"lati" # Uses: 7193
+"\007\000\000\000" # Uses: 7054
+"\302\373\377\377" # Uses: 7177
+"\377\377\377\362" # Uses: 7184
+"\376\377\377\363" # Uses: 7105
+"\000\004\000\000" # Uses: 7152
+"sent_at-17" # Uses: 7241
+"\001l" # Uses: 7191
+"\014\000" # Uses: 7139
+"\013\000\000\000\000\000\000\000" # Uses: 7156
+"message_id" # Uses: 7303
+"!\000\000\000\000\000\000\000" # Uses: 7201
+"\000\000\000\000\000\000\000\023" # Uses: 7192
+"mesion" # Uses: 7087
+"\377\377\000\316" # Uses: 7183
+"pose_i" # Uses: 7173
+"session_sequene" # Uses: 7039
+"message_" # Uses: 7231
+"sessio9999" # Uses: 7003
+"\000\000\000\000\000\000\000\022" # Uses: 7078
+"\016\000\000\000\000\000\000\000" # Uses: 7191
+"char" # Uses: 7071
+"\001\000\000\000\000\000\000\027" # Uses: 7039
+"\021\000\000\000\000\000\000\000" # Uses: 7003
+"\000\017" # Uses: 7247
+"\001\000\000\000\000\000\000\026" # Uses: 7020
+"\001\017" # Uses: 7019
+"deadline_a" # Uses: 7085
+"\022\000\000\000\000\000\000\000" # Uses: 7107
+"\000\000\000\000\000\000\000\030" # Uses: 7019
+"\000\000\000\000\000\000\000\027" # Uses: 7103
+"state_r" # Uses: 7131
+":\001\000\000" # Uses: 7088
+"\360\377\377\377" # Uses: 7111
+"\001\000\000\000\000\000\000\022" # Uses: 7051
+"body" # Uses: 6890
+"\000\000\000\027" # Uses: 6957
+"\367\377\377\377" # Uses: 7031
+"methodprot" # Uses: 6900
+"deadline_at" # Uses: 6813
+"session_sequenc" # Uses: 6889
+"\011\000" # Uses: 7059
+"\000\000\000\014" # Uses: 6967
+"id" # Uses: 7020
+"\004\000\000\000\000\000\000\000" # Uses: 7029
+"character_i" # Uses: 6935
+"\021\000\000\000" # Uses: 6887
+"deadkind" # Uses: 7075
+"\000\000\000\003" # Uses: 6838
+"\376\377\377\377\377\377\377\377" # Uses: 6802
+"4ats" # Uses: 6709
+"\376\377\377\362" # Uses: 6797
+"\001\000\000\000\000\000\000 " # Uses: 6936
+"proAocol_v" # Uses: 6789
+"sent" # Uses: 6814
+"mesasge_id" # Uses: 6907
+"protocomes" # Uses: 6824
+"pro:c2e" # Uses: 6632
+"\001\000\000\004" # Uses: 6721
+"message]id" # Uses: 6796
+"\377\377\377\377\377\377\377\003" # Uses: 6909
+"\001\000\000\000\000\000\000\020" # Uses: 6760
+"protocol_version" # Uses: 6525
+"mepmepn" # Uses: 6836
+"\377\377\377\377\377\377\377\377" # Uses: 6706
+"\000\000\000\000\000\000\000\004" # Uses: 6756
+"\017\000\000\000\000\000\000\000" # Uses: 6727
+"a_ttresevisios" # Uses: 6636
+"\002\000\000\000" # Uses: 6722
+"ssta" # Uses: 6563
+")\000\000\000\000\000\000\000" # Uses: 6644
+"\000\013" # Uses: 6581
+"\376\377\377\366" # Uses: 6683
+"N\000" # Uses: 6637
+"se#sion_se" # Uses: 6566
+"\000\006" # Uses: 6638
+"protoco" # Uses: 6510
+"\000\000\000\006" # Uses: 6637
+"\023\001\000\000\000\000\000\000" # Uses: 6621
+"\002\021" # Uses: 6515
+">\000\000\000\000\000\000\000" # Uses: 6305
+"cmetho`orr" # Uses: 6506
+"r#quest_id" # Uses: 6316
+"\001\000\000\000\000\000\000\024" # Uses: 6396
+"metho-d" # Uses: 6285
+"corre" # Uses: 6606
+"shhhhhhnn" # Uses: 6142
+"\001\000\000\000\000\000\000\177" # Uses: 6281
+"\377\377\377\377\377\377\3777" # Uses: 6192
+"characteEr_id" # Uses: 6184
+"ch(r" # Uses: 6321
+"\021\000" # Uses: 6214
+"{00L" # Uses: 6031
+"\377\377\002\221\001\337\247\214" # Uses: 6067
+"L\000\000\000\000\000\000\000" # Uses: 6140
+"pos" # Uses: 6037
+"\003\000\000\000" # Uses: 5962
+"\"\001\000\000\000\000\000\000" # Uses: 5889
+"\000\000" # Uses: 6025
+"sessiuenqc" # Uses: 5996
+"\001\000" # Uses: 5795
+"session_qdence" # Uses: 5794
+"\000\000\003\240\377\215_\216" # Uses: 5644
+"\001\004\000\000" # Uses: 5784
+"req" # Uses: 5786
+"\001\000\000\000\000\000\000=" # Uses: 5637
+"message_i" # Uses: 5714
+"\000\000\000\013" # Uses: 5612
+"y\003\000\000" # Uses: 5635
+"\001\000\000\000\000\000\000k" # Uses: 5639
+"reSS" # Uses: 5662
+"\000\000!s" # Uses: 5545
+"\376\377\377\353" # Uses: 5621
+"protocol_ve" # Uses: 5449
+"\000\000\001\033" # Uses: 5552
+"\000\000\000@" # Uses: 5493
+"\201\000\000\000\000\000\000\000" # Uses: 5500
+"\000\000\000\000\000\000\0008" # Uses: 5407
+"message_*id" # Uses: 5300
+"\001\000\000\000\000\000\000\002" # Uses: 5309
+"/\000\000\000" # Uses: 5219
+"\377\377\377\377\377\377\377\033" # Uses: 5145
+"\377\377\377\377\377\377\377\017" # Uses: 5156
+"mess:ge_id" # Uses: 5175
+"correlatio" # Uses: 5097
+"sessionsent_at" # Uses: 5100
+"starequest_idn" # Uses: 5084
+"\256\001\000\000\000\000\000\000" # Uses: 5103
+"\003\000\000\000\000\000\000\000" # Uses: 5223
+"\377\020" # Uses: 5097
+"\014\000\000\000\000\000\000\000" # Uses: 4858
+"T00:00:00Z" # Uses: 4762
+"a\001\000\000\000\000\000\000" # Uses: 4680
+"\001\000\000\005" # Uses: 4853
+"pro:tocol_v" # Uses: 4793
+"\000\000\000\012" # Uses: 4899
+"\377\377\003\000" # Uses: 4713
+"\366\377\377\377" # Uses: 4674
+"\011\000\000\000\000\000\000\000" # Uses: 4691
+"messagm_idc" # Uses: 4724
+"\001\000\000\000\000\000\000\021" # Uses: 4699
+"4\000\000\000\000\000\000\000" # Uses: 4547
+"8\001\000\000" # Uses: 4514
+"protoc" # Uses: 4432
+"Y\000" # Uses: 4616
+"\377\006" # Uses: 4481
+"T\000\000\000\000\000\000\000" # Uses: 4488
+"session_sequet" # Uses: 4342
+"reai" # Uses: 4345
+"\377\377\377\377\377\377\377\037" # Uses: 4368
+"\005\000\000\000\000\000\000\000" # Uses: 4284
+"\000d" # Uses: 4278
+"\0010" # Uses: 4258
+"\000\020" # Uses: 4126
+"\001\000\000\000\000\000\000\010" # Uses: 4137
+"\006\000\000\000\000\000\000\000" # Uses: 4048
+"\202P\337\377\320\003\000\000" # Uses: 4019
+" \003" # Uses: 3919
+"[\001\000\000" # Uses: 3922
+"state_re" # Uses: 3787
+"\002\000" # Uses: 3997
+"_iddeadlin" # Uses: 3908
+"snession_w" # Uses: 3863
+"presentation.hello" # Uses: 3810
+"6\000\000\000" # Uses: 3820
+"list" # Uses: 3763
+"\020\000\000\000\000\000\000\000" # Uses: 3679
+"\000\000\000\000\000\000\000\020" # Uses: 3817
+"sessist_id" # Uses: 3599
+"9\001\000\000\000\000\000\000" # Uses: 3524
+"h\000\000\000\000\000\000\000" # Uses: 3632
+"\013\000" # Uses: 3652
+"\001\000\000\002\021\3113\364" # Uses: 3536
+"iessage_id" # Uses: 3484
+"\032\000\000\000" # Uses: 3559
+"\000\000\000\200" # Uses: 3368
+"=\013\000\000\000\000\000\000" # Uses: 3401
+"\000\005" # Uses: 3470
+"intensit}" # Uses: 3437
+"\003 " # Uses: 3408
+"iNted" # Uses: 3264
+"\307\000\000\000\000\000\000\000" # Uses: 3133
+"\377\377\377\377\377\377\377\031" # Uses: 3191
+"lisquence" # Uses: 3024
+"snt_at" # Uses: 3046
+"\002x" # Uses: 2976
+"\212\377\377\377" # Uses: 2900
+"\030\001\000\000\000\000\000\000" # Uses: 2907
+"\004\000\000\000" # Uses: 2768
+"\015\000\000\000\000\000\000\000" # Uses: 2583
+"\000\000\001\\" # Uses: 2575
+"/ead" # Uses: 2446
+"intensi|y" # Uses: 2693
+"chstate_enc" # Uses: 2533
+"characyer" # Uses: 2439
+"(\001\000\000" # Uses: 2014
+"\001\002" # Uses: 1958
+"protocol_ver" # Uses: 1874
+"3\000\000\000\000\000\000\000" # Uses: 1800
+"\377\377\377\377\377\377\377\010" # Uses: 1446
+"\024\000\000\000\000\000\000\000" # Uses: 1422
+"\010\000\000\000" # Uses: 956
+"\377\004" # Uses: 906
+"sent_0000" # Uses: 849
+"rEquest_id" # Uses: 888
+"chatocol_v" # Uses: 810
+"emotionmetho`" # Uses: 764
+"\000\000\000d" # Uses: 672
+"resqteid" # Uses: 411
+"mess" # Uses: 348
+###### End of recommended dictionary. ######
+stat::number_of_executed_units: 19261140
+stat::average_exec_per_sec:     63990
+stat::new_units_added:          8157
+stat::slowest_unit_time_sec:    0
+stat::peak_rss_mb:              434
