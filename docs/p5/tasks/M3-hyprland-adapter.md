@@ -1,6 +1,6 @@
 # M3 task plan — Hyprland v0.57.2 adapter
 
-**Status:** Planned; implementation not started. **Gate status:** ADAPTER-01, HYPR-01 and HYPR-02 remain Not Run.
+**Status:** In progress on `feat/p5-m3-hyprland-adapter`; adapter core implemented with title redaction, command allowlist, work-area bounds, and independent read-back verification. **Gate status:** ADAPTER-01, HYPR-01 and HYPR-02 remain Not Run.
 
 **Selected profile:** Hyprland v0.57.2 stable, release tag commit `11cbc6c577b84ffb1edf4df3fc5b6128c3ae6947`, on one Linux host and one supported display. Use Lua configuration (`hyprland.lua`); do not use the removed `.conf` configuration format. The release is documented at [Hyprland v0.57.2](https://github.com/hyprwm/Hyprland/releases/tag/v0.57.2). The versioned [0.57.0 configuration docs](https://wiki.hypr.land/0.57.0/configuring/core/) identify `hyprland.lua` as the config path. v0.57.2 includes a fix for accessing expired window references from Lua, so the adapter must still treat references as short-lived and revalidate before use.
 

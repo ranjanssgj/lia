@@ -64,3 +64,7 @@ Partial M2 implementation evidence (not a conformance run): [bounded I/O timeout
 ## P5 M2 production authorization and lifecycle checks (18 November 2026)
 
 - [Production UI registry, deterministic policy, and supervisor lifecycle (18 November 2026)](IPC-01/2026-11-18-m2-production-authorization-and-lifecycle/README.md) — canonical AC-010 controls with risk tiers, deterministic permission policy, graceful SIGTERM termination, isolated zero-FD-leak churn, and slow reader bounding; IPC-01 remains Not Run.
+
+## P5 M3 Hyprland adapter core checks (18 November 2026)
+
+- [Hyprland v0.57.2 adapter core and ADP synthetic conformance (18 November 2026)](HYPR-01/2026-11-18-m3-hyprland-adapter-core/README.md) — active-window title redaction, 10s reference freshness, structured command filtering, work-area margin computation, consume-before-effect store integration, independent read-back verification, event socket invalidation epoch, and synthetic ADP conformance suite (ADP-001, 005, 008-010, 014, 018, 023, 024); HYPR-01, HYPR-02, and ADAPTER-01 remain Not Run.
