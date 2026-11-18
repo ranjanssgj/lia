@@ -1,18 +1,30 @@
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s
+   Compiling lia-device-agent v0.1.0 (/home/ice/.gemini/antigravity/scratch/lia/crates/lia-device-agent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.62s
      Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
 
-running 11 tests
-test hyprland::tests::cache_invalidator_advances_epoch_on_relevant_events ... ok
-test hyprland::tests::inspect_active_window_redacts_title_and_enforces_freshness ... ok
+running 22 tests
+test hyprland::adp_tests::tests::adp_024_presentation_client_has_no_os_execution_authority ... ok
+test hyprland::adp_tests::tests::adp_001_valid_current_manifest_conforms ... ok
 test hyprland::tests::command_filter_validates_hex_addresses_and_disallowed_queries ... ok
-test hyprland::tests::parse_event_line_redacts_title_and_handles_all_event_types ... ok
-test hyprland::tests::inspect_work_area_computes_reserved_margins ... ok
+test hyprland::adp_tests::tests::adp_005_unsupported_capability_fails_closed_without_shell_fallback ... ok
+test hyprland::tests::cache_invalidator_advances_epoch_on_relevant_events ... ok
 test hyprland::tests::inspect_active_window_fails_when_absent_or_unmapped ... ok
+test hyprland::tests::inspect_active_window_redacts_title_and_enforces_freshness ... ok
+test hyprland::tests::inspect_work_area_computes_reserved_margins ... ok
+test hyprland::tests::parse_event_line_redacts_title_and_handles_all_event_types ... ok
+test hyprland::tests::service_caches_snapshot_and_invalidates_on_epoch_advance ... ok
 test hyprland::tests::manifest_generation_conforms_to_contract_v1_and_preserves_privacy ... ok
+test hyprland::tests::spawn_event_listener_delivers_events_and_shuts_down_cleanly ... ok
 test hyprland::tests::execute_move_rejects_expired_reference ... ok
-test hyprland::tests::execute_move_read_back_contradiction_yields_verified_failure ... ok
-test hyprland::tests::execute_move_dispatch_timeout_yields_unknown_outcome ... ok
+test hyprland::adp_tests::tests::adp_010_out_of_bounds_target_arguments_reject_before_effect ... ok
+test hyprland::adp_tests::tests::adp_008_stale_resource_fails_before_effect ... ok
+test hyprland::adp_tests::tests::adp_014_timeout_after_dispatch_requires_reconciliation ... ok
+test hyprland::adp_tests::tests::adp_018_dispatch_acknowledgement_alone_is_not_verified_success ... ok
 test hyprland::tests::execute_same_display_move_verified_success_path ... ok
+test hyprland::tests::execute_move_dispatch_timeout_yields_unknown_outcome ... ok
+test hyprland::adp_tests::tests::adp_023_privacy_guarantee_zero_titles_in_evidence_or_manifests ... ok
+test hyprland::tests::execute_move_read_back_contradiction_yields_verified_failure ... ok
+test hyprland::adp_tests::tests::adp_009_resource_older_than_freshness_bound_rejected ... ok
 
-test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 70 filtered out; finished in 0.10s
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 70 filtered out; finished in 0.42s
 

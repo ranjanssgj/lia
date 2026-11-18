@@ -1,6 +1,6 @@
 # P5 — First vertical slice plan
 
-**Status:** M0 readiness complete; M1 core merged with follow-up evidence open; M2 IPC spike in progress.
+**Status:** M0 readiness complete; M1 core merged; M2 presentation IPC merged; M3 Hyprland adapter in progress.
 **Scope:** The approved first slice in Blueprint §6, on one Linux host, one supported display and one exact Hyprland profile.
 **Authority:** Blueprint v1.14.35 and P4 contract package 0.3.3 (Draft) in this branch.
 
@@ -37,7 +37,7 @@ M2 follow-up on 17 November adds strict versioned hello, ready and state-replace
 
 M2 follow-up on 18 November establishes the production presentation authorization boundary and supervisor lifecycle: `ProductionUiRegistry` provides canonical AC-010 controls (`panel.hide`, `panel.pin`, `panel.lock`, `panel.reposition`, `presentation.pause`, `presentation.resume`, `chat.input`, `chat.stop`) declaring risk tiers (R0, R1), allowed event kinds, session requirements and text bounds; `DeterministicPresentationPolicy` integrates deterministic permission authority checks; `RendererSupervisor` implements graceful `SIGTERM` termination with bounded timeout fallback to `SIGKILL` and clean zombie-free reaping on Drop; isolated churn tests verify zero file descriptor leaks across 32 rapid connection cycles; slow readers are bounded by the 1.0s I/O timeout ceiling; and adversarial parser tests cover deep nesting and invalid intensity rejection; see [18 November evidence](../../evidence/IPC-01/2026-11-18-m2-production-authorization-and-lifecycle/README.md). PR #6 is merged into `main`.
 
-M3 follow-up on 18 November begins Hyprland v0.57.2 adapter implementation on `feat/p5-m3-hyprland-adapter`: `crates/lia-device-agent/src/hyprland/` implements active-window discovery with compile-time window title redaction, 10s reference freshness bounds, structured command allowlisting, display work-area reserved margin parsing, `AgentStore` `consume_before_effect` permit integration, and independent read-back post-operation verification; see [M3 adapter core evidence](../../evidence/HYPR-01/2026-11-18-m3-hyprland-adapter-core/README.md). Full gates ADAPTER-01, HYPR-01, and HYPR-02 remain Not Run.
+M3 follow-up on 18 November begins Hyprland v0.57.2 adapter implementation on `feat/p5-m3-hyprland-adapter`: `crates/lia-device-agent/src/hyprland/` implements active-window discovery with compile-time window title redaction, 10s reference freshness bounds, structured command allowlisting, display work-area reserved margin parsing, `AgentStore` `consume_before_effect` permit integration, independent read-back post-operation verification, capability manifest generation, asynchronous event listener cache invalidation epoch, and synthetic ADP conformance test suite (ADP-001, ADP-005, ADP-008, ADP-009, ADP-010, ADP-014, ADP-018, ADP-023, ADP-024); see [M3 adapter core evidence](../../evidence/HYPR-01/2026-11-18-m3-hyprland-adapter-core/README.md). Full gates ADAPTER-01, HYPR-01, and HYPR-02 remain Not Run.
 
 ### Open owner decisions
 

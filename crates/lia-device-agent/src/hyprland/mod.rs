@@ -13,7 +13,11 @@ pub mod discovery;
 pub mod events;
 pub mod manifest;
 pub mod operations;
+pub mod service;
 pub mod types;
+
+#[cfg(test)]
+mod adp_tests;
 
 pub use client::{
     HYPRLAND_IO_TIMEOUT, HyprlandCommandFilter, HyprlandSocketClient, HyprlandTransport,
@@ -23,6 +27,7 @@ pub use discovery::{inspect_active_window, inspect_work_area};
 pub use events::{HyprlandCacheInvalidator, HyprlandEvent, parse_event_line};
 pub use manifest::{HyprlandCapabilityManifest, generate_hyprland_manifest};
 pub use operations::execute_and_record_move;
+pub use service::{HyprlandAdapterService, spawn_event_listener};
 pub use types::{
     ActiveWindowSnapshot, DisplayWorkArea, HyprlandError, MoveOperationResult,
     SameDisplayMoveCommand, WindowGeometry, WindowIdentity,
@@ -694,5 +699,114 @@ mod tests {
         let json_str = serde_json::to_string_pretty(&manifest).unwrap();
         assert!(!json_str.contains("title"));
         assert!(json_str.contains("desktop.window.move_same_display"));
+    }
+
+    #[test]
+    fn service_caches_snapshot_and_invalidates_on_epoch_advance() {
+        let clock = MockClock::new(1_700_000_000_000_000);
+        let transport = MockHyprlandTransport::new();
+        transport.set_query_response(
+            "j/activewindow",
+            Ok(sample_active_window_json(
+                "0x55a8f2c3b1a0",
+                100,
+                200,
+                800,
+                600,
+                true,
+            )),
+        );
+
+        let invalidator = HyprlandCacheInvalidator::new();
+        let mut service = HyprlandAdapterService::new(
+            "device-uuid-1",
+            "account-uuid-1",
+            transport,
+            invalidator.clone(),
+        );
+
+        // First query: queries compositor
+        let snap1 = service
+            .get_active_window(&clock, "gen-1", false)
+            .expect("snap1 failed");
+        assert_eq!(snap1.identity.address, "0x55a8f2c3b1a0");
+
+        // Change response on transport to prove cache is served
+        service.transport().set_query_response(
+            "j/activewindow",
+            Ok(sample_active_window_json(
+                "0x999999999999",
+                500,
+                500,
+                800,
+                600,
+                true,
+            )),
+        );
+
+        // Second query: epoch unchanged, serves cached snapshot
+        let snap2 = service
+            .get_active_window(&clock, "gen-1", false)
+            .expect("snap2 failed");
+        assert_eq!(snap2.identity.address, "0x55a8f2c3b1a0");
+
+        // Event occurs: invalidates cache
+        invalidator.invalidate();
+
+        // Third query: cache invalidated, re-queries compositor and sees new snapshot
+        let snap3 = service
+            .get_active_window(&clock, "gen-2", false)
+            .expect("snap3 failed");
+        assert_eq!(snap3.identity.address, "0x999999999999");
+    }
+
+    #[test]
+    fn spawn_event_listener_delivers_events_and_shuts_down_cleanly() {
+        use std::io::Write;
+        use std::os::unix::net::UnixListener;
+        use std::sync::atomic::AtomicBool;
+
+        let socket_path =
+            std::env::temp_dir().join(format!("test_hypr_events_{}.sock", std::process::id()));
+        let _ = std::fs::remove_file(&socket_path);
+        let listener = UnixListener::bind(&socket_path).unwrap();
+
+        let invalidator = HyprlandCacheInvalidator::new();
+        assert_eq!(invalidator.current_epoch(), 1);
+
+        let shutdown = std::sync::Arc::new(AtomicBool::new(false));
+        let handle =
+            spawn_event_listener(socket_path.clone(), invalidator.clone(), shutdown.clone());
+
+        // Accept connection from background listener
+        let (mut stream, _) = listener.accept().unwrap();
+
+        // Send workspace event line
+        stream.write_all(b"workspace>>4\n").unwrap();
+        stream.flush().unwrap();
+
+        // Allow listener thread to process line and advance epoch
+        for _ in 0..50 {
+            if invalidator.current_epoch() > 1 {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        assert!(
+            invalidator.current_epoch() > 1,
+            "Event listener must increment epoch on workspace event"
+        );
+
+        // Signal shutdown and join thread cleanly
+        shutdown.store(true, std::sync::atomic::Ordering::SeqCst);
+        let _ = stream.write_all(b"\n");
+        let _ = stream.flush();
+        drop(stream);
+        drop(listener);
+        let _ = std::fs::remove_file(&socket_path);
+
+        handle
+            .join()
+            .expect("Event listener thread panicked on join");
     }
 }

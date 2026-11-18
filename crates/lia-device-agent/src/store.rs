@@ -660,6 +660,10 @@ impl AgentStore {
         )?;
         Ok(())
     }
+    #[cfg(test)]
+    pub fn conn(&self) -> &Connection {
+        &self.conn
+    }
     pub fn pragma_i64(&self, name: &str) -> Result<i64, StoreError> {
         Ok(self
             .conn

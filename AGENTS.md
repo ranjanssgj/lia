@@ -30,7 +30,7 @@ Planned areas are:
 - `testdata/`: standards-derived public vectors and synthetic fixtures.
 - `evidence/`: redacted, reproducible gate evidence; never secrets or private content.
 
-`crates/lia-device-agent/` is the active M1 implementation. Other crates and `apps/` remain milestone-planned; the documentation/tooling paths above already exist.
+`crates/lia-device-agent/` is the active implementation workspace covering M1 device agent core, M2 presentation IPC, and M3 Hyprland adapter. Other crates and `apps/` remain milestone-planned; the documentation/tooling paths above already exist.
 
 ## Definition of done
 
