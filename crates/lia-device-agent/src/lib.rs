@@ -5,6 +5,8 @@
 pub mod hyprland;
 #[cfg(target_os = "linux")]
 pub mod ipc;
+#[cfg(test)]
+mod presentation_client_tests;
 #[cfg(target_os = "linux")]
 pub mod presentation_policy;
 pub mod signatures;

@@ -1,0 +1,31 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; but for LIA M4 Godot presentation baseline it is configured here.
+
+config_version=5
+
+[application]
+
+config/name="LIA Presentation"
+config/description="LIA Embodied Desktop Presentation Surface"
+config/version="0.1.0"
+run/main_scene="res://scenes/presentation_main.tscn"
+config/features=PackedStringArray("4.3", "Forward Plus")
+
+[display]
+
+window/size/viewport_width=400
+window/size/viewport_height=600
+window/size/mode=0
+window/size/resizable=false
+window/size/borderless=true
+window/size/always_on_top=true
+window/size/transparent=true
+window/per_pixel_transparency/allowed=true
+window/subwindows/embed_subwindows=false
+window/dpi/allow_hidpi=true
+
+[rendering]
+
+viewport/transparent_background=true
+renderer/rendering_method="forward_plus"
