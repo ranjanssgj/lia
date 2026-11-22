@@ -1,0 +1,15 @@
+   Compiling lia-device-agent v0.1.0 (/home/ice/.gemini/antigravity/scratch/lia/crates/lia-device-agent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.27s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 7 tests
+test presentation_client_tests::tests::test_godot_005_ac010_user_controls_typed_intents_and_bounds ... ok
+test presentation_client_tests::tests::test_godot_003_character_lifecycle_transitions ... ok
+test presentation_client_tests::tests::test_godot_001_snapshot_parsing_strict_unknown_fields_and_bounds ... ok
+test presentation_client_tests::tests::test_godot_004_truthful_outcome_visual_distinction_ac007 ... ok
+test presentation_client_tests::tests::test_godot_006_placement_precedence_user_lock ... ok
+test presentation_client_tests::tests::test_godot_002_monotonic_state_revision_enforcement ... ok
+test presentation_client_tests::tests::test_godot_007_reconnect_fresh_session_and_no_replay ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 92 filtered out; finished in 0.00s
+

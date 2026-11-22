@@ -68,3 +68,7 @@ Partial M2 implementation evidence (not a conformance run): [bounded I/O timeout
 ## P5 M3 Hyprland adapter core checks (18 November 2026)
 
 - [Hyprland v0.57.2 adapter core and ADP synthetic conformance (18 November 2026)](HYPR-01/2026-11-18-m3-hyprland-adapter-core/README.md) — active-window title redaction, 10s reference freshness, structured command filtering, work-area margin computation, consume-before-effect store integration, independent read-back verification, event socket invalidation epoch, and synthetic ADP conformance suite (ADP-001, 005, 008-010, 014, 018, 023, 024); HYPR-01, HYPR-02, and ADAPTER-01 remain Not Run.
+
+## P5 M4 Godot presentation checks (22 November 2026)
+
+- [Godot presentation architecture and synthetic client conformance (22 November 2026)](GODOT-01/2026-11-22-m4-godot-presentation/README.md) — GDScript presentation client architecture, strict snapshot decoding, character lifecycle states (AC-001), truthful outcome visual distinction for 5 outcome classes (AC-007, Invariant 8), canonical AC-010 typed user control intent generation, placement precedence lock, and session replay protection; GODOT-01 and IPC-01 remain Not Run.
