@@ -14,6 +14,7 @@ try {
     "docs/p4/sql/sqlite/006-operation-outcomes-and-evidence.sql",
     "docs/p4/sql/sqlite/007-integer-time-and-integrity-anchor.sql",
     "docs/p4/sql/sqlite/008-integer-time-table-rebuild.sql",
+    "docs/p4/sql/sqlite/009-user-preferences-and-tombstones.sql",
   ]) {
     db.exec(await readFile(migration, "utf8"));
     console.log(`applied: ${migration}`);

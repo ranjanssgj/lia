@@ -47,7 +47,33 @@ const MIGRATIONS: &[(i64, &str)] = &[
         8,
         include_str!("../../../docs/p4/sql/sqlite/008-integer-time-table-rebuild.sql"),
     ),
+    (
+        9,
+        include_str!("../../../docs/p4/sql/sqlite/009-user-preferences-and-tombstones.sql"),
+    ),
 ];
+
+fn random_uuid_v4() -> Result<String, StoreError> {
+    let mut bytes = [0_u8; 16];
+    std::fs::File::open("/dev/urandom")
+        .and_then(|mut f| std::io::Read::read_exact(&mut f, &mut bytes))
+        .map_err(|e| StoreError::Invalid(format!("Failed to read /dev/urandom: {e}")))?;
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    let hex = bytes
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<Vec<_>>()
+        .join("");
+    Ok(format!(
+        "{}-{}-{}-{}-{}",
+        &hex[0..8],
+        &hex[8..12],
+        &hex[12..16],
+        &hex[16..20],
+        &hex[20..32]
+    ))
+}
 
 fn enable_wal_with_retry(conn: &Connection) -> Result<(), StoreError> {
     let deadline = Instant::now() + Duration::from_secs(5);
@@ -349,6 +375,22 @@ impl std::fmt::Display for StoreError {
     }
 }
 impl std::error::Error for StoreError {}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UserPreferenceRecord {
+    pub preference_id: String,
+    pub account_id: String,
+    pub preference_key: String,
+    pub preference_value: String,
+    pub sensitivity: String,
+    pub scope_type: String,
+    pub scope_reference: String,
+    pub source_reference_id: String,
+    pub revision: i64,
+    pub is_deleted: bool,
+    pub created_at_us: i64,
+    pub updated_at_us: i64,
+}
 
 #[derive(Clone, Debug)]
 pub struct OperationClaims {
@@ -675,6 +717,201 @@ impl AgentStore {
             [],
             |r| r.get(0),
         )?)
+    }
+
+    /// Sets or updates a user preference with full provenance tracking (AC-009).
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_user_preference(
+        &mut self,
+        account_id: &str,
+        preference_key: &str,
+        preference_value: &str,
+        scope_type: &str,
+        scope_reference: &str,
+        source_reference_id: &str,
+        now_us: i64,
+    ) -> Result<UserPreferenceRecord, StoreError> {
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+
+        let existing: Option<(String, i64, bool)> = tx
+            .query_row(
+                "SELECT preference_id, revision, is_deleted FROM local_user_preference WHERE account_id=?1 AND preference_key=?2",
+                params![account_id, preference_key],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get::<_, i64>(2)? != 0)),
+            )
+            .optional()?;
+
+        let (pref_id, next_revision, created_at) = match existing {
+            Some((id, rev, was_deleted)) => {
+                let next_rev = rev + 1;
+                let tombstone_exists: bool = tx
+                    .query_row(
+                        "SELECT COUNT(*) FROM local_deletion_tombstone WHERE account_id=?1 AND record_reference=?2 AND deletion_revision=?3",
+                        params![account_id, id, rev.to_string()],
+                        |r| r.get::<_, i64>(0),
+                    )
+                    .map(|c| c > 0)
+                    .unwrap_or(false);
+
+                if was_deleted && tombstone_exists && source_reference_id.is_empty() {
+                    return Err(StoreError::Invalid(
+                        "Tombstone blocks resurrection without fresh source reference".into(),
+                    ));
+                }
+
+                tx.execute(
+                    "UPDATE local_user_preference SET preference_value=?1, scope_type=?2, scope_reference=?3, source_reference_id=?4, revision=?5, is_deleted=0, updated_at_us=?6 WHERE preference_id=?7",
+                    params![preference_value, scope_type, scope_reference, source_reference_id, next_rev, now_us, id],
+                )?;
+                let created: i64 = tx.query_row(
+                    "SELECT created_at_us FROM local_user_preference WHERE preference_id=?1",
+                    params![id],
+                    |r| r.get(0),
+                )?;
+                (id, next_rev, created)
+            }
+            None => {
+                let id = format!("pref-{}", random_uuid_v4()?);
+                tx.execute(
+                    "INSERT INTO local_user_preference (preference_id, account_id, preference_key, preference_value, sensitivity, scope_type, scope_reference, source_reference_id, revision, is_deleted, created_at_us, updated_at_us) VALUES (?1, ?2, ?3, ?4, 'S1', ?5, ?6, ?7, 1, 0, ?8, ?8)",
+                    params![id, account_id, preference_key, preference_value, scope_type, scope_reference, source_reference_id, now_us],
+                )?;
+                (id, 1, now_us)
+            }
+        };
+
+        tx.commit()?;
+
+        Ok(UserPreferenceRecord {
+            preference_id: pref_id,
+            account_id: account_id.to_string(),
+            preference_key: preference_key.to_string(),
+            preference_value: preference_value.to_string(),
+            sensitivity: "S1".to_string(),
+            scope_type: scope_type.to_string(),
+            scope_reference: scope_reference.to_string(),
+            source_reference_id: source_reference_id.to_string(),
+            revision: next_revision,
+            is_deleted: false,
+            created_at_us: created_at,
+            updated_at_us: now_us,
+        })
+    }
+
+    /// Retrieves an active non-deleted user preference.
+    pub fn get_user_preference(
+        &self,
+        account_id: &str,
+        preference_key: &str,
+    ) -> Result<Option<UserPreferenceRecord>, StoreError> {
+        let record = self
+            .conn
+            .query_row(
+                "SELECT preference_id, account_id, preference_key, preference_value, sensitivity, scope_type, scope_reference, source_reference_id, revision, is_deleted, created_at_us, updated_at_us FROM local_user_preference WHERE account_id=?1 AND preference_key=?2 AND is_deleted=0",
+                params![account_id, preference_key],
+                |r| {
+                    Ok(UserPreferenceRecord {
+                        preference_id: r.get(0)?,
+                        account_id: r.get(1)?,
+                        preference_key: r.get(2)?,
+                        preference_value: r.get(3)?,
+                        sensitivity: r.get(4)?,
+                        scope_type: r.get(5)?,
+                        scope_reference: r.get(6)?,
+                        source_reference_id: r.get(7)?,
+                        revision: r.get(8)?,
+                        is_deleted: r.get::<_, i64>(9)? != 0,
+                        created_at_us: r.get(10)?,
+                        updated_at_us: r.get(11)?,
+                    })
+                },
+            )
+            .optional()?;
+        Ok(record)
+    }
+
+    /// Deletes a user preference and records an authoritative deletion tombstone.
+    pub fn delete_user_preference(
+        &mut self,
+        account_id: &str,
+        preference_key: &str,
+        source_event_id: &str,
+        now_us: i64,
+        now_iso: &str,
+    ) -> Result<bool, StoreError> {
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+
+        let existing: Option<(String, String, String, i64)> = tx
+            .query_row(
+                "SELECT preference_id, scope_type, scope_reference, revision FROM local_user_preference WHERE account_id=?1 AND preference_key=?2 AND is_deleted=0",
+                params![account_id, preference_key],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )
+            .optional()?;
+
+        let (pref_id, scope_type, scope_reference, rev) = match existing {
+            Some(v) => v,
+            None => return Ok(false),
+        };
+
+        let next_rev = rev + 1;
+        tx.execute(
+            "UPDATE local_user_preference SET is_deleted=1, revision=?1, updated_at_us=?2 WHERE preference_id=?3",
+            params![next_rev, now_us, pref_id],
+        )?;
+
+        let tombstone_id = format!("tomb-pref-{}-{}", pref_id, next_rev);
+        tx.execute(
+            "INSERT INTO local_deletion_tombstone (tombstone_id, account_id, owner_domain, record_type, record_reference, scope_type, scope_reference, deletion_revision, source_event_id, issued_at, applied_at, apply_state, reason_code) VALUES (?1, ?2, 'lia.memory.preference', 'user_preference', ?3, ?4, ?5, ?6, ?7, ?8, ?8, 'applied', 'user_requested_deletion')",
+            params![
+                tombstone_id,
+                account_id,
+                pref_id,
+                scope_type,
+                scope_reference,
+                next_rev.to_string(),
+                source_event_id,
+                now_iso
+            ],
+        )?;
+
+        tx.commit()?;
+        Ok(true)
+    }
+
+    /// Lists active user preferences for an account.
+    pub fn list_user_preferences(
+        &self,
+        account_id: &str,
+    ) -> Result<Vec<UserPreferenceRecord>, StoreError> {
+        let mut stmt = self.conn.prepare(
+            "SELECT preference_id, account_id, preference_key, preference_value, sensitivity, scope_type, scope_reference, source_reference_id, revision, is_deleted, created_at_us, updated_at_us FROM local_user_preference WHERE account_id=?1 AND is_deleted=0 ORDER BY preference_key ASC",
+        )?;
+        let rows = stmt.query_map(params![account_id], |r| {
+            Ok(UserPreferenceRecord {
+                preference_id: r.get(0)?,
+                account_id: r.get(1)?,
+                preference_key: r.get(2)?,
+                preference_value: r.get(3)?,
+                sensitivity: r.get(4)?,
+                scope_type: r.get(5)?,
+                scope_reference: r.get(6)?,
+                source_reference_id: r.get(7)?,
+                revision: r.get(8)?,
+                is_deleted: r.get::<_, i64>(9)? != 0,
+                created_at_us: r.get(10)?,
+                updated_at_us: r.get(11)?,
+            })
+        })?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
     }
     /// Create a transactionally consistent SQLite backup that retains replay ledgers.
     pub fn backup_to(&self, destination: impl AsRef<Path>) -> Result<(), StoreError> {
@@ -1031,7 +1268,7 @@ mod tests {
     #[test]
     fn migrations_wal_foreign_keys_and_first_zero_once() {
         let mut s = AgentStore::open_in_memory().unwrap();
-        assert_eq!(s.schema_version().unwrap(), 8);
+        assert_eq!(s.schema_version().unwrap(), MIGRATIONS.len() as i64);
         assert_eq!(s.pragma_i64("foreign_keys").unwrap(), 1);
         assert_eq!(
             s.pragma_i64("synchronous").unwrap(),
@@ -1115,7 +1352,7 @@ mod tests {
             .query_row("PRAGMA journal_mode", [], |r| r.get(0))
             .unwrap();
         assert_eq!(mode.to_ascii_lowercase(), "wal");
-        assert_eq!(s.schema_version().unwrap(), 8);
+        assert_eq!(s.schema_version().unwrap(), MIGRATIONS.len() as i64);
         drop(s);
         clear_database_files(&path);
     }
@@ -1139,7 +1376,7 @@ mod tests {
             .collect();
         barrier.wait();
         for handle in handles {
-            assert_eq!(handle.join().unwrap().unwrap(), 8);
+            assert_eq!(handle.join().unwrap().unwrap(), MIGRATIONS.len() as i64);
         }
         clear_database_files(&path);
     }
@@ -1174,7 +1411,10 @@ mod tests {
             let mut restore_target = AgentStore::open(&restored).unwrap();
             std::fs::copy(anchor_path(&source), anchor_path(&restored)).unwrap();
             restore_target.restore_from(&backup).unwrap();
-            assert_eq!(restore_target.schema_version().unwrap(), 8);
+            assert_eq!(
+                restore_target.schema_version().unwrap(),
+                MIGRATIONS.len() as i64
+            );
             assert_eq!(
                 restore_target
                     .reconcile_uncertain_operations("2026-11-15T00:01:00Z")
@@ -1795,5 +2035,104 @@ mod tests {
         drop(contender);
         drop(store);
         clear_database_files(&path);
+    }
+
+    #[test]
+    fn test_user_preference_provenance_and_tombstone_deletion() {
+        let mut store = AgentStore::open_in_memory().unwrap();
+        let account = "acc-test-1";
+
+        // 1. Initial preference insertion with provenance
+        let pref1 = store
+            .set_user_preference(
+                account,
+                "theme",
+                "dark",
+                "account",
+                account,
+                "turn-001",
+                1_700_000_000_000_000,
+            )
+            .unwrap();
+        assert_eq!(pref1.preference_key, "theme");
+        assert_eq!(pref1.preference_value, "dark");
+        assert_eq!(pref1.revision, 1);
+        assert_eq!(pref1.source_reference_id, "turn-001");
+        assert!(!pref1.is_deleted);
+
+        // 2. Query preference
+        let fetched = store
+            .get_user_preference(account, "theme")
+            .unwrap()
+            .unwrap();
+        assert_eq!(fetched, pref1);
+
+        // 3. Update preference with new revision and source
+        let pref2 = store
+            .set_user_preference(
+                account,
+                "theme",
+                "high-contrast",
+                "account",
+                account,
+                "turn-002",
+                1_700_000_001_000_000,
+            )
+            .unwrap();
+        assert_eq!(pref2.preference_value, "high-contrast");
+        assert_eq!(pref2.revision, 2);
+        assert_eq!(pref2.source_reference_id, "turn-002");
+
+        // 4. List preferences
+        let list = store.list_user_preferences(account).unwrap();
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].preference_value, "high-contrast");
+
+        // 5. Delete preference (AC-009 tombstone generation)
+        let deleted = store
+            .delete_user_preference(
+                account,
+                "theme",
+                "event-del-001",
+                1_700_000_002_000_000,
+                "2026-11-23T10:00:00Z",
+            )
+            .unwrap();
+        assert!(deleted);
+
+        // 6. Inspecting deleted preference yields None
+        assert!(
+            store
+                .get_user_preference(account, "theme")
+                .unwrap()
+                .is_none()
+        );
+        assert!(store.list_user_preferences(account).unwrap().is_empty());
+
+        // 7. Verify tombstone exists in local_deletion_tombstone
+        let tombstone_count: i64 = store
+            .conn
+            .query_row(
+                "SELECT COUNT(*) FROM local_deletion_tombstone WHERE record_type='user_preference' AND apply_state='applied'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(tombstone_count, 1);
+
+        // 8. Re-inserting without source reference fails closed against tombstone
+        let res = store.set_user_preference(
+            account,
+            "theme",
+            "dark",
+            "account",
+            account,
+            "",
+            1_700_000_003_000_000,
+        );
+        assert!(
+            res.is_err(),
+            "Tombstone must prevent stale resurrection without source"
+        );
     }
 }
