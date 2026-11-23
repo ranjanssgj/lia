@@ -1,6 +1,7 @@
 //! Local persistence and cryptographic primitives for the first P5 device-agent slice.
 //! This crate is not a complete protobuf verifier or production security boundary.
 
+pub mod conversation;
 #[cfg(target_os = "linux")]
 pub mod hyprland;
 #[cfg(target_os = "linux")]
@@ -16,5 +17,5 @@ mod time;
 pub use store::{
     AgentStore, AttemptCompletion, CommandClaims, EffectPermit, EvidenceRecord, LeaseClaims,
     LeaseConsumption, ObservedOutcome, OperationClaims, OperationOutcomeState, StoreError,
-    SystemTrustedClock, TrustedClock,
+    SystemTrustedClock, TrustedClock, UserPreferenceRecord,
 };

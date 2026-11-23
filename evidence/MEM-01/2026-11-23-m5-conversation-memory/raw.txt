@@ -1,0 +1,16 @@
+   Compiling lia-device-agent v0.1.0 (/home/ice/.gemini/antigravity/scratch/lia/crates/lia-device-agent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.83s
+     Running unittests src/lib.rs (target/debug/deps/lia_device_agent-40f8983a59756e7b)
+
+running 8 tests
+test conversation::tests::test_m5_002_synthetic_speech_transcription_and_tts_duration ... ok
+test conversation::tests::test_m5_001_synthetic_model_deterministic_and_prompt_injection_refusal ... ok
+test conversation::tests::test_m5_003_context_package_integrity_expiry_and_locality ... ok
+test conversation::tests::test_m5_006_undeclared_tool_proposal_fails_closed ... ok
+test conversation::tests::test_m5_008_end_to_end_vertical_slice_turn_to_verified_window_move_ac001_to_ac011 ... ok
+test conversation::tests::test_m5_004_turn_interruption_chat_stop_ac002 ... ok
+test conversation::tests::test_m5_007_persistent_memory_preference_provenance_and_deletion_ac009 ... ok
+test conversation::tests::test_m5_005_model_tool_proposal_untrusted_and_broker_permission_denial ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 100 filtered out; finished in 0.15s
+

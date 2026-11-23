@@ -72,3 +72,9 @@ Partial M2 implementation evidence (not a conformance run): [bounded I/O timeout
 ## P5 M4 Godot presentation checks (22 November 2026)
 
 - [Godot presentation architecture and synthetic client conformance (22 November 2026)](GODOT-01/2026-11-22-m4-godot-presentation/README.md) — GDScript presentation client architecture, strict snapshot decoding, character lifecycle states (AC-001), truthful outcome visual distinction for 5 outcome classes (AC-007, Invariant 8), canonical AC-010 typed user control intent generation, placement precedence lock, and session replay protection; GODOT-01 and IPC-01 remain Not Run.
+
+## P5 M5 Conversation, synthetic providers, and preference memory checks (23 November 2026)
+
+- [Synthetic model provider and prompt injection refusal (23 November 2026)](MODEL-01/2026-11-23-m5-conversation-memory/README.md) — deterministic model responses, prompt injection refusal, untrusted tool proposal generation, context package integrity verification, and provider locality enforcement (zero network egress); MODEL-01 remains Not Run.
+- [Synthetic speech provider and push-to-talk transcription (23 November 2026)](SPEECH-01/2026-11-23-m5-conversation-memory/README.md) — push-to-talk ASR transcription (AC-002), audio token validation, corrupted audio rejection, and deterministic TTS speech duration bounds; SPEECH-01 remains Not Run.
+- [Preference memory, provenance tracking, and end-to-end slice integration (23 November 2026)](MEM-01/2026-11-23-m5-conversation-memory/README.md) — low-sensitivity preference persistence with source provenance (AC-009), monotonic revisions, tombstone deletion, full vertical slice execution from text turn to verified window move (AC-001–AC-011), and SQLite privacy title redaction verification; MEM-01 remains Not Run.
