@@ -304,7 +304,7 @@ through controlled change; they do not invalidate earlier requirements.
   P2      Requirements engineering           Complete — baseline approved
   P3      System architecture                Complete — P3.1–P3.8 architecture and reference technology baseline approved
   P4      Integration contracts              In Progress — P4.1 contract package drafted; verification pending
-  P5      First vertical slice               In Progress — M0 complete; M1 core merged with proof open; M2 IPC spike in progress
+  P5      First vertical slice               Complete — M0–M5 merged; synthetic AC-001–AC-011 verified; live gates Not Run
   P6      Companion integration              Pending
   P7      Proactive behavior                 Pending
   P8      Expanded autonomy and perception   Pending
@@ -2578,6 +2578,8 @@ Docker Compose remains the initial development and self-host/reference packaging
 
 **1.14.1 — 14 Nov 2026:** Opened P4.1 and translated the approved P2/P3 baselines into draft integration contracts: Protobuf device control, OpenAPI 3.1 API, device IPC, PostgreSQL/SQLite persistence, Temporal workflow boundaries, NATS event delivery, provider-neutral interfaces, security profile, adapter manifests/conformance, runtime and supply-chain requirements. Added the P4 contract package and initial conformance/compatibility matrices. All implementation gates remained Not Run.
 
+**1.14.7 — 24 Nov 2026:** Completed P5 Milestones M0 through M5 on the Linux reference profile. Realized the first vertical slice across Rust device agent core (migrations 001–009, atomic consume-before-effect, integer time, integrity anchor), presentation IPC (peer UID credentials, session sequence, bounded queue, production UI registry), Hyprland v0.57.2 adapter (active-window title redaction, 10s freshness bound, work-area margins, post-dispatch read-back verification), Godot presentation application (character lifecycle, 5 truthful outcome classes, AC-010 controls, placement precedence), and conversation loop (context packaging with SHA-256 digest, deterministic synthetic model/speech providers with prompt-injection refusal, low-sensitivity preference memory with provenance and tombstone deletion). All 108 workspace tests pass; all live hardware conformance gates remain Not Run pending live physical workstation execution.
+
 **1.14.6 — 15 Nov 2026:** Began P5 M1 device-agent core implementation against P4 package 0.2.2. Added the Rust 1.99.1/rusqlite 0.41.1 pinned crate workspace, SQLite migration 005, command and offline-lease consume-before-effect paths, primitive signature/digest checks, backup/restore reconciliation, CI and partial evidence. Recorded remaining process-kill crash, rollback/anti-resurrection, protocol-interoperability and full-gate work; no conformance gate is marked Passed.
 
 **1.14.5 — 15 Nov 2026:** Clarified the owner-required zero-first command sequence rule with SQLite migration 005, preserving migrations 001–004 and requiring later sequences to increase strictly. Updated P4 package revision to 0.2.2 and the M1 evidence plan. No conformance gate is marked Passed.
@@ -2592,15 +2594,15 @@ Docker Compose remains the initial development and self-host/reference packaging
 
 # 10. Current working state
 
-**Current phase:** P5 — First Vertical Slice (M0 complete; M1 implementation in progress)
+**Current phase:** P5 — First Vertical Slice (M0–M5 complete; synthetic acceptance verified; live execution gates Not Run)
 **Phase 2 status:** Complete — approved requirements baselines  
 **P2.1–P2.7 status:** Complete as requirements baselines; runtime implementation and verification remain engineering work  
 **P3.1–P3.8 status:** Complete — architecture and reference technology baseline approved  
-**P4.1 status:** Contract package 0.3.3, including SQLite migrations 001–008, selected P5 M3 Hyprland v0.57.2, and versioned IPC handshake/session/body schemas, is Draft; all implementation/conformance gates remain Not Run and Godot renderer binding, authorization policy integration and full IPC service proof remain open
+**P4.1 status:** Contract package 0.3.3, including SQLite migrations 001–009, selected P5 M3 Hyprland v0.57.2, and versioned IPC handshake/session/body schemas, is Draft; all live implementation/conformance gates remain Not Run pending live physical environment execution
 **P4 implementation status:** No P4 conformance gate is marked Passed. Contract hygiene passed; P4 implementation conformance including interoperability, security, persistence, Temporal, NATS, live adapters and end-to-end integration remains unverified
-**P5 status:** M0 contract-hygiene readiness is complete. PR #5 merged to `main` on 15 November 2026 with Rust and contract-hygiene CI green. M1 includes outcome/evidence/outbox persistence, migrations 001–008, integer-time backfill and a development filesystem anchor prototype; M1 integration and SQLITE-02/SECURITY-01 procedures remain incomplete. M2 on `feat/p5-m2-ipc-spike` implements Linux presentation IPC primitives, strict versioned message-body schemas, private Unix socket setup, kernel peer UID checks, session lifecycle and bounded queue primitives. A mapped-user-namespace separate-UID peer test now verifies rejection at the authenticated accept boundary. Real Godot service binding, authorization policy integration, sustained resource/backpressure measurements and full IPC-01 evidence remain open. No P5 implementation gate has passed. P5 remains Linux-first and local-first; coordinator infrastructure is outside the baseline
-**Overall status:** P0–P3 baselines are approved. P4 contracts remain drafts. P5 M0 provides agent instructions, initial validation pins, CI, fixtures and evidence conventions; a green hygiene check is not a passed implementation gate or production authorization.
-**Next action:** Complete the M2 socket lifecycle and IPC-01 threat matrix while closing the remaining M1 crash/restore, replay and security-vector evidence. Keep all gates Not Run until complete procedures and review are finished. Hyprland v0.57.2 stable is selected for the P5 M3 reference; M5 hardware, language, budget and provider choices remain open for the owner.
+**P5 status:** M0 through M5 are implemented and merged into `main` (PRs #3, #5, #6, #7, #8, #9). All 108 workspace tests pass. P5 acceptance report is consolidated in `docs/p5/acceptance-report.md`. Live compositor, display, and provider conformance gates (ADAPTER-01, HYPR-01/02, GODOT-01, MODEL-01, SPEECH-01, MEM-01, IPC-01) remain Not Run until live execution on physical Linux hardware. P5 remains Linux-first and local-first; coordinator infrastructure is outside the baseline
+**Overall status:** P0–P3 baselines are approved. P4 contracts remain drafts. P5 first vertical slice is implemented and verified against synthetic harnesses and tests. Live hardware conformance gates remain Not Run.
+**Next action:** Prepare Phase 6 companion integration and coordinator architecture handoff while maintaining P5 test and contract hygiene.
 
 ## Phase 2 exit criteria
 
